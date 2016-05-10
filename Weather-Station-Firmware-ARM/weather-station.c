@@ -3,6 +3,16 @@
 @version 0.0.0
 @author Ken Sarkies (www.jiggerjuice.info)
 @date 07 May 2016
+
+This initial development version uses the ET-STM32F103 development board.
+
+- Rainwater gauge. Tipping bucket with reed switch.
+- Wind Speed. Reed switch.
+- Wind Direction. Reed switch.
+- Temperature and Humidity. Freetronics DHT22.
+- Solar Radiance (scale dependent on the panel material). Suntech-STP005S12-5W.
+- Air Pressure. Freetronics MS-5637-02BA03.
+
 */
 
 /*

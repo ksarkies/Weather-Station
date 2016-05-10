@@ -23,11 +23,11 @@ The sensors shall be:
 3. Wind Direction,
 4. Rainfall,
 5. Air Pressure,
-6. Solar Incident Radiation.
+6. Solar Radiance.
 
 The solar panel provided for power shall also be used to measure the incident
-solar radiation. This is a measure specific to the panel type and is intended
-only for providing records of incident radiation for use in design of solar
+solar radiance. This is a measure specific to the panel type and is intended
+only for providing records of incident radiance for use in design of solar
 power generators having similar panel types.
 
 (c) K. Sarkies 07/05/2016
