@@ -1,6 +1,6 @@
 /* DHT Temperature/Humidity sensor library 
 
-written by Adafruit Industries
+written by Adafruit Industries 21 Jun 2011
 */
 
 /******************************************************************************
@@ -26,6 +26,10 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************/
+#ifndef _DHT_H_
+#define _DHT_H_
+
+#include <stdint.h>
 
 // how many timing transitions we need to keep track of. 2 * number bits + extra
 #define MAXTIMINGS 85
@@ -35,19 +39,25 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DHT21 21
 #define AM2301 21
 
-class DHT {
- private:
-  uint8_t data[6];
-  uint8_t _pin, _type;
-  boolean read(void);
-  unsigned long _lastreadtime;
-  boolean firstreading;
+/* Data structure for a humidity-temperature sensor */
+typedef struct
+{
+/* I/O pin to which the communication line from the sensor is connected */
+    uint8_t pin;
+/* Sensor type */
+    uint8_t type;
+/* Carry persistent variables in case it is used by more than one sensor */
+    bool firstreading;
+    unsigned long lastreadtime;
+/* integer/fraction humidity, integer/fraction temperature, checksum */
+    uint8_t data[6];
+} DHT;
 
- public:
-  DHT(uint8_t pin, uint8_t type);
-  void begin(void);
-  float readTemperature(bool S=false);
-  float convertCtoF(float);
-  float readHumidity(void);
+bool readDHT(DHT *sensor);
+void initDHT(DHT *sensor);
+float readTemperature(DHT *sensor, bool S);
+float convertCtoF(float C);
+float readHumidity(DHT *sensor);
 
-};
+#endif
+
