@@ -1,13 +1,14 @@
 /* DHT Temperature/Humidity sensor library 
 
-written by Adafruit Industries 21 Jun 2011
+based on Arduino code written by Adafruit Industries 21 Jun 2011
+modified for general use by Ken Sarkies (www.jiggerjuice.net).
 */
 
 /******************************************************************************
     MIT Licence
 
     Copyright (c) 2011 Adafruit Industries
-
+    Copyright (c) Ken Sarkies
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal in
@@ -39,6 +40,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DHT21 21
 #define AM2301 21
 
+/* largest possible absolute fixed point number */
+#define NAN 0x7FFFFF00
+
 /* Data structure for a humidity-temperature sensor */
 typedef struct
 {
@@ -55,9 +59,9 @@ typedef struct
 
 bool readDHT(DHT *sensor);
 void initDHT(DHT *sensor);
-float readTemperature(DHT *sensor, bool S);
-float convertCtoF(float C);
-float readHumidity(DHT *sensor);
+uint32_t readTemperature(DHT *sensor, bool S);
+uint32_t convertCtoF(uint32_t celsius);
+uint32_t readHumidity(DHT *sensor);
 
 #endif
 

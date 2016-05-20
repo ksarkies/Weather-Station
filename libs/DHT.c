@@ -14,12 +14,15 @@ application. Originally the read timing was tied strictly to the Arduino 16MHz
 ATMega328 timing. However this is now independent of timing and relies on
 comparing the pulse widths within the signal.
 
+Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
+are the fractional part.
+
 Handles the following sensors:
 
 DHT11: this is a low cost device with temperature accuracy to 5C and humidity
        valid 20%-80%
 
-DHT21: Similar to DHT22 but different casing. Code is identical for both.
+DHT21: similar to DHT22 but different casing. Code is identical for both.
 
 DHT22: this device provides temperature accurate to 0.5C and humidity over the
        full range 0-100%.
@@ -29,7 +32,7 @@ DHT22: this device provides temperature accurate to 0.5C and humidity over the
     MIT Licence
 
     Copyright (c) 2011 Adafruit Industries
-
+    Copyright (c) Ken Sarkies
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal in
@@ -76,35 +79,36 @@ void initDHT(DHT *sensor)
 //-----------------------------------------------------------------------------
 /* @brief Read the Temperature from the sensor
 
+Temperature comes as (data[2]*256+data[3])/10 celcius. Expressed as fixed point.
+
 @param[in] *sensor: DHT for the sensor used.
-@param[in] boolean S: Scale, True = Farenheit; False = Celcius
-@returns float: temperature. NaN if an error occurred.
+@param[in] boolean fahrenheit: Scale, True = Farenheit; False = Celcius
+@returns uint32_t: temperature. NaN if an error occurred.
 */
 
-float readTemperature(DHT *sensor, bool S)
+uint32_t readTemperature(DHT *sensor, bool fahrenheit)
 {
-    float f;
+    uint32_t temperature;
 
     if (readDHT(sensor))
     {
         switch (sensor->type)
         {
         case DHT11:
-            f = sensor->data[2];
-            if (S)
-            f = convertCtoF(f);
-            return f;
+            temperature = sensor->data[2];
+            if (fahrenheit)
+            temperature = convertCtoF(temperature);
+            return temperature;
         case DHT22:
         case DHT21:
-            f = sensor->data[2] & 0x7F;
-            f *= 256;
-            f += sensor->data[3];
-            f /= 10;
+            temperature = (sensor->data[2] & 0x7F) << 16;
+            temperature += (sensor->data[3] << 8);
+            temperature /= 10;
             if (sensor->data[2] & 0x80)
-    	        f *= -1;
-            if (S)
-    	        f = convertCtoF(f);
-            return f;
+    	        temperature = -temperature;
+            if (fahrenheit)
+    	        temperature = convertCtoF(temperature);
+            return temperature;
         }
     }
     return NAN;
@@ -113,39 +117,40 @@ float readTemperature(DHT *sensor, bool S)
 //-----------------------------------------------------------------------------
 /* @brief Conversion Celsius to Fahrenheit
 
-@param[in] float c: Celcius temperature
-@returns float: Fahrenheit temperature.
+@param[in] uint32_t c: Celcius temperature
+@returns uint32_t: Fahrenheit temperature.
 */
 
-float convertCtoF(float C)
+uint32_t convertCtoF(uint32_t celsius)
 {
-	return 1.8*C + 32;
+	return 9*celsius/5 + 32*256;
 }
 
 //-----------------------------------------------------------------------------
 /* @brief Read humidity from the sensor
 
+Humidity comes as (data[0]*256+data[1])/10 percent. Expressed as fixed point.
+
 @param[in] *sensor: DHT for the sensor used.
-@returns float: Humidity 0 to 100. NaN if an error occurred.
+@returns uint32_t: Humidity 0 to 100. NaN if an error occurred.
 */
 
-float readHumidity(DHT *sensor)
+uint32_t readHumidity(DHT *sensor)
 {
-    float f;
+    uint32_t humidity;
     if (readDHT(sensor))
     {
         switch (sensor->type)
         {
         case DHT11:
-            f = sensor->data[0];
-            return f;
+            humidity = sensor->data[0];
+            return humidity;
         case DHT22:
         case DHT21:
-            f = sensor->data[0];
-            f *= 256;
-            f += sensor->data[1];
-            f /= 10;
-            return f;
+            humidity = (sensor->data[0]) << 16;
+            humidity += (sensor->data[1]) << 8;
+            humidity /= 10;
+            return humidity;
         }
     }
     return NAN;
