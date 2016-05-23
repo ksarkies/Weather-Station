@@ -1,34 +1,57 @@
-/*  Defines necessary to specify the processor and board used.
+/*  
+@mainpage Defines necessary to specify the processor and board used.
+@version 0.0
+@author Ken Sarkies (www.jiggerjuice.info)
+@date 22 May 2016
 
 This includes code to match the hardware Arduino calls to the particular
 processor and board.
 
-The systick timer must be set to 1ms ticks, and timer 2 set to a clock rate of
-1 microsecond.
+The hardware setup includes:
+
+- USART1
+- TIMER2 for microsecond delays. This must be set to a period of 0xFFFF to
+   ensure that it wraps around. It must be set to a clock rate of 1 microsecond.
+- Systick for millisecond delays. It must be set to 1ms ticks.
 
 The processor used here is the STM32F103 on the ET-STM32F103 development board.
-libopencm3 is the hardware library.
+The hardware library is libopencm3.
 
 K. Sarkies, 10 May 2016
 */
 
 #include <stdint.h>
 
-#include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/usart.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/cortex.h>
+#include <libopencm3/cm3/nvic.h>
+#include "buffer.h"
+#include "DHT.h"
 #include "hardware.h"
 
 #define  _BV(bit) (1 << (bit))
+#define BUFFER_SIZE 128
 
 //-----------------------------------------------------------------------------
 // Globals
-uint32_t systickTime;
+volatile uint32_t systickTime;
+static uint8_t send_buffer[BUFFER_SIZE+3];
+static uint8_t receive_buffer[BUFFER_SIZE+3];
+
+/*--------------------------------------------------------------------------*/
+/* Local Prototypes */
+
+void systickSetup(void);
+void usart1Setup(void);
+void timer2Setup(uint32_t period);
 
 //-----------------------------------------------------------------------------
-/* @brief   Calls to match Arduino hardware calls to processor
-*/
+/* @brief   Calls to emulate Arduino hardware calls             */
 //-----------------------------------------------------------------------------
 /*      Derive port number from pin
 
@@ -66,9 +89,12 @@ void pinMode(uint8_t pin, enum pinmodetype mode)
     switch (mode)
     {
         case INPUT_PULLUP:
-        case INPUT:
             gpio_set_mode(gpioPort(pin), GPIO_MODE_INPUT,
                            GPIO_CNF_INPUT_PULL_UPDOWN, _BV(pin & 0x0F));
+            break;
+        case INPUT:
+            gpio_set_mode(gpioPort(pin), GPIO_MODE_INPUT,
+                           GPIO_CNF_INPUT_FLOAT, _BV(pin & 0x0F));
             break;
         case OUTPUT:
             gpio_set_mode(gpioPort(pin), GPIO_MODE_OUTPUT_50_MHZ,
@@ -79,19 +105,22 @@ void pinMode(uint8_t pin, enum pinmodetype mode)
 //-----------------------------------------------------------------------------
 /*      Set Digital Pin value
 
-An output pin is set high or low, while an input pin is set to pullup high or
-no pullup.
+An output pin is set high or low, while an input pin is set to pullup or
+no pull down.
 
 For libopencm3 STM32F103 the port is derived from the pin parameter which is
 the pin number plus the port number times 16, where 0=GPIOA etc.
 
 @param[in] pin: uint8_t. Refers to the Arduino pin used for DHT.
-@param[in] setting: uint8_t. HIGH (1) or LOW (0).
+@param[in] setting: uint8_t. HIGH (1) or LOW (0). Only bit 0 is used.
 */
 
 inline void digitalWrite(uint8_t pin, uint8_t setting)
 {
-    gpio_port_write(gpioPort(pin), _BV(setting));
+    if ((setting & 0x01) == HIGH)
+        gpio_set(gpioPort(pin), _BV(pin & 0x0F));
+    else
+        gpio_clear(gpioPort(pin), _BV(pin & 0x0F));
 }
 
 //-----------------------------------------------------------------------------
@@ -120,12 +149,35 @@ inline uint32_t millis()
     return systickTime;
 }
 
+/*-----------------------------------------------------------*/
+/** @Brief Disable Global interrupts
+*/
+
+inline void cli(void)
+{
+    cm_disable_interrupts();
+}
+
+/*-----------------------------------------------------------*/
+/** @Brief Enable Global interrupts
+*/
+
+inline void sei(void)
+{
+    cm_enable_interrupts();
+}
+
 //-----------------------------------------------------------------------------
-/*      Delay in milliseconds
+/* @brief      Hardware specific settings  */
+//-----------------------------------------------------------------------------
+/* @brief Blocking Delay in milliseconds
 
 This function provides a basic delay in milliseconds. This differs from
 one system to another in libc. Here it makes use of a timer to define
 the time more accurately and independently of the instruction timing.
+
+The CM3 systick timer is a 24 bits downcounter that can reload to a specified
+start value.
 
 Global: systickTime taken from the systick interrupt.
 
@@ -134,50 +186,81 @@ Global: systickTime taken from the systick interrupt.
 
 void delay(uint16_t delayMs)
 {
-    uint16_t lastTime = systickTime;
+    uint32_t lastTime;
     uint16_t count; 
     for (count = delayMs; count>0; count--)
     {
+        lastTime = systickTime;
 // As 1ms is an eternity, just spin until the systick timer changes.
         while (lastTime == systickTime);
-        lastTime = systickTime;
     }
 }
 
 //-----------------------------------------------------------------------------
-/*      Delay in microseconds
+/* @brief Blocking Delay in microseconds
 
 This function provides a basic delay in microseconds. This differs from
 one system to another in libc. Here it makes use of timer2 to define
 the time more accurately and independently of the instruction timing.
+timer2 must be set to a 1 microsecond clock.
 
 Accuracy depends on the execution time in each loop being less than a
 microsecond. Interrupts should be disabled while this is executing.
 
 @note As the timer 2 is 16 bit for the STM32F103, this will fail if delayUs is
-greater than 32768.
+greater than 65565.
 
-@param[in] delayUs: uint32_t. Delay in microseconds up to 32768.
+@param[in] delayUs: uint32_t. Delay in microseconds up to 65565.
 */
 
- void delayMicroseconds(uint32_t delayUs)
+void delayMicroseconds(uint16_t delayUs)
 {
     uint16_t initialTime = timer_get_counter(TIM2);
-    uint16_t finalTime = initialTime+delayUs; 
-    if (finalTime > initialTime)
-        while (timer_get_counter(TIM2) < finalTime);
-    else
-        while ((timer_get_counter(TIM2) - delayUs) < initialTime);
+    uint16_t finalTime = initialTime + delayUs;
+/* With rollover, count up to rollover first, then continue to final time */
+    if (finalTime < initialTime)
+        while (timer_get_counter(TIM2) > initialTime);
+    while (timer_get_counter(TIM2) < finalTime);
 }
 
 /*--------------------------------------------------------------------------*/
-/** @brief Systick Setup
+/* @brief Hardware Setup.
+
+*/
+
+void hardwareSetup(void)
+{
+/* Set the clock to 72MHz from the 8MHz external crystal */
+
+	rcc_clock_setup_in_hse_8mhz_out_72mhz();
+
+/* Enable GPIOA, GPIOB and GPIOC clocks and alternate functions. */
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
+    rcc_periph_clock_enable(RCC_AFIO);
+
+/* Set GPIO8-15 (in GPIO port B) to 'output push-pull' for the LEDs. */
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8 | GPIO9 | GPIO10 | GPIO11 |
+              GPIO12 | GPIO13 | GPIO14 | GPIO15);
+/* All LEDS off */
+	gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
+               GPIO14 | GPIO15);
+
+    systickSetup();
+    usart1Setup();
+    timer2Setup(0xFFFF);
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Initialise Systick
 
 Setup SysTick Timer for 1 millisecond interrupts, also enables Systick and
 Systick-Interrupt. Timing is defined for a 72MHz system clock.
 */
 
-void systickSetup()
+void systickSetup(void)
 {
 /* 72MHz / 8 => 9,000,000 counts per second */
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
@@ -193,23 +276,66 @@ void systickSetup()
 }
 
 /*--------------------------------------------------------------------------*/
-/** @brief Timer 2 Setup for Microsecond Timing
+/* @brief Initialise USART 1.
 
-Timer 2 is set to run at a frequency that allows times to be measured at
-microsecond accuracy. Timing is defined for a 72MHz system clock.
-Interrupts are not used; the counter simply runs continuously.
+USART 1 is configured for 38400 baud, no flow control and interrupt.
 */
 
-void timer2Setup(void)
+void usart1Setup(void)
+{
+/* Enable clocks for GPIO port A (for GPIO_USART1_TX) and USART1. */
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_AFIO);
+    rcc_periph_clock_enable(RCC_USART1);
+/* Enable the USART1 interrupt. */
+	nvic_enable_irq(NVIC_USART1_IRQ);
+/* Setup GPIO pin GPIO_USART1_RE_TX on GPIO port A for transmit. */
+	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
+		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
+/* Setup GPIO pin GPIO_USART1_RE_RX on GPIO port A for receive. */
+	gpio_set_mode(GPIOA, GPIO_MODE_INPUT,
+		      GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
+/* Setup UART parameters. */
+	usart_set_baudrate(USART1, 38400);
+	usart_set_databits(USART1, 8);
+	usart_set_stopbits(USART1, USART_STOPBITS_1);
+	usart_set_parity(USART1, USART_PARITY_NONE);
+	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+	usart_set_mode(USART1, USART_MODE_TX_RX);
+	/* Enable USART1 receive interrupts. */
+	usart_enable_rx_interrupt(USART1);
+	usart_disable_tx_interrupt(USART1);
+	/* Finally enable the USART. */
+	usart_enable(USART1);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Initialise Timer 2.
+
+Setup timer 2 to run through a period and to interrupt.
+This must have a 1 microsecond clock for the microsecond delay function.
+Its counter is 16 bit so only periods up to 65 milliseconds can be handled.
+For longer periods use the systick counter.
+
+@param[in] period: uint32_t tick period in 1 microsecond cycles.
+*/
+
+void timer2Setup(uint32_t period)
 {
 	rcc_periph_clock_enable(RCC_TIM2);
+	nvic_enable_irq(NVIC_TIM2_IRQ);
+	nvic_set_priority(NVIC_TIM2_IRQ, 1);
 	timer_reset(TIM2);
 /* Timer global mode: - No Divider, Alignment edge, Direction up */
 	timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT,
 		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
 	timer_continuous_mode(TIM2);
 /* Set timer prescaler. 72MHz/72 => 1,000,000 counts per second. */
-	timer_set_prescaler(TIM2, 73);
+	timer_set_prescaler(TIM2, 72);
+/* End timer value. When this is reached an interrupt is generated. */
+	timer_set_period(TIM2, period);
+/* Update interrupt enable. */
+	timer_enable_irq(TIM2, TIM_DIER_UIE);
 /* Start timer. */
 	timer_enable_counter(TIM2);
 }
@@ -233,22 +359,155 @@ void sys_tick_handler(void)
     }
 }
 
-/*-----------------------------------------------------------*/
-/** @Brief Disable Global interrupts
+/*--------------------------------------------------------------------------*/
+/* @brief Print out a fixed point value in ASCII decimal form.
+
+Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
+are the fractional part. The integer part is printed first with sign, followed
+by the fractional part rounded up to a specified precision.
+
+The USART ISR accesses the buffer independently. The USART interrupt must be
+re-enabled in the main program after each call to this function.
+
+@param[in] value: 32 bit signed integer as uint32_t.
 */
 
-inline void cli(void)
+#define PRECISION 4
+
+void usart_print_fixed_point(uint32_t value)
 {
-    cm_disable_interrupts();
+    int i = 0;
+    usart_print_int((int) value >> 8);
+    buffer_put(send_buffer, '.');
+    if ((value & 0x80000000) > 0) value = -value;
+    uint16_t fraction = value & 0xFF;
+	if (fraction == 0) buffer_put(send_buffer, '0');
+	else while (fraction > 0)
+	{
+		fraction *= 10;
+        if ((++i >= PRECISION) && ((fraction & 0xFF) > 128)) fraction += 256;
+		buffer_put(send_buffer, "0123456789"[fraction >> 8]);
+        if (i >= PRECISION) break;
+        fraction &= 0xFF;
+	}
+	usart_enable_tx_interrupt(USART1);
 }
 
-/*-----------------------------------------------------------*/
-/** @Brief Enable Global interrupts
+/*--------------------------------------------------------------------------*/
+/* @brief Print out an integer value in ASCII decimal form
+
+(ack Thomas Otto). The USART ISR accesses the buffer independently. The USART
+interrupt must be re-enabled in the main program after each call to this
+function.
+
+@param[in] value: 16 bit signed integer.
 */
 
-inline void sei(void)
+void usart_print_int(int value)
 {
-    cm_enable_interrupts();
+	uint8_t i;
+	uint8_t nr_digits = 0;
+	char buffer[25];
+
+	if (value < 0)
+	{
+		buffer_put(send_buffer, '-');
+		value = value * -1;
+	}
+	if (value == 0) buffer[nr_digits++] = '0';
+	else while (value > 0)
+	{
+		buffer[nr_digits++] = "0123456789"[value % 10];
+		value /= 10;
+	}
+	for (i = nr_digits; i > 0; i--)
+	{
+		buffer_put(send_buffer, buffer[i-1]);
+	}
+	usart_enable_tx_interrupt(USART1);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Print out a value in ASCII hex form.
+
+The USART ISR accesses the buffer independently. The USART interrupt must be
+re-enabled in the main program after each call to this function.
+
+@param[in] value: 16 bit unsigned integer.
+*/
+
+void usart_print_hex(uint16_t value)
+{
+	uint8_t i;
+	char buffer[25];
+
+	for (i = 0; i < 4; i++)
+	{
+		buffer[i] = "0123456789ABCDEF"[value & 0xF];
+		value >>= 4;
+	}
+	for (i = 4; i > 0; i--)
+	{
+		buffer_put(send_buffer, buffer[i-1]);
+	}
+	buffer_put(send_buffer, ' ');
+	usart_enable_tx_interrupt(USART1);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Print a String.
+*/
+
+void usart_print_string(char *ch)
+{
+  	while(*ch)
+	{
+     	buffer_put(send_buffer, *ch);
+     	ch++;
+  	}
+	usart_enable_tx_interrupt(USART1);
+}
+
+/*--------------------------------------------------------------------------*/
+/* Interrupt Service Routines */
+/*--------------------------------------------------------------------------*/
+/* TIMER
+
+Set a global flag to indicate that the interrupt occurred.
+*/
+
+void tim2_isr(void)
+{
+	if (timer_get_flag(TIM2, TIM_SR_UIF))
+        timer_clear_flag(TIM2, TIM_SR_UIF); /* Clear interrrupt flag. */
+	timer_get_flag(TIM2, TIM_SR_UIF);	/* Reread to force the previous write */
+}
+
+/*--------------------------------------------------------------------------*/
+/* USART
+
+Find out what interrupted and get or send data via the FIFO buffers as
+appropriate.
+*/
+
+void usart1_isr(void)
+{
+	static uint16_t data;
+
+/* Check if we were called because of RXNE. */
+	if (usart_get_flag(USART1,USART_SR_RXNE))
+	{
+/* If buffer full we'll just drop it */
+		buffer_put(receive_buffer, (uint8_t) usart_recv(USART1));
+	}
+/* Check if we were called because of TXE. */
+	if (usart_get_flag(USART1,USART_SR_TXE))
+	{
+/* If buffer empty, disable the tx interrupt */
+		data = buffer_get(send_buffer);
+		if ((data & 0xFF00) > 0) usart_disable_tx_interrupt(USART1);
+		else usart_send(USART1, (data & 0xFF));
+	}
 }
 
 //-----------------------------------------------------------------------------

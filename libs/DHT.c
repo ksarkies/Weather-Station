@@ -2,7 +2,7 @@
 @mainpage DHT Temperature/Humidity sensor library 
 @version 0.0
 @author Adafruit Industries 21 Jun 2011
-@author modified for general use by Ken Sarkies (www.jiggerjuice.net)
+@author modified for general use by Ken Sarkies (www.jiggerjuice.info)
 @date 09 May 2016
 
 Based on a C++ version originally written for Arduino, this adapts to other
@@ -70,10 +70,10 @@ configuration.
 
 void initDHT(DHT *sensor)
 {
-// Code to set pin to digital input and set pullup high.
+// Code to set pin to digital input and set pullup high (AVR and STM32).
     pinMode(sensor->pin, INPUT);
     digitalWrite(sensor->pin, HIGH);
-    sensor->lastreadtime = 0;
+    sensor->lastReadTime = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -178,23 +178,26 @@ code changes for other processors and instruction clock rates.
 bool readDHT(DHT *sensor)
 {
     uint8_t j = 0, i;
-    uint32_t currenttime;
+    uint32_t currentTime;
 
 // pull the pin high and wait 250 milliseconds
+    pinMode(sensor->pin, OUTPUT);
     digitalWrite(sensor->pin, HIGH);
     delay(250);
 
 /* The specification requires that each collection period be > 2 seconds.
 Therefore if the last call time was less than two seconds ago, just return the
 previously stored value. */
-    currenttime = millis();         // millisecond system clock.
-// if there was a rollover in the millis() time.
-    if (currenttime < sensor->lastreadtime) sensor->lastreadtime = 0;
-    if (!sensor->firstreading && ((currenttime - sensor->lastreadtime) < 2000))
-        return true;            // return last correct measurement
-//delay(2000 - (currenttime - sensor->lastreadtime));
-    sensor->firstreading = false;
-    sensor->lastreadtime = millis();
+    currentTime = millis();         // millisecond system time.
+// Time since the last reading.
+    uint32_t timeLapse = (currentTime - sensor->lastReadTime);
+// if there was a rollover in the system time.
+    if (currentTime < sensor->lastReadTime)
+        timeLapse = currentTime + (0xFFFFFFFF - sensor->lastReadTime) + 1;
+    if (!sensor->firstReading && (timeLapse < 2000))
+        return true;                // just return last correct measurement
+    sensor->firstReading = false;
+    sensor->lastReadTime = currentTime;
 
 // data array: integer/fraction humidity, integer/fraction temperature, checksum
     sensor->data[0] = sensor->data[1] = sensor->data[2] = sensor->data[3] = sensor->data[4] = 0;
@@ -202,7 +205,6 @@ previously stored value. */
 /* Now pull it low for ~20 milliseconds, then set it high again.
 (the specification only requires 1ms minimum time).
 This initiates a reading. */
-    pinMode(sensor->pin, OUTPUT);
     digitalWrite(sensor->pin, LOW);
     delay(20);
     cli();                  // Prevent any interrupt interfering with timing.
@@ -261,5 +263,4 @@ This initiates a reading. */
         return true;
 
     return false;
-
 }

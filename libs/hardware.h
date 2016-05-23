@@ -13,11 +13,6 @@ K. Sarkies, 10 May 2016
 
 #include <stdint.h>
 
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/timer.h>
-#include <libopencm3/cm3/nvic.h>
-
 #define HIGH        1
 #define LOW         0
 
@@ -26,20 +21,24 @@ K. Sarkies, 10 May 2016
 
 enum pinmodetype {INPUT, OUTPUT, INPUT_PULLUP};
 
-/* STM32F103 definitions */
+/* STM32F103 definitions. Define pin as pin number in first four bits,
+with the port number in the next 4 bits (GPIOA = 0 etc). */
 #define DHT_PORT    GPIOA
 #define DHT_PIN     1
 
+void hardwareSetup(void);
+void pinMode(uint8_t pin, enum pinmodetype mode);
 void digitalWrite(uint8_t pin, uint8_t setting);
 uint8_t digitalRead(uint8_t pin);
 uint32_t millis();
 void delay(uint16_t delayMs);
-void delayMicroseconds(uint32_t delayUs);
-void systickSetup();
-void timer2Setup(void);
+void delayMicroseconds(uint16_t delayUs);
 void cli(void);
 void sei(void);
-void pinMode(uint8_t pin, enum pinmodetype mode);
+void usart_print_fixed_point(uint32_t value);
+void usart_print_int(int value);
+void usart_print_hex(uint16_t value);
+void usart_print_string(char *ch);
 
 #endif
 

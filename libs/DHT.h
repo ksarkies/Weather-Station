@@ -51,8 +51,8 @@ typedef struct
 /* Sensor type */
     uint8_t type;
 /* Carry persistent variables in case it is used by more than one sensor */
-    bool firstreading;
-    unsigned long lastreadtime;
+    bool firstReading;
+    unsigned long lastReadTime;
 /* integer/fraction humidity, integer/fraction temperature, checksum */
     uint8_t data[6];
 } DHT;
