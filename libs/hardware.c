@@ -37,22 +37,24 @@ K. Sarkies, 10 May 2016
 #define  _BV(bit) (1 << (bit))
 #define BUFFER_SIZE 128
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 // Globals
 volatile uint32_t systickTime;
+volatile uint32_t lastReloadValue;
+volatile uint32_t time2TickCounter;
 static uint8_t send_buffer[BUFFER_SIZE+3];
 static uint8_t receive_buffer[BUFFER_SIZE+3];
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
-void systickSetup(void);
+void systickSetup(uint16_t period);
 void usart1Setup(void);
 void timer2Setup(uint32_t period);
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /* @brief   Calls to emulate Arduino hardware calls             */
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /*      Derive port number from pin
 
 @param[in] pin: uint8_t. Refers to the Arduino pin used for DHT.
@@ -74,7 +76,7 @@ uint32_t gpioPort(uint8_t pin)
     return 0;
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /*      Set mode of pin
 
 For libopencm3 STM32F103 the port is derived from the pin parameter which is
@@ -102,7 +104,7 @@ void pinMode(uint8_t pin, enum pinmodetype mode)
     }
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /*      Set Digital Pin value
 
 An output pin is set high or low, while an input pin is set to pullup or
@@ -115,7 +117,7 @@ the pin number plus the port number times 16, where 0=GPIOA etc.
 @param[in] setting: uint8_t. HIGH (1) or LOW (0). Only bit 0 is used.
 */
 
-inline void digitalWrite(uint8_t pin, uint8_t setting)
+void digitalWrite(uint8_t pin, uint8_t setting)
 {
     if ((setting & 0x01) == HIGH)
         gpio_set(gpioPort(pin), _BV(pin & 0x0F));
@@ -123,7 +125,7 @@ inline void digitalWrite(uint8_t pin, uint8_t setting)
         gpio_clear(gpioPort(pin), _BV(pin & 0x0F));
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /*      Read Digital Pin value
 
 For libopencm3 STM32F103 the port is derived from the pin parameter which is
@@ -133,71 +135,70 @@ the pin number plus the port number times 16, where 0=GPIOA etc.
 @returns uint8_t. Pin value HIGH (1) or LOW (0).
 */
 
-inline uint8_t digitalRead(uint8_t pin)
+uint8_t digitalRead(uint8_t pin)
 {
     return (uint8_t)(gpio_get(gpioPort(pin), _BV(pin & 0x0F)) >> (pin & 0x0F));
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /*      Millisecond System Time
+
+The systick time is updated only at the end of a systick timer countdown to 0.
+Compute the actual time by adding in the time elapsed since the last event.
 
 @returns uint32_t. Time in milliseconds since rollover or start of counting.
 */
 
-inline uint32_t millis()
+uint32_t millis()
 {
-    return systickTime;
+    cli();
+    uint32_t elapsedTime = systickTime
+                             + (lastReloadValue - systick_get_value())/MS_COUNT;
+    sei();
+    return elapsedTime;
 }
 
-/*-----------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 /** @Brief Disable Global interrupts
 */
 
-inline void cli(void)
+void cli(void)
 {
     cm_disable_interrupts();
 }
 
-/*-----------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 /** @Brief Enable Global interrupts
 */
 
-inline void sei(void)
+void sei(void)
 {
     cm_enable_interrupts();
 }
 
-//-----------------------------------------------------------------------------
-/* @brief      Hardware specific settings  */
-//-----------------------------------------------------------------------------
-/* @brief Blocking Delay in milliseconds
+/*--------------------------------------------------------------------------*/
+/* @brief Blocking Delay in Milliseconds
 
-This function provides a basic delay in milliseconds. This differs from
-one system to another in libc. Here it makes use of a timer to define
-the time more accurately and independently of the instruction timing.
+This function provides a basic blocking delay in milliseconds. This differs from
+one system to another in libc. Here it makes use of the millis() function to
+define the time more accurately and independently of the instruction timing.
 
-The CM3 systick timer is a 24 bits downcounter that can reload to a specified
-start value.
-
-Global: systickTime taken from the systick interrupt.
-
-@param[in] delayMs: uint16_t. Delay in milliseconds to 65.536 seconds.
+@param[in] delayMs: uint16_t. Delay in milliseconds.
 */
 
-void delay(uint16_t delayMs)
+void delay(uint32_t delayMs)
 {
-    uint32_t lastTime;
     uint16_t count; 
     for (count = delayMs; count>0; count--)
     {
-        lastTime = systickTime;
-// As 1ms is an eternity, just spin until the systick timer changes.
-        while (lastTime == systickTime);
+        uint32_t lastTime = millis();
+// As 1ms is an eternity, just spin until the timer changes.
+        while (lastTime == millis());
     }
 }
 
-//-----------------------------------------------------------------------------
-/* @brief Blocking Delay in microseconds
+/*--------------------------------------------------------------------------*/
+/* @brief Blocking Delay in Microseconds
 
 This function provides a basic delay in microseconds. This differs from
 one system to another in libc. Here it makes use of timer2 to define
@@ -224,6 +225,8 @@ void delayMicroseconds(uint16_t delayUs)
 }
 
 /*--------------------------------------------------------------------------*/
+/* @brief      Hardware specific settings  */
+/*--------------------------------------------------------------------------*/
 /* @brief Hardware Setup.
 
 */
@@ -248,7 +251,8 @@ void hardwareSetup(void)
 	gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
                GPIO14 | GPIO15);
 
-    systickSetup();
+//    systickSetup(1);        // Set systick to interrupt after 1 millisecond.
+    systickSetup(1000);         // Set systick to interrupt after 1 second.
     usart1Setup();
     timer2Setup(0xFFFF);
 }
@@ -256,23 +260,27 @@ void hardwareSetup(void)
 /*--------------------------------------------------------------------------*/
 /** @brief Initialise Systick
 
-Setup SysTick Timer for 1 millisecond interrupts, also enables Systick and
-Systick-Interrupt. Timing is defined for a 72MHz system clock.
+Setup SysTick Timer for interrupts, enable clock and Systick-Interrupt.
+Timing is defined for a 72MHz system clock.
+
+The AHB clock can be divided by 8 to give a 9MHz clock. The period can be up
+to 24 bits giving a 1864 ms maximum count. If the period is set beyond this
+then a shortened period will occur.
+
+@param[in] period: uint16_t period before interrupt in ms, up to 1864.
 */
 
-void systickSetup(void)
+void systickSetup(uint16_t period)
 {
 /* 72MHz / 8 => 9,000,000 counts per second */
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
-
-/* 9000000/9000 = 1000 overflows per second - every 1ms one interrupt */
+/* 9000000/9000 = 1000 overflows per second - every period ms one interrupt */
 /* SysTick interrupt every N clock pulses: set reload to N-1 */
-    systick_set_reload(MS_COUNT);
-
+    systick_set_reload(MS_COUNT*(uint32_t)period - 1);
     systick_interrupt_enable();
-
 /* Start counting. */
     systick_counter_enable();
+    systick_get_countflag();        // Clear the flag
 }
 
 /*--------------------------------------------------------------------------*/
@@ -313,7 +321,7 @@ void usart1Setup(void)
 /* @brief Initialise Timer 2.
 
 Setup timer 2 to run through a period and to interrupt.
-This must have a 1 microsecond clock for the microsecond delay function.
+This must have a 1 microsecond clock for the various delay and time functions.
 Its counter is 16 bit so only periods up to 65 milliseconds can be handled.
 For longer periods use the systick counter.
 
@@ -340,22 +348,39 @@ void timer2Setup(uint32_t period)
 	timer_enable_counter(TIM2);
 }
 
-/*-----------------------------------------------------------*/
-/** @Brief Systick Interrupt Handler
+/*--------------------------------------------------------------------------*/
+/* @brief Sleeping Delay in Milliseconds
 
-Just update some counters for general use.
+This function provides a basic sleeping delay in milliseconds. The systick
+timer defines the time more accurately and independently of the instruction
+timing.
+
+The CM3 systick timer is a 24 bits downcounter that can reload to a specified
+start value.
+
+Global: systickTime taken from the systick interrupt.
+
+@param[in] delayMs: uint32_t. Delay in milliseconds to 65,535.
 */
 
-void sys_tick_handler(void)
+void delaySleep(uint32_t delayMs)
 {
-    systickTime++;
-/* updated every 1s if systick is used for real-time clock. */
-    static uint16_t cnttime=0;
-    cnttime++;
-    if (cnttime >= 1000)
+#define DIVISOR 0xFFFFFF/MS_COUNT
+/* If delayMs is more than 24 bits, split into number of 24 bit full cycles and
+the remainder for the last cycle */
+    uint16_t cycles = 1+delayMs/DIVISOR;
+    uint32_t lastCycleCount = delayMs % DIVISOR;
+    uint32_t count;
+/* Sleep state will awake on any interrupt. Wait for systick before deciding
+whether to quit this loop. */
+    uint16_t i = 0;
+    for (i=0; i < cycles; i++)
     {
-        cnttime = 0;
-//        updateTimeCount();
+        if (i == 0) count = lastCycleCount;
+        else count = DIVISOR;
+        systickSetup(count);        // Set systick to interrupt after given delay.
+        while (! systick_get_countflag())
+            asm volatile("wfi");    // sleep until systick fires
     }
 }
 
@@ -473,7 +498,7 @@ void usart_print_string(char *ch)
 /*--------------------------------------------------------------------------*/
 /* TIMER
 
-Set a global flag to indicate that the interrupt occurred.
+The tick counter is incremented on each interrupt.
 */
 
 void tim2_isr(void)
@@ -481,6 +506,7 @@ void tim2_isr(void)
 	if (timer_get_flag(TIM2, TIM_SR_UIF))
         timer_clear_flag(TIM2, TIM_SR_UIF); /* Clear interrrupt flag. */
 	timer_get_flag(TIM2, TIM_SR_UIF);	/* Reread to force the previous write */
+    time2TickCounter++;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -510,5 +536,24 @@ void usart1_isr(void)
 	}
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
+/** @Brief Systick Interrupt Handler
+
+Just update a counter for extended time use. As it is only updated on an
+interrupt occurring, the last reload value that resulted in the countdown
+is read and used to update the time before being reset to the existing reload
+value.
+
+Globals: systickTime: running count of milliseconds from an arbitrary time.
+         lastReloadValue: reload value used for the countdown just finished.
+*/
+
+void sys_tick_handler(void)
+{
+//    systickTime++;
+    systickTime += lastReloadValue/MS_COUNT;
+    lastReloadValue = (systick_get_reload() & 0xFFFFFF);
+}
+
+/*--------------------------------------------------------------------------*/
 

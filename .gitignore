@@ -6,6 +6,7 @@
 *.srec
 *.a
 *.elf
+*.sym
 *.stylecheck
 *.swp
 *.csv

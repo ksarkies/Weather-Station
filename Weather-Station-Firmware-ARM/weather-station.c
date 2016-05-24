@@ -37,7 +37,7 @@ Development platform ET-STM32F103 board. LEDS on B8-B15.
 #include "../libs/DHT.h"
 #include "../libs/hardware.h"
 
-/* 2 second period */
+/* 2 second period in milliseconds */
 #define MEASUREMENT_PERIOD 2000
 
 /*--------------------------------------------------------------------------*/
@@ -56,21 +56,19 @@ void usart_print_string(char *ch);
 int main(void)
 {
 	hardwareSetup();
-    DHT sensor = {DHT_PIN,DHT22,false};
-    initDHT(&sensor);
+    DHT sensorDHT = {DHT_PIN,DHT22,false};
+    initDHT(&sensorDHT);
 
 	for (;;)
     {
     	gpio_toggle(GPIOB, GPIO9);      /* LED2 on/off. */
-        uint32_t temperature = readTemperature(&sensor, false);
-        uint32_t humidity = readHumidity(&sensor);
+        uint32_t temperature = readTemperature(&sensorDHT, false);
+        uint32_t humidity = readHumidity(&sensorDHT);
         usart_print_fixed_point(temperature);
         usart_print_string(" ");
         usart_print_fixed_point(humidity);
-        usart_print_string(" ");
-        usart_print_int(millis());
         usart_print_string("\n\r");
-        delay(MEASUREMENT_PERIOD);
+        delaySleep(MEASUREMENT_PERIOD);
 	}
 
 	return 0;

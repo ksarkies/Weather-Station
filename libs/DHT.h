@@ -62,6 +62,8 @@ void initDHT(DHT *sensor);
 uint32_t readTemperature(DHT *sensor, bool S);
 uint32_t convertCtoF(uint32_t celsius);
 uint32_t readHumidity(DHT *sensor);
+bool readTemperatureHumidity(DHT *sensor, uint32_t *temperature,
+                              uint32_t *humidity, bool fahrenheit);
 
 #endif
 

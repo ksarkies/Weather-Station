@@ -6,8 +6,9 @@
 @date 09 May 2016
 
 Based on a C++ version originally written for Arduino, this adapts to other
-hardware configurations. The external file defines.c is provided by the user
-to adapt the library to the hardware to be used. See example code.
+hardware configurations. The external file hardware.c is provided by the user
+to adapt the library to the hardware to be used. The example code adapts
+to libopencm3 STM32 ARM series by emulating the Arduino calls.
 
 The low level read/write to the device has been changed to generalise the code
 application. Originally the read timing was tied strictly to the Arduino 16MHz
@@ -59,7 +60,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "DHT.h"
 #include "hardware.h"
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /* @brief Initialization of hardware I/O pin
 
 This is specific to the application. Change defines.c to define the pin used and
@@ -76,7 +77,7 @@ void initDHT(DHT *sensor)
     sensor->lastReadTime = 0;
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /* @brief Read the Temperature from the sensor
 
 Temperature comes as (data[2]*256+data[3])/10 celcius. Expressed as fixed point.
@@ -97,7 +98,7 @@ uint32_t readTemperature(DHT *sensor, bool fahrenheit)
         case DHT11:
             temperature = sensor->data[2];
             if (fahrenheit)
-            temperature = convertCtoF(temperature);
+                temperature = convertCtoF(temperature);
             return temperature;
         case DHT22:
         case DHT21:
@@ -114,7 +115,7 @@ uint32_t readTemperature(DHT *sensor, bool fahrenheit)
     return NAN;
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /* @brief Conversion Celsius to Fahrenheit
 
 @param[in] uint32_t c: Celcius temperature
@@ -126,8 +127,52 @@ uint32_t convertCtoF(uint32_t celsius)
 	return 9*celsius/5 + 32*256;
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /* @brief Read humidity from the sensor
+
+Humidity comes as (data[0]*256+data[1])/10 percent. Expressed as fixed point.
+Temperature comes as (data[2]*256+data[3])/10 celcius. Expressed as fixed point.
+
+@param[in] *sensor: DHT for the sensor used.
+@param[in] boolean fahrenheit: Scale, True = Farenheit; False = Celcius
+@param[out] *temperature: uint32_t temperature.
+@param[out] *humidity: uint32_t Humidity 0 to 100.
+@returns bool: false if an error occurred, true otherwise.
+*/
+
+bool readTemperatureHumidity(DHT *sensor, uint32_t *temperature,
+                             uint32_t *humidity, bool fahrenheit)
+{
+    if (readDHT(sensor))
+    {
+        switch (sensor->type)
+        {
+        case DHT11:
+            *humidity = sensor->data[0];
+            *temperature = sensor->data[2];
+            if (fahrenheit)
+                *temperature = convertCtoF(*temperature);
+            return true;
+        case DHT22:
+        case DHT21:
+            *humidity = (sensor->data[0]) << 16;
+            *humidity += (sensor->data[1]) << 8;
+            *humidity /= 10;
+            *temperature = (sensor->data[2] & 0x7F) << 16;
+            *temperature += (sensor->data[3] << 8);
+            *temperature /= 10;
+            if (sensor->data[2] & 0x80)
+    	        *temperature = -*temperature;
+            if (fahrenheit)
+    	        *temperature = convertCtoF(*temperature);
+            return true;
+        }
+    }
+    return false;
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Read humidity and temperature together from the sensor
 
 Humidity comes as (data[0]*256+data[1])/10 percent. Expressed as fixed point.
 
@@ -156,7 +201,7 @@ uint32_t readHumidity(DHT *sensor)
     return NAN;
 }
 
-//-----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
 /* @brief Read Device
 
 The DHT devices have only a single data line. These send out pulse width coded
@@ -180,11 +225,6 @@ bool readDHT(DHT *sensor)
     uint8_t j = 0, i;
     uint32_t currentTime;
 
-// pull the pin high and wait 250 milliseconds
-    pinMode(sensor->pin, OUTPUT);
-    digitalWrite(sensor->pin, HIGH);
-    delay(250);
-
 /* The specification requires that each collection period be > 2 seconds.
 Therefore if the last call time was less than two seconds ago, just return the
 previously stored value. */
@@ -198,6 +238,11 @@ previously stored value. */
         return true;                // just return last correct measurement
     sensor->firstReading = false;
     sensor->lastReadTime = currentTime;
+
+// pull the pin high and wait 250 milliseconds
+    pinMode(sensor->pin, OUTPUT);
+    digitalWrite(sensor->pin, HIGH);
+    delay(250);
 
 // data array: integer/fraction humidity, integer/fraction temperature, checksum
     sensor->data[0] = sensor->data[1] = sensor->data[2] = sensor->data[3] = sensor->data[4] = 0;

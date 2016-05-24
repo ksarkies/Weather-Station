@@ -17,7 +17,7 @@ K. Sarkies, 10 May 2016
 #define LOW         0
 
 /* 72MHz clock rate divided by 8 and 1000 to set ms count period for systick */
-#define MS_COUNT    8999
+#define MS_COUNT    9000
 
 enum pinmodetype {INPUT, OUTPUT, INPUT_PULLUP};
 
@@ -26,12 +26,14 @@ with the port number in the next 4 bits (GPIOA = 0 etc). */
 #define DHT_PORT    GPIOA
 #define DHT_PIN     1
 
+uint32_t elapsed();
 void hardwareSetup(void);
 void pinMode(uint8_t pin, enum pinmodetype mode);
 void digitalWrite(uint8_t pin, uint8_t setting);
 uint8_t digitalRead(uint8_t pin);
 uint32_t millis();
-void delay(uint16_t delayMs);
+void delaySleep(uint32_t delayMs);
+void delay(uint32_t delaySec);
 void delayMicroseconds(uint16_t delayUs);
 void cli(void);
 void sei(void);
