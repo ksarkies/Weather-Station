@@ -4,16 +4,26 @@
 @author Ken Sarkies (www.jiggerjuice.info)
 @date 07 May 2016
 
-This initial development version uses the ET-STM32F103 development board.
+This initial development version uses the ET-STM32F103 development board. The
+port allocations are:
 
-- Rainwater gauge. Tipping bucket with reed switch.
-- Wind Speed. Reed switch.
-- Wind Direction. Reed switch.
-- Temperature and Humidity. Freetronics DHT22.
-- Solar Radiance (scale dependent on the panel material). Suntech-STP005S12-5W.
-- Air Pressure. Freetronics MS-5637-02BA03.
+- PA0: Rainwater gauge. Tipping bucket with reed switch.
+- PA1: Temperature and Humidity. Freetronics DHT22.
+- PA2: Wind Speed. Reed switch.
+- PA3: Wind Direction. Reed switch.
+- PA4: Solar Radiance (scale dependent on the panel material). Suntech-STP005S12-5W.
+- Air Pressure. Freetronics MS-5637-02BA03. I2C-1 on PB6 for SCL and PB7 for SDA.
 
-Development platform ET-STM32F103 board. LEDS on B8-B15.
+For battery charging the following are needed:
+- PA5 to measure battery voltage on ADC12-IN5.
+- PA6 for PWM on TIM3_CH1 to control the battery charging.
+- PA7 to switch the panel to the solar radiance current measurement circuit.
+
+USART1 is on PA8-PA12 with Tx on PA9 and Rx on PA10.
+
+Development platform ET-STM32F103 board. LEDS on B8-B15. USART1 is provided.
+
+The final version uses the ET-ARM STAMP board using the same ports.
 */
 
 /*
@@ -64,8 +74,10 @@ int main(void)
     	gpio_toggle(GPIOB, GPIO9);      /* LED2 on/off. */
         uint32_t temperature = readTemperature(&sensorDHT, false);
         uint32_t humidity = readHumidity(&sensorDHT);
+        usart_print_string("pT");
         usart_print_fixed_point(temperature);
-        usart_print_string(" ");
+        usart_print_string("\n\r");
+        usart_print_string("pH");
         usart_print_fixed_point(humidity);
         usart_print_string("\n\r");
         delaySleep(MEASUREMENT_PERIOD);
