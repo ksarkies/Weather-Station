@@ -475,7 +475,6 @@ void usart_print_hex(uint16_t value)
 	{
 		buffer_put(send_buffer, buffer[i-1]);
 	}
-	buffer_put(send_buffer, ' ');
 	usart_enable_tx_interrupt(USART1);
 }
 

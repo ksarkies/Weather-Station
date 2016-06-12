@@ -13,6 +13,7 @@ MOSFET to the current measurement circuit. This effectively shorts out the
 panel. At the same time the battery charger circuit is disabled to avoid any
 possible interference with the measurements.
 
+A small FM640A 6V 4AH Lead Acid battery is used for powering the system. 
 The circuit manages battery charging by limiting the battery voltage through
 a linear regulator with an output voltage controlled from the processor. The
 battery voltage and charging current is passed to the processor for management
@@ -32,11 +33,15 @@ voltage limits.
 
 The variable voltage regulator based on the 7805 has a 100 ohm voltage setting
 resistor. The 7805 has a quiescent current of 60mA which flows through this
-resistor and sets a minimum voltage of 0.6V. Th LM324 can source as much as 60mA
-which gives a maximum voltage of 3.6V. This provides an output voltage range
-between 5.6V and 8.6V. The actual maximum can be somewhat lower but as long as
-it is more than 7.5V it will provide a valuable natural limit on the battery
-charging voltage.
+resistor and sets a minimum voltage of 0.6V. The LM324 can source as much as
+60mA which gives a maximum voltage of 3.6V. This provides an output voltage
+range between 5.6V and 8.6V. The actual maximum can be somewhat lower but as
+long as it is more than 7.5V it will provide a valuable natural limit on the
+battery charging voltage.
+
+A Schottky diode prevents the battery discharging back through the circuit when
+measurements are being taken (as both MOSFETs may be on simultaneously for a
+brief period as they are switched).
 
 (c) K. Sarkies 10/06/2016
 

@@ -74,10 +74,10 @@ int main(void)
     	gpio_toggle(GPIOB, GPIO9);      /* LED2 on/off. */
         uint32_t temperature = readTemperature(&sensorDHT, false);
         uint32_t humidity = readHumidity(&sensorDHT);
-        usart_print_string("pT");
+        usart_print_string("dT,");
         usart_print_fixed_point(temperature);
         usart_print_string("\n\r");
-        usart_print_string("pH");
+        usart_print_string("dH,");
         usart_print_fixed_point(humidity);
         usart_print_string("\n\r");
         delaySleep(MEASUREMENT_PERIOD);
