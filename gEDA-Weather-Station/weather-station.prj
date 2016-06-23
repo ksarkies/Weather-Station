@@ -1,0 +1,4 @@
+elements-dir footprints
+schematics weather-station-power.sch weather-station-processor.sch
+output-name weather-station
+

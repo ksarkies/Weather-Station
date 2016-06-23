@@ -31,17 +31,23 @@ The LM324 has been given a supply voltage VDD of 5V. The outputs can reach
 VDD-1.5V which limits them to 3.5V; within the range of the processor input
 voltage limits.
 
-The variable voltage regulator based on the 7805 has a 100 ohm voltage setting
-resistor. The 7805 has a quiescent current of 60mA which flows through this
-resistor and sets a minimum voltage of 0.6V. The LM324 can source as much as
-60mA which gives a maximum voltage of 3.6V. This provides an output voltage
-range between 5.6V and 8.6V. The actual maximum can be somewhat lower but as
-long as it is more than 7.5V it will provide a valuable natural limit on the
-battery charging voltage.
+The variable voltage regulator based on the 7805 has a voltage setting 
+resistor. The 7805 has a quiescent current of a few milliamps which flows
+through this resistor and sets a minimum voltage. After some experimentation
+it was found that a 470 ohm resistor would set a minimum voltage of 0.8V and a
+maximum of 3.3V. The LM324 can source as much as 60mA which is sufficient to
+maintain this maximum voltage. This provides an output voltage range between
+5.5V and 8.0V. As long as it is more than 7.5V it will provide a valuable
+natural limit on the battery charging voltage. Using a D/A converter to drive
+this voltage will allow accurate setting of voltages according to battery
+temperature. An option for testing purposes allows a fixed voltage provided by
+jumper lead as any selected processor may not have a D/A converter. Once the
+charging current falls below a given threshold the processor must terminate
+charging.
 
 A Schottky diode prevents the battery discharging back through the circuit when
 measurements are being taken (as both MOSFETs may be on simultaneously for a
-brief period as they are switched).
+brief period when they are switched).
 
 (c) K. Sarkies 10/06/2016
 
