@@ -5,13 +5,17 @@
 @date 22 May 2016
 
 This includes code to match the hardware Arduino calls to the particular
-processor and board.
+processor and board. The reason for doing this is to minimize changes to
+Arduino code taken from sensor support websites.
 
-The hardware setup includes:
+Some hardware setups are provided here as they provide general timing and
+communication functionality. These include:
 
-- USART1
+- USART1 for communication.
 - TIMER2 for microsecond delays. This must be set to a period of 0xFFFF to
-   ensure that it wraps around. It must be set to a clock rate of 1 microsecond.
+   ensure that the time count wraps around. It must be set to a clock rate of
+   1 microsecond. The DTH22 sensor requires microsecond level bit bashing
+   interpretation of signals.
 - Systick for millisecond delays. It must be set to 1ms ticks.
 
 The processor used here is the STM32F103 on the ET-STM32F103 development board.
@@ -25,8 +29,8 @@ K. Sarkies, 10 May 2016
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/stm32/i2c.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
@@ -35,22 +39,18 @@ K. Sarkies, 10 May 2016
 #include "hardware.h"
 
 #define  _BV(bit) (1 << (bit))
-#define BUFFER_SIZE 128
 
 /*--------------------------------------------------------------------------*/
 // Globals
+
+volatile uint32_t time2TickCounter;
 volatile uint32_t systickTime;
 volatile uint32_t lastReloadValue;
-volatile uint32_t time2TickCounter;
 static uint8_t send_buffer[BUFFER_SIZE+3];
 static uint8_t receive_buffer[BUFFER_SIZE+3];
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
-
-void systickSetup(uint16_t period);
-void usart1Setup(void);
-void timer2Setup(uint32_t period);
 
 /*--------------------------------------------------------------------------*/
 /* @brief   Calls to emulate Arduino hardware calls             */
@@ -225,130 +225,6 @@ void delayMicroseconds(uint16_t delayUs)
 }
 
 /*--------------------------------------------------------------------------*/
-/* @brief      Hardware specific settings  */
-/*--------------------------------------------------------------------------*/
-/* @brief Hardware Setup.
-
-*/
-
-void hardwareSetup(void)
-{
-/* Set the clock to 72MHz from the 8MHz external crystal */
-
-	rcc_clock_setup_in_hse_8mhz_out_72mhz();
-
-/* Enable GPIOA, GPIOB and GPIOC clocks and alternate functions. */
-    rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_GPIOB);
-    rcc_periph_clock_enable(RCC_GPIOC);
-    rcc_periph_clock_enable(RCC_AFIO);
-
-/* Set GPIO8-15 (in GPIO port B) to 'output push-pull' for the LEDs. */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8 | GPIO9 | GPIO10 | GPIO11 |
-              GPIO12 | GPIO13 | GPIO14 | GPIO15);
-/* All LEDS off */
-	gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
-               GPIO14 | GPIO15);
-
-//    systickSetup(1);        // Set systick to interrupt after 1 millisecond.
-    systickSetup(1000);         // Set systick to interrupt after 1 second.
-    usart1Setup();
-    timer2Setup(0xFFFF);
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief Initialise Systick
-
-Setup SysTick Timer for interrupts, enable clock and Systick-Interrupt.
-Timing is defined for a 72MHz system clock.
-
-The AHB clock can be divided by 8 to give a 9MHz clock. The period can be up
-to 24 bits giving a 1864 ms maximum count. If the period is set beyond this
-then a shortened period will occur.
-
-@param[in] period: uint16_t period before interrupt in ms, up to 1864.
-*/
-
-void systickSetup(uint16_t period)
-{
-/* 72MHz / 8 => 9,000,000 counts per second */
-    systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
-/* 9000000/9000 = 1000 overflows per second - every period ms one interrupt */
-/* SysTick interrupt every N clock pulses: set reload to N-1 */
-    systick_set_reload(MS_COUNT*(uint32_t)period - 1);
-    systick_interrupt_enable();
-/* Start counting. */
-    systick_counter_enable();
-    systick_get_countflag();        // Clear the flag
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Initialise USART 1.
-
-USART 1 is configured for 38400 baud, no flow control and interrupt.
-*/
-
-void usart1Setup(void)
-{
-/* Enable clocks for GPIO port A (for GPIO_USART1_TX) and USART1. */
-    rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_AFIO);
-    rcc_periph_clock_enable(RCC_USART1);
-/* Enable the USART1 interrupt. */
-	nvic_enable_irq(NVIC_USART1_IRQ);
-/* Setup GPIO pin GPIO_USART1_RE_TX on GPIO port A for transmit. */
-	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
-/* Setup GPIO pin GPIO_USART1_RE_RX on GPIO port A for receive. */
-	gpio_set_mode(GPIOA, GPIO_MODE_INPUT,
-		      GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
-/* Setup UART parameters. */
-	usart_set_baudrate(USART1, 38400);
-	usart_set_databits(USART1, 8);
-	usart_set_stopbits(USART1, USART_STOPBITS_1);
-	usart_set_parity(USART1, USART_PARITY_NONE);
-	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-	usart_set_mode(USART1, USART_MODE_TX_RX);
-	/* Enable USART1 receive interrupts. */
-	usart_enable_rx_interrupt(USART1);
-	usart_disable_tx_interrupt(USART1);
-	/* Finally enable the USART. */
-	usart_enable(USART1);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Initialise Timer 2.
-
-Setup timer 2 to run through a period and to interrupt.
-This must have a 1 microsecond clock for the various delay and time functions.
-Its counter is 16 bit so only periods up to 65 milliseconds can be handled.
-For longer periods use the systick counter.
-
-@param[in] period: uint32_t tick period in 1 microsecond cycles.
-*/
-
-void timer2Setup(uint32_t period)
-{
-	rcc_periph_clock_enable(RCC_TIM2);
-	nvic_enable_irq(NVIC_TIM2_IRQ);
-	nvic_set_priority(NVIC_TIM2_IRQ, 1);
-	timer_reset(TIM2);
-/* Timer global mode: - No Divider, Alignment edge, Direction up */
-	timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT,
-		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-	timer_continuous_mode(TIM2);
-/* Set timer prescaler. 72MHz/72 => 1,000,000 counts per second. */
-	timer_set_prescaler(TIM2, 72);
-/* End timer value. When this is reached an interrupt is generated. */
-	timer_set_period(TIM2, period);
-/* Update interrupt enable. */
-	timer_enable_irq(TIM2, TIM_DIER_UIE);
-/* Start timer. */
-	timer_enable_counter(TIM2);
-}
-
-/*--------------------------------------------------------------------------*/
 /* @brief Sleeping Delay in Milliseconds
 
 This function provides a basic sleeping delay in milliseconds. The systick
@@ -493,19 +369,115 @@ void usart_print_string(char *ch)
 }
 
 /*--------------------------------------------------------------------------*/
-/* Interrupt Service Routines */
-/*--------------------------------------------------------------------------*/
-/* TIMER
+/** @brief Initialise Systick
 
-The tick counter is incremented on each interrupt.
+Setup SysTick Timer for interrupts, enable clock and Systick-Interrupt.
+Timing is defined for a 72MHz system clock.
+
+The AHB clock can be divided by 8 to give a 9MHz clock. The period can be up
+to 24 bits giving a 1864 ms maximum count. If the period is set beyond this
+then a shortened period will occur.
+
+@param[in] period: uint16_t period before interrupt in ms, up to 1864.
 */
 
-void tim2_isr(void)
+void systickSetup(uint16_t period)
 {
-	if (timer_get_flag(TIM2, TIM_SR_UIF))
-        timer_clear_flag(TIM2, TIM_SR_UIF); /* Clear interrrupt flag. */
-	timer_get_flag(TIM2, TIM_SR_UIF);	/* Reread to force the previous write */
-    time2TickCounter++;
+/* 72MHz / 8 => 9,000,000 counts per second */
+    systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
+/* 9000000/9000 = 1000 overflows per second - every period ms one interrupt */
+/* SysTick interrupt every N clock pulses: set reload to N-1 */
+    systick_set_reload(MS_COUNT*(uint32_t)period - 1);
+    systick_interrupt_enable();
+/* Start counting. */
+    systick_counter_enable();
+    systick_get_countflag();        // Clear the flag
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Initialise USART 1.
+
+USART 1 is configured for 38400 baud, no flow control and interrupt.
+*/
+
+void usart1Setup(void)
+{
+/* Enable clocks for GPIO port A (for GPIO_USART1_TX) and USART1. */
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_AFIO);
+    rcc_periph_clock_enable(RCC_USART1);
+/* Enable the USART1 interrupt. */
+	nvic_enable_irq(NVIC_USART1_IRQ);
+/* Setup GPIO pin GPIO_USART1_RE_TX on GPIO port A for transmit. */
+	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
+		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
+/* Setup GPIO pin GPIO_USART1_RE_RX on GPIO port A for receive. */
+	gpio_set_mode(GPIOA, GPIO_MODE_INPUT,
+		      GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
+/* Setup UART parameters. */
+	usart_set_baudrate(USART1, 38400);
+	usart_set_databits(USART1, 8);
+	usart_set_stopbits(USART1, USART_STOPBITS_1);
+	usart_set_parity(USART1, USART_PARITY_NONE);
+	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+	usart_set_mode(USART1, USART_MODE_TX_RX);
+	/* Enable USART1 receive interrupts. */
+	usart_enable_rx_interrupt(USART1);
+	usart_disable_tx_interrupt(USART1);
+	/* Finally enable the USART. */
+	usart_enable(USART1);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Initialise Timer 2.
+
+Setup timer 2 to run through a period and to interrupt.
+This must have a 1 microsecond clock for the various delay and time functions.
+Its counter is 16 bit so only periods up to 65 milliseconds can be handled.
+For longer periods use the systick counter.
+
+@param[in] period: uint32_t tick period in 1 microsecond cycles.
+*/
+
+void timer2Setup(uint32_t period)
+{
+	rcc_periph_clock_enable(RCC_TIM2);
+	nvic_enable_irq(NVIC_TIM2_IRQ);
+	nvic_set_priority(NVIC_TIM2_IRQ, 1);
+	timer_reset(TIM2);
+/* Timer global mode: - No Divider, Alignment edge, Direction up */
+	timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT,
+		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_continuous_mode(TIM2);
+/* Set timer prescaler. 72MHz/72 => 1,000,000 counts per second. */
+	timer_set_prescaler(TIM2, 72);
+/* End timer value. When this is reached an interrupt is generated. */
+	timer_set_period(TIM2, period);
+/* Update interrupt enable. */
+	timer_enable_irq(TIM2, TIM_DIER_UIE);
+/* Start timer. */
+	timer_enable_counter(TIM2);
+}
+
+/*--------------------------------------------------------------------------*/
+/* Interrupt Service Routines */
+/*--------------------------------------------------------------------------*/
+/** @Brief Systick Interrupt Handler
+
+Just update a counter for extended time use. As it is only updated on an
+interrupt occurring, the last reload value that resulted in the countdown
+is read and used to update the time before being reset to the existing reload
+value.
+
+Globals: systickTime: running count of milliseconds from an arbitrary time.
+         lastReloadValue: reload value used for the countdown just finished.
+*/
+
+void sys_tick_handler(void)
+{
+//    systickTime++;
+    systickTime += lastReloadValue/MS_COUNT;
+    lastReloadValue = (systick_get_reload() & 0xFFFFFF);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -536,22 +508,17 @@ void usart1_isr(void)
 }
 
 /*--------------------------------------------------------------------------*/
-/** @Brief Systick Interrupt Handler
+/* TIMER
 
-Just update a counter for extended time use. As it is only updated on an
-interrupt occurring, the last reload value that resulted in the countdown
-is read and used to update the time before being reset to the existing reload
-value.
-
-Globals: systickTime: running count of milliseconds from an arbitrary time.
-         lastReloadValue: reload value used for the countdown just finished.
+The tick counter is incremented on each interrupt.
 */
 
-void sys_tick_handler(void)
+void tim2_isr(void)
 {
-//    systickTime++;
-    systickTime += lastReloadValue/MS_COUNT;
-    lastReloadValue = (systick_get_reload() & 0xFFFFFF);
+	if (timer_get_flag(TIM2, TIM_SR_UIF))
+        timer_clear_flag(TIM2, TIM_SR_UIF); /* Clear interrrupt flag. */
+	timer_get_flag(TIM2, TIM_SR_UIF);	/* Reread to force the previous write */
+    time2TickCounter++;
 }
 
 /*--------------------------------------------------------------------------*/

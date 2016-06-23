@@ -16,6 +16,8 @@ K. Sarkies, 10 May 2016
 #define HIGH        1
 #define LOW         0
 
+#define BUFFER_SIZE 128
+
 /* 72MHz clock rate divided by 8 and 1000 to set ms count period for systick */
 #define MS_COUNT    9000
 
@@ -27,7 +29,6 @@ with the port number in the next 4 bits (GPIOA = 0 etc). */
 #define DHT_PIN     1
 
 uint32_t elapsed();
-void hardwareSetup(void);
 void pinMode(uint8_t pin, enum pinmodetype mode);
 void digitalWrite(uint8_t pin, uint8_t setting);
 uint8_t digitalRead(uint8_t pin);
@@ -41,6 +42,9 @@ void usart_print_fixed_point(uint32_t value);
 void usart_print_int(int value);
 void usart_print_hex(uint16_t value);
 void usart_print_string(char *ch);
+void systickSetup(uint16_t period);
+void usart1Setup(void);
+void timer2Setup(uint32_t period);
 
 #endif
 

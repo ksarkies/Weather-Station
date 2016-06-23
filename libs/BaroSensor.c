@@ -27,6 +27,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 #include "BaroSensor.h"
+#include "hardware.h"
 
 bool initialised;
 int8_t err;
@@ -54,49 +55,27 @@ const uint8_t SamplingDelayMs[6] PROGMEM = {
 #define CMD_START_D2(oversample_level) (0x50 + 2*(int)oversample_level)
 #define CMD_READ_ADC 0x00
 
-BaroSensorClass BaroSensor;
-
-// Temporary hack due to bug in Arduino 1.5.0-1.5.6 on ARM (see below)
-inline static int8_t _endTransmission(bool stop = true)
-{
-  int8_t res = Wire.endTransmission(stop);
-#ifdef __AVR__
-  return res;
-#else
-  // ARM Arduino <= 1.5.6 doesn't return an error code from endTransmission(),
-  // instead number of bytes is returned (regardless of error status or not.)
-  // This is corrected in https://github.com/arduino/Arduino/pull/1994 but not yet released.
-  return 0;
-#endif
-}
-
 /*--------------------------------------------------------------------------*/
-/* @brief Initialization of hardware
+/* @brief Initialization of sensor hardware
 
 */
-void initBaro()
+void initBaroSensor()
 {
-  Wire.begin();
-  Wire.beginTransmission(BARO_ADDR);
-  Wire.write(CMD_RESET);
-  err = _endTransmission();
-  if(err) return;
+    i2c1Setup();
+    i2c_initiate_transmission(I2C1,BARO_ADDR,I2C_WRITE);
+    i2c_transmit_single_byte(CMD_RESET);
+    if (i2c_check_error()) return;
 
-  uint16_t prom[7];
-  for(int i = 0; i < 7; i++) {
-    Wire.beginTransmission(BARO_ADDR);
-    Wire.write(CMD_PROM_READ(i));
-    err = _endTransmission(false);
-    if(err)
-      return;
-    int req = Wire.requestFrom(BARO_ADDR, 2);
-    if(req != 2) {
-      err = ERR_BAD_READLEN;
-      return;
+    uint16_t prom[7];
+    for (int i = 0; i < 7; i++)
+    {
+        i2c_initiate_transmission(BARO_ADDR);
+        i2c_transmit_single_byte(CMD_PROM_READ(i));
+        if (i2c_check_error()) return;
+        i2c_initiate_transmission(I2C1,BARO_ADDR,I2C_READ);
+        prom[i] = ((uint16_t)Wire.read()) << 8;
+        prom[i] |= Wire.read();
     }
-    prom[i] = ((uint16_t)Wire.read()) << 8;
-    prom[i] |= Wire.read();
-  }
 
   // TODO verify CRC4 in top 4 bits of prom[0] (follows AN520 but not directly...)
 
