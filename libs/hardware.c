@@ -146,6 +146,8 @@ uint8_t digitalRead(uint8_t pin)
 The systick time is updated only at the end of a systick timer countdown to 0.
 Compute the actual time by adding in the time elapsed since the last event.
 
+NOTE: Systick must be set to a one millisecond count period.
+
 @returns uint32_t. Time in milliseconds since rollover or start of counting.
 */
 
@@ -153,7 +155,7 @@ uint32_t millis()
 {
     cli();
     uint32_t elapsedTime = systickTime
-                             + (lastReloadValue - systick_get_value())/MS_COUNT;
+                           + (lastReloadValue - systick_get_value())/MS_COUNT;
     sei();
     return elapsedTime;
 }
@@ -183,6 +185,8 @@ This function provides a basic blocking delay in milliseconds. This differs from
 one system to another in libc. Here it makes use of the millis() function to
 define the time more accurately and independently of the instruction timing.
 
+NOTE: Systick must be set to a one millisecond count period.
+
 @param[in] delayMs: uint16_t. Delay in milliseconds.
 */
 
@@ -203,7 +207,8 @@ void delay(uint32_t delayMs)
 This function provides a basic delay in microseconds. This differs from
 one system to another in libc. Here it makes use of timer2 to define
 the time more accurately and independently of the instruction timing.
-timer2 must be set to a 1 microsecond clock.
+
+NOTE: timer2 must be set to a 1 microsecond clock.
 
 Accuracy depends on the execution time in each loop being less than a
 microsecond. Interrupts should be disabled while this is executing.

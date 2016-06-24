@@ -50,6 +50,7 @@ The final version uses the ET-ARM STAMP board using the same ports.
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/dac.h>
 #include <libopencm3/stm32/i2c.h>
+#include <libopencm3/stm32/exti.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
@@ -63,14 +64,18 @@ The final version uses the ET-ARM STAMP board using the same ports.
 /*--------------------------------------------------------------------------*/
 /* Global Variables */
 
+uint32_t rainfall;                  /* Counter of interrupts from sensor */
+uint32_t windSpeed;                 /* Counter of interrupts from sensor */
+
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
 static void hardwareSetup(void);
 void i2c1Setup(void);
 void adcSetup(void);
-void gpio_setup(void);
+void gpioSetup(void);
 void dacSetup(void);
+void extiSetup(void);
 
 /*--------------------------------------------------------------------------*/
 
@@ -101,7 +106,7 @@ int main(void)
 /* Read and send solar panel current. Use simple polling of the ADC. */
 
         uint16_t radiance = 0;
-        channel[0] = ADC_CHANNEL4;         /* channel 4 for the radiance */
+        channel[0] = ADC_CHANNEL4;         /* channel 4 radiance */
 	    adc_set_regular_sequence(ADC1, 1, channel);
         adc_start_conversion_direct(ADC1);
         while (!adc_eoc(ADC1));
@@ -110,14 +115,28 @@ int main(void)
         usart_print_int(radiance);
         usart_print_string("\n\r");
 
+/* Send rain gauge count. */
+
+        usart_print_string("dR,");
+        usart_print_int(rainfall);
+        usart_print_string("\n\r");
+        cli();
+        rainfall = 0;
+        sei();
+
 /* Send wind speed count. */
 
-/* Send rain gauge count. */
+        usart_print_string("dS,");
+        usart_print_int(windSpeed);
+        usart_print_string("\n\r");
+        cli();
+        windSpeed = 0;
+        sei();
 
 /* Send Battery Voltage. */
 
         uint16_t voltage = 0;
-        channel[0] = ADC_CHANNEL6;         /* channel 6 for the voltage */
+        channel[0] = ADC_CHANNEL6;         /* channel 6 battery voltage */
 	    adc_set_regular_sequence(ADC1, 1, channel);
         adc_start_conversion_direct(ADC1);
         while (!adc_eoc(ADC1));
@@ -129,7 +148,7 @@ int main(void)
 /* Send Battery Current. */
 
         uint16_t current = 0;
-        channel[0] = ADC_CHANNEL7;         /* channel 7 for the current */
+        channel[0] = ADC_CHANNEL7;         /* channel 7 battery current */
 	    adc_set_regular_sequence(ADC1, 1, channel);
         adc_start_conversion_direct(ADC1);
         while (!adc_eoc(ADC1));
@@ -140,12 +159,12 @@ int main(void)
 
 /* Control Battery Charging */
 
-        chargeLimit = 4096 >> 1;
+        chargeLimit = 4000;                 /* temporary for testing */
         dac_software_trigger(CHANNEL_2);
-        dac_load_data_buffer_single(chargeLimit, RIGHT8, CHANNEL_2);
+        dac_load_data_buffer_single(chargeLimit, RIGHT12, CHANNEL_2);
 
 /* Snooze for a while */
-        delaySleep(MEASUREMENT_PERIOD);
+        delay(MEASUREMENT_PERIOD);
 	}
 
 	return 0;
@@ -164,14 +183,16 @@ void hardwareSetup(void)
 
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
 
-    systickSetup(1);            // Set systick to interrupt after 1 millisecond.
+    gpioSetup();
+//    systickSetup(1);            // Set systick to interrupt after 1 millisecond.
     systickSetup(1000);         // Set systick to interrupt after 1 second.
     usart1Setup();
     timer2Setup(0xFFFF);
-    gpio_setup();
     adcSetup();
     dacSetup();
     i2c1Setup();
+    extiSetup();
+    sei();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -181,7 +202,7 @@ This sets the clocks for the GPIO and AFIO ports, and sets the LEDs on
 PB8 - PB15 to output and cleared.
 */
 
-void gpio_setup(void)
+void gpioSetup(void)
 {
 /* Enable GPIOA, GPIOB and GPIOC clocks and alternate functions. */
     rcc_periph_clock_enable(RCC_GPIOA);
@@ -204,34 +225,17 @@ void gpio_setup(void)
 ADC1 is turned on and calibrated.
 */
 
+#define ADC_INPUTS  (GPIO4 | GPIO6 | GPIO7)
+
 void adcSetup(void)
 {
-/* Set port PA4 for ADC1 to analogue input. */
-	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, GPIO4);
+/* Set ports on PA for ADC1 to analogue input. */
+	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, ADC_INPUTS);
 /* Enable the ADC1 clock on APB2 */
     rcc_periph_clock_enable(RCC_ADC1);
 /* Setup the ADC */
     adc_power_on(ADC1);
     adc_calibration(ADC1);
-	uint8_t channel[1] = { ADC_CHANNEL4 };
-    adc_set_regular_sequence(ADC1, 1, channel);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Setup I2C1
-
-The clocks and GPIO settings are established.
-*/
-
-void i2c1Setup(void)
-{
-/* Enable clocks for I2C1 and AFIO. */
-	rcc_periph_clock_enable(RCC_I2C1);
-	rcc_periph_clock_enable(RCC_AFIO);
-/* Set alternate functions for the SCL and SDA pins of I2C1. */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
-		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-		      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -252,7 +256,88 @@ woken up by the time the first interrupt occurs */
 	dac_enable(CHANNEL_2);
 	dac_trigger_enable(CHANNEL_2);
 	dac_set_trigger_source(DAC_CR_TSEL1_SW);
-	dac_load_data_buffer_single(0, LEFT12, CHANNEL_2);
+	dac_load_data_buffer_single(0, RIGHT12, CHANNEL_2);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Setup I2C1
+
+The clocks and GPIO settings are established.
+*/
+
+void i2c1Setup(void)
+{
+/* Enable clocks for I2C1 and AFIO. */
+	rcc_periph_clock_enable(RCC_I2C1);
+	rcc_periph_clock_enable(RCC_AFIO);
+/* Set alternate functions for the SCL and SDA pins of I2C1. */
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
+		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
+		      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief EXTI Setup.
+
+This enables the external interrupts on bits 0, 2 and 3 of the ports.
+*/
+
+#define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
+#define PA_DIGITAL_INPUTS   (GPIO0 | GPIO2 | GPIO3)
+
+void extiSetup(void)
+{
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
+                  PA_DIGITAL_INPUTS);
+    gpio_set(GPIOA,PA_DIGITAL_INPUTS);      // Pull up
+    exti_select_source(EXTI0, GPIOA);
+    exti_select_source(EXTI2, GPIOA);
+    exti_select_source(EXTI3, GPIOA);
+    exti_set_trigger(EXTI_ENABLES, EXTI_TRIGGER_RISING);
+    nvic_enable_irq(NVIC_EXTI0_IRQ);
+    nvic_enable_irq(NVIC_EXTI2_IRQ);
+    nvic_enable_irq(NVIC_EXTI3_IRQ);
+    exti_enable_request(EXTI_ENABLES);
+}
+
+/*--------------------------------------------------------------------------*/
+/* Interrupt Service Routines */
+/*--------------------------------------------------------------------------*/
+/* EXT0
+
+Bit 0 of each port used as a pin interrupt. This is for rainfall.
+*/
+
+void exti0_isr(void)
+{
+	gpio_toggle(GPIOB, GPIO10);      /* LED3 on/off. */
+    rainfall++;
+    exti_reset_request(EXTI0);
+}
+
+/*--------------------------------------------------------------------------*/
+/* EXT2
+
+Bit 2 of each port used as a pin interrupt. This is for wind speed.
+*/
+
+void exti2_isr(void)
+{
+	gpio_toggle(GPIOB, GPIO11);      /* LED4 on/off. */
+    windSpeed++;
+    exti_reset_request(EXTI2);
+}
+
+/*--------------------------------------------------------------------------*/
+/* EXT3
+
+Bit 3 of each port used as a pin interrupt. This is for wind direction.
+*/
+
+void exti3_isr(void)
+{
+	gpio_toggle(GPIOB, GPIO12);      /* LED5 on/off. */
+    exti_reset_request(EXTI3);
 }
 
 /*--------------------------------------------------------------------------*/
