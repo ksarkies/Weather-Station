@@ -41,7 +41,7 @@ K. Sarkies, 10 May 2016
 #define  _BV(bit) (1 << (bit))
 
 /*--------------------------------------------------------------------------*/
-// Globals
+/* Globals */
 
 volatile uint32_t time2TickCounter;
 volatile uint32_t systickTime;
@@ -141,26 +141,6 @@ uint8_t digitalRead(uint8_t pin)
 }
 
 /*--------------------------------------------------------------------------*/
-/*      Millisecond System Time
-
-The systick time is updated only at the end of a systick timer countdown to 0.
-Compute the actual time by adding in the time elapsed since the last event.
-
-NOTE: Systick must be set to a one millisecond count period.
-
-@returns uint32_t. Time in milliseconds since rollover or start of counting.
-*/
-
-uint32_t millis()
-{
-    cli();
-    uint32_t elapsedTime = systickTime
-                           + (lastReloadValue - systick_get_value())/MS_COUNT;
-    sei();
-    return elapsedTime;
-}
-
-/*--------------------------------------------------------------------------*/
 /** @Brief Disable Global interrupts
 */
 
@@ -179,13 +159,29 @@ void sei(void)
 }
 
 /*--------------------------------------------------------------------------*/
+/*      Millisecond System Time
+
+The systick time is updated only at the end of a systick timer countdown to 0.
+Compute the actual time by adding in the time elapsed since the last event.
+
+@returns uint32_t. Time in milliseconds since rollover or start of counting.
+*/
+
+uint32_t millis()
+{
+    cli();
+    uint32_t elapsedTime = systickTime
+                           + (lastReloadValue - systick_get_value())/MS_COUNT;
+    sei();
+    return elapsedTime;
+}
+
+/*--------------------------------------------------------------------------*/
 /* @brief Blocking Delay in Milliseconds
 
 This function provides a basic blocking delay in milliseconds. This differs from
 one system to another in libc. Here it makes use of the millis() function to
 define the time more accurately and independently of the instruction timing.
-
-NOTE: Systick must be set to a one millisecond count period.
 
 @param[in] delayMs: uint16_t. Delay in milliseconds.
 */
@@ -247,6 +243,7 @@ Global: systickTime taken from the systick interrupt.
 void delaySleep(uint32_t delayMs)
 {
 #define DIVISOR 0xFFFFFF/MS_COUNT
+
 /* If delayMs is more than 24 bits, split into number of 24 bit full cycles and
 the remainder for the last cycle */
     uint16_t cycles = 1+delayMs/DIVISOR;
@@ -261,7 +258,7 @@ whether to quit this loop. */
         else count = DIVISOR;
         systickSetup(count);        // Set systick to interrupt after given delay.
         while (! systick_get_countflag())
-            asm volatile("wfi");    // sleep until systick fires
+            asm volatile("wfi");    // sleep until systick fires.
     }
 }
 
@@ -383,11 +380,15 @@ The AHB clock can be divided by 8 to give a 9MHz clock. The period can be up
 to 24 bits giving a 1864 ms maximum count. If the period is set beyond this
 then a shortened period will occur.
 
+MS_COUNT provides the translation between the systick clock and a millisecond
+clock, thus allowing time estimates to be made in milliseconds.
+
 @param[in] period: uint16_t period before interrupt in ms, up to 1864.
 */
 
 void systickSetup(uint16_t period)
 {
+    systick_counter_disable();
 /* 72MHz / 8 => 9,000,000 counts per second */
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
 /* 9000000/9000 = 1000 overflows per second - every period ms one interrupt */
@@ -396,6 +397,7 @@ void systickSetup(uint16_t period)
     systick_interrupt_enable();
 /* Start counting. */
     systick_counter_enable();
+    systick_clear();
     systick_get_countflag();        // Clear the flag
 }
 

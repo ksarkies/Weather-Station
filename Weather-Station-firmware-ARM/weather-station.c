@@ -21,6 +21,9 @@ For battery charging the following are needed:
 
 USART1 is on PA8-PA12 with Tx on PA9 and Rx on PA10.
 
+NOTE: The battery must be in place otherwise disabling the charger will power
+off the processor.
+
 Development platform ET-STM32F103 board. LEDS on B8-B15. USART1 is provided.
 
 The final version uses the ET-ARM STAMP board using the same ports.
@@ -59,37 +62,116 @@ The final version uses the ET-ARM STAMP board using the same ports.
 #include "../libs/hardware.h"
 
 /* 2 second period in milliseconds */
-#define MEASUREMENT_PERIOD 2000
+#define MEASUREMENT_PERIOD      2000
+#define RADIANCE_SETTLE_TIME     100
+/* Resistor values times 10 */
+#define VOLTAGE_SENSE             12        
+#define RADIANCE_SENSE            10       
+/* Amplification of current sense voltage */
+#define I_AMP                    110 
+/* Amplification of battery voltage */
+#define V_AMP                    259 
+
+/* Fixed point for battery charge limit for Diamec batteries (7.2V to 7.5V). */
+#define CHARGE_LIMIT       72*256/10
+/* Fixed point for battery float limit for Diamec batteries (6.5V to 6.8V). */
+#define FLOAT_LIMIT        68*256/10
 
 /*--------------------------------------------------------------------------*/
 /* Global Variables */
 
-uint32_t rainfall;                  /* Counter of interrupts from sensor */
-uint32_t windSpeed;                 /* Counter of interrupts from sensor */
+static uint32_t rainfall;               /* Counter of interrupts from sensor */
+static uint32_t windSpeed;              /* Counter of interrupts from sensor */
+static uint8_t chargerIsActive;         /* Existing state of charger */
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
+static void enableRadianceMeasurement(void);
+static void disableRadianceMeasurement(void);
+static void enableCharging(void);
+static void disableCharging(void);
+static uint8_t chargerActive(void);
 static void hardwareSetup(void);
-void i2c1Setup(void);
-void adcSetup(void);
-void gpioSetup(void);
-void dacSetup(void);
-void extiSetup(void);
+static void i2c1Setup(void);
+static void adcSetup(void);
+static void gpioSetup(void);
+static void dacSetup(void);
+static void extiSetup(void);
 
 /*--------------------------------------------------------------------------*/
 
 int main(void)
 {
 	hardwareSetup();
+    chargerIsActive = chargerActive();
     uint8_t channel[1];                 /* Channel for A/D conversion */
     uint16_t chargeLimit = 0;           /* voltage limit for charging battery */
+    uint8_t i=0;
     DHT sensorDHT = {DHT_PIN,DHT22,false};
     initDHT(&sensorDHT);
 
 	for (;;)
     {
-    	gpio_toggle(GPIOB, GPIO9);      /* LED2 on/off. */
+    	gpio_toggle(GPIOB, GPIO9);          /* LED2 on/off. */
+
+/* Read and send Battery Voltage. */
+
+        uint16_t voltageRaw = 0;
+        channel[0] = ADC_CHANNEL6;          /* channel 6 battery voltage */
+	    adc_set_regular_sequence(ADC1, 1, channel);
+        for (i=0; i<16; i++)                /* Average over 16 readings */
+        {
+            adc_start_conversion_direct(ADC1);
+            while (! adc_eoc(ADC1));
+            voltageRaw += adc_read_regular(ADC1);
+            delay(1);
+        }
+/* Voltage times 256 for fixed point scaling, with sense resistor (x10)
+and amplification (x100) */
+        uint32_t voltage = ((voltageRaw>>4)*256*V_AMP)/(1241*100);/* Volts */
+        usart_print_string("dV,");
+        usart_print_int(voltageRaw);
+        usart_print_string(",");
+        usart_print_fixed_point(voltage);
+        usart_print_string("\n\r");
+
+/* Read and send Battery Current. */
+
+        uint16_t currentRaw = 0;
+        channel[0] = ADC_CHANNEL7;          /* channel 7 battery current */
+	    adc_set_regular_sequence(ADC1, 1, channel);
+        for (i=0; i<16; i++)                /* Average over 16 readings */
+        {
+            adc_start_conversion_direct(ADC1);
+            while (! adc_eoc(ADC1));
+            currentRaw += adc_read_regular(ADC1);
+        }
+/* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
+and current amplification (x10) */
+        uint32_t current = 
+                ((currentRaw>>4)*256*1000*VOLTAGE_SENSE)/(1241*I_AMP);
+        usart_print_string("dI,");
+        usart_print_fixed_point(current);
+        usart_print_string("\n\r");
+
+/* Battery Charge Limit Setting */
+
+        chargeLimit = 4000;                 /* temporary for testing */
+        dac_load_data_buffer_single(chargeLimit, RIGHT12, CHANNEL_2);
+        dac_software_trigger(CHANNEL_2);
+
+/* Control Battery Charging.
+This cycles between the absorption voltage limit and the float voltage limit. */
+
+        if (voltage > CHARGE_LIMIT)
+        {
+            disableCharging();              /* Turn off battery charging */
+        }
+        if (voltage < FLOAT_LIMIT)
+        {
+            enableCharging();               /* Turn on battery charging */
+        }
 
 /* Read and send Temperature and Humidity from the DTH22. */
         uint32_t temperature = readTemperature(&sensorDHT, false);
@@ -105,14 +187,23 @@ int main(void)
 
 /* Read and send solar panel current. Use simple polling of the ADC. */
 
-        uint16_t radiance = 0;
-        channel[0] = ADC_CHANNEL4;         /* channel 4 radiance */
+        enableRadianceMeasurement();
+        uint16_t radianceRaw = 0;
+        channel[0] = ADC_CHANNEL4;          /* channel 4 radiance */
 	    adc_set_regular_sequence(ADC1, 1, channel);
-        adc_start_conversion_direct(ADC1);
-        while (!adc_eoc(ADC1));
-        radiance = adc_read_regular(ADC1);
+        for (i=0; i<16; i++)                /* Average over 16 readings */
+        {
+            adc_start_conversion_direct(ADC1);
+            while (! adc_eoc(ADC1));
+            radianceRaw = adc_read_regular(ADC1);
+        }
+        disableRadianceMeasurement();       /* Puts charging back on */
+/* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
+and current amplification (x10) */
+        uint32_t radiance =
+                (radianceRaw>>4)*256*1000*RADIANCE_SENSE/(1241*I_AMP);
         usart_print_string("dL,");
-        usart_print_int(radiance);
+        usart_print_fixed_point(radiance);
         usart_print_string("\n\r");
 
 /* Send rain gauge count. */
@@ -133,41 +224,76 @@ int main(void)
         windSpeed = 0;
         sei();
 
-/* Send Battery Voltage. */
-
-        uint16_t voltage = 0;
-        channel[0] = ADC_CHANNEL6;         /* channel 6 battery voltage */
-	    adc_set_regular_sequence(ADC1, 1, channel);
-        adc_start_conversion_direct(ADC1);
-        while (!adc_eoc(ADC1));
-        voltage = adc_read_regular(ADC1);
-        usart_print_string("dV,");
-        usart_print_int(voltage);
-        usart_print_string("\n\r");
-
-/* Send Battery Current. */
-
-        uint16_t current = 0;
-        channel[0] = ADC_CHANNEL7;         /* channel 7 battery current */
-	    adc_set_regular_sequence(ADC1, 1, channel);
-        adc_start_conversion_direct(ADC1);
-        while (!adc_eoc(ADC1));
-        current = adc_read_regular(ADC1);
-        usart_print_string("dI,");
-        usart_print_int(current);
-        usart_print_string("\n\r");
-
-/* Control Battery Charging */
-
-        chargeLimit = 4000;                 /* temporary for testing */
-        dac_software_trigger(CHANNEL_2);
-        dac_load_data_buffer_single(chargeLimit, RIGHT12, CHANNEL_2);
-
 /* Snooze for a while */
-        delay(MEASUREMENT_PERIOD);
+        delaySleep(MEASUREMENT_PERIOD);
 	}
 
 	return 0;
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Enable measurement
+
+The measurement MOSFET must be turned on and the charging must be turned off.
+Delay for a while to allow settling of currents in the sense resistor.
+*/
+
+void enableRadianceMeasurement(void)
+{
+    chargerIsActive = chargerActive();
+    disableCharging();                  /* turn off charger */
+    gpio_set(GPIOB, GPIO4);             /* Turn on measurement switch */
+    delay(RADIANCE_SETTLE_TIME);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Disable measurement
+
+The measurement MOSFET must be turned off and the charging must be restored
+if it was in a charging state at the time of measurement.
+*/
+
+void disableRadianceMeasurement(void)
+{
+    gpio_clear(GPIOB, GPIO4);           /* Turn off measurement switch */
+    if (chargerIsActive) enableCharging();
+    else disableCharging();
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Enable Charging
+
+Output must be low to turn on the MOSFET.
+*/
+
+void enableCharging(void)
+{
+    gpio_clear(GPIOB, GPIO5);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Disable Charging
+
+Output must be high to turn off the MOSFET.
+*/
+
+void disableCharging(void)
+{
+    gpio_set(GPIOB, GPIO5);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Return State of Charging
+
+The measurement MOSFET must be turned on and the charging must be turned off.
+Delay for a while to allow settling of currents in the sense resistor.
+
+@returns uint8_t: true = charging active, false = charging inactive.
+*/
+
+uint8_t chargerActive(void)
+{
+    return (gpio_get(GPIOB, GPIO5) == 0);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -200,6 +326,9 @@ void hardwareSetup(void)
 
 This sets the clocks for the GPIO and AFIO ports, and sets the LEDs on
 PB8 - PB15 to output and cleared.
+
+Sets the two MOSFET control outputs to low, which disables the measurement and
+enables the charging.
 */
 
 void gpioSetup(void)
@@ -217,6 +346,12 @@ void gpioSetup(void)
 /* All LEDS off */
 	gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
                GPIO14 | GPIO15);
+
+/* Set GPIO4, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO4 | GPIO5);
+/* All MOSFET controls off. */
+	gpio_clear(GPIOB, GPIO4 | GPIO5);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -248,7 +383,7 @@ void dacSetup(void)
 {
 /* Set port PA5 for DAC1 to 'alternate function'. Output driver mode is ignored. */
 	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5);
+		          GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5);
 /* Enable the DAC clock on APB1 */
 	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_DACEN);
 /* Setup the DAC, software trigger source. Assume the DAC has
@@ -256,7 +391,6 @@ woken up by the time the first interrupt occurs */
 	dac_enable(CHANNEL_2);
 	dac_trigger_enable(CHANNEL_2);
 	dac_set_trigger_source(DAC_CR_TSEL1_SW);
-	dac_load_data_buffer_single(0, RIGHT12, CHANNEL_2);
 }
 
 /*--------------------------------------------------------------------------*/
