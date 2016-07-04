@@ -2,10 +2,10 @@
 @mainpage Weather Station Firmware for ARM based Remote Unit
 @version 0.0.0
 @author Ken Sarkies (www.jiggerjuice.info)
-@date 07 May 2016
+@date 04 July 2016
 
-This initial development version uses the ET-STM32F103 development board. The
-port allocations are:
+This initial development version uses the ET-ARM STAMP board. The port
+allocations are:
 
 - PA0: Rainwater gauge. Tipping bucket with reed switch.
 - PA1: Temperature and Humidity. Freetronics DHT22.
@@ -15,18 +15,17 @@ port allocations are:
 - Air Pressure. Freetronics MS-5637-02BA03. I2C-1 on PB6 for SCL and PB7 for SDA.
 
 For battery charging the following are needed:
-- PA5 to measure battery voltage on ADC12-IN5.
-- PA6 for PWM on TIM3_CH1 to control the battery charging.
-- PA7 to switch the panel to the solar radiance current measurement circuit.
+- PA6 to measure battery voltage on ADC12-IN5.
+- PA7 to measure battery current on ADC12-IN6.
+- PB3 to switch the panel to charge the battery.
+- PB5 to switch the panel to the solar radiance current measurement circuit.
 
 USART1 is on PA8-PA12 with Tx on PA9 and Rx on PA10.
 
-NOTE: The battery must be in place otherwise disabling the charger will power
-off the processor.
+NOTE: The battery must be in place otherwise when the charger is disabled by
+the program the processor will power off.
 
-Development platform ET-STM32F103 board. LEDS on B8-B15. USART1 is provided.
-
-The final version uses the ET-ARM STAMP board using the same ports.
+NOTE: the test ET-STM32 STAMP board has a faulty PB4.
 */
 
 /*
@@ -113,7 +112,6 @@ int main(void)
 
 	for (;;)
     {
-    	gpio_toggle(GPIOB, GPIO9);          /* LED2 on/off. */
 
 /* Read and send Battery Voltage. */
 
@@ -131,8 +129,6 @@ int main(void)
 and amplification (x100) */
         uint32_t voltage = ((voltageRaw>>4)*256*V_AMP)/(1241*100);/* Volts */
         usart_print_string("dV,");
-        usart_print_int(voltageRaw);
-        usart_print_string(",");
         usart_print_fixed_point(voltage);
         usart_print_string("\n\r");
 
@@ -242,7 +238,7 @@ void enableRadianceMeasurement(void)
 {
     chargerIsActive = chargerActive();
     disableCharging();                  /* turn off charger */
-    gpio_set(GPIOB, GPIO4);             /* Turn on measurement switch */
+    gpio_set(GPIOB, GPIO3);             /* Turn on measurement switch */
     delay(RADIANCE_SETTLE_TIME);
 }
 
@@ -255,7 +251,7 @@ if it was in a charging state at the time of measurement.
 
 void disableRadianceMeasurement(void)
 {
-    gpio_clear(GPIOB, GPIO4);           /* Turn off measurement switch */
+    gpio_clear(GPIOB, GPIO3);           /* Turn off measurement switch */
     if (chargerIsActive) enableCharging();
     else disableCharging();
 }
@@ -340,18 +336,18 @@ void gpioSetup(void)
     rcc_periph_clock_enable(RCC_AFIO);
 
 /* Set GPIO8-15 (in GPIO port B) to 'output push-pull' for the LEDs. */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
+/*    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8 | GPIO9 | GPIO10 | GPIO11 |
-              GPIO12 | GPIO13 | GPIO14 | GPIO15);
+              GPIO12 | GPIO13 | GPIO14 | GPIO15); */
 /* All LEDS off */
-	gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
-               GPIO14 | GPIO15);
+/*    gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
+               GPIO14 | GPIO15); */
 
-/* Set GPIO4, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO4 | GPIO5);
+/* Set GPIO3, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO3 | GPIO5);
 /* All MOSFET controls off. */
-	gpio_clear(GPIOB, GPIO4 | GPIO5);
+    gpio_clear(GPIOB, GPIO3 | GPIO5);
 }
 
 /*--------------------------------------------------------------------------*/
