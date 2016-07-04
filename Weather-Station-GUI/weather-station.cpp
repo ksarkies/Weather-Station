@@ -51,7 +51,7 @@ Here the data stream from the remote is received and saved to a file.
 
 #define NUMBAUDS 7
 const qint32 bauds[NUMBAUDS] = {2400,4800,9600,19200,38400,57600,115200};
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** Weather Station Main Window Constructor
 
 @param[in] parent Parent widget.
@@ -60,7 +60,7 @@ const qint32 bauds[NUMBAUDS] = {2400,4800,9600,19200,38400,57600,115200};
 WeatherStationGui::WeatherStationGui(QString device, uint parameter,
                                        QWidget* parent) : QDialog(parent)
 {
-// Build the User Interface display from the Ui class in ui_mainwindowform.h
+/* Build the User Interface display from the Ui class in ui_mainwindowform.h */
     WeatherStationMainUi.setupUi(this);
     initMainWindow(WeatherStationMainUi);
 
@@ -70,7 +70,7 @@ WeatherStationGui::WeatherStationGui(QString device, uint parameter,
     port = NULL;
     baudrate = parameter;
     serialDevice = device;
-    setSourceComboBox(0);           // Pick up the top of the detected sources
+    setSourceComboBox(0);           /* Pick up the top of the detected sources */
 /* Create serial port if it has been specified, otherwise leave to the GUI. */
     on_connectButton_clicked();
     if (port != NULL)
@@ -93,7 +93,7 @@ WeatherStationGui::~WeatherStationGui()
     }
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Initialize the main window */
 
 void WeatherStationGui::initMainWindow(Ui::WeatherStationMainDialog mainWindow)
@@ -104,9 +104,13 @@ void WeatherStationGui::initMainWindow(Ui::WeatherStationMainDialog mainWindow)
     mainWindow.baudrateComboBox->setEnabled(true);
     mainWindow.baudrateComboBox->show();
     mainWindow.baudrateComboBox->raise();
+
+    mainWindow.battery->setMinimum(0);
+    mainWindow.battery->setMaximum(100);
+    mainWindow.battery->setValue(0);
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Initialize the Serial Combo Box Items
 
 This queries selected serial devices in /dev and fills in the source combo box
@@ -120,7 +124,7 @@ void WeatherStationGui::setSourceComboBox(int index)
     QString serialDevice;
     WeatherStationMainUi.sourceComboBox->clear();
     WeatherStationMainUi.sourceComboBox->insertItem(0,"/dev/ttyS0");
-// Try three ACM sources
+/* Try three ACM sources */
     for (int i=3; i>=0; i--)
     {
         serialDevice = "/dev/ttyACM"+QString::number(i);
@@ -128,7 +132,7 @@ void WeatherStationGui::setSourceComboBox(int index)
         if (checkACMFile.exists())
             WeatherStationMainUi.sourceComboBox->insertItem(0,serialDevice);
     }
-// Try three USB sources
+/* Try three USB sources */
     for (int i=3; i>=0; i--)
     {
         serialDevice = "/dev/ttyUSB"+QString::number(i);
@@ -143,7 +147,7 @@ void WeatherStationGui::setSourceComboBox(int index)
     WeatherStationMainUi.baudrateComboBox->setCurrentIndex(DEFAULT_BAUDRATE);
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Handle incoming serial data
 
 This is called when data appears in the serial buffer. Data is pulled in until
@@ -161,7 +165,7 @@ void WeatherStationGui::onDataAvailable()
         if ((data.at(n) != '\r') && (data.at(n) != '\n')) response += data.at(n);
         if (data.at(n) == '\n')
         {
-// The current time is saved to ms precision followed by the line.
+/* The current time is saved to ms precision followed by the line. */
             tick.restart();
             processResponse(response);
             response.clear();
@@ -170,7 +174,7 @@ void WeatherStationGui::onDataAvailable()
     }
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Process the incoming serial data
 
 Parse the line and take action on the command received.
@@ -186,26 +190,71 @@ void WeatherStationGui::processResponse(const QString response)
     if (size > 1) secondField = breakdown[1].simplified();
     QString current, voltage;
     if (! saveFile.isEmpty()) saveLine(response);
-//qDebug() << response << firstField;
 /* When the time field is received, send back a short message to keep comms
 alive. Also check for calibration as time messages stop during this process. */
     if ((size > 0) && (firstField == "pH"))
     {
         port->write("pc+\n\r");
     }
-// outside temperature
+/* Outside temperature is sent as fixed point floating number to scale. */
     if ((size > 0) && (firstField == "dT"))
     {
         if (size > 1) WeatherStationMainUi.outsideTemperature
             ->setText(QString("%1").arg(secondField
                 .toFloat(),0,'f',1).append(QChar(0x00B0)).append("C"));
     }
-// outside humidity
+/* Outside humidity is sent as fixed point floating number to scale. */
     if ((size > 0) && (firstField == "dH"))
     {
         if (size > 1) WeatherStationMainUi.outsideHumidity
             ->setText(QString("%1").arg(secondField
                 .toFloat(),0,'f',1).append("%"));
+    }
+
+// TBD convert to suitable scaled value
+/* Wind Speed */
+    if ((size > 0) && (firstField == "dS"))
+    {
+        if (size > 1) WeatherStationMainUi.windSpeed
+            ->setText(QString("%1").arg(secondField
+                .toFloat(),0,'f',1));
+    }
+
+// TBD convert to suitable scaled value
+/* Rainfall */
+    if ((size > 0) && (firstField == "dR"))
+    {
+        if (size > 1) WeatherStationMainUi.rainfall
+            ->setText(QString("%1").arg(secondField
+                .toFloat(),0,'f',1));
+    }
+
+// TBD convert to suitable scaled value
+/* Solar Radiance */
+    if ((size > 0) && (firstField == "dL"))
+    {
+        if (size > 1) WeatherStationMainUi.insolation
+            ->setText(QString("%1").arg(secondField
+                .toFloat(),0,'f',1));
+    }
+
+// TBD convert to suitable scaled value
+/* Barometric Pressure */
+    if ((size > 0) && (firstField == "dP"))
+    {
+        if (size > 1) WeatherStationMainUi.airPressure
+            ->setText(QString("%1").arg(secondField
+                .toFloat(),0,'f',1));
+    }
+
+// TBD work at providing a better health measure
+/* Battery Health. For now use voltage as fixed point number to scale. */
+    if ((size > 0) && (firstField == "dV"))
+    {
+        int batteryHealth = (secondField.toFloat()*100/6.5;
+        if (batteryHealth > 100) batteryHealth = 100;
+        if (size > 1) WeatherStationMainUi.battery
+            ->setValue(batteryHealth);
     }
 
 /* This allows debug messages to be displayed on the terminal. */
@@ -216,7 +265,7 @@ alive. Also check for calibration as time messages stop during this process. */
     }
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Obtain a save file name and path and attempt to open it.
 
 The files are csv but the ending can be arbitrary to allow compatibility
@@ -225,7 +274,7 @@ with the data processing application.
 
 void WeatherStationGui::on_saveFileButton_clicked()
 {
-//! Make sure there is no file already open.
+/* Make sure there is no file already open. */
     if (! saveFile.isEmpty())
     {
         displayErrorMessage("A file is already open - close first");
@@ -237,11 +286,11 @@ void WeatherStationGui::on_saveFileButton_clicked()
                         QString(),
                         "Comma Separated Variables (*.csv *.txt)");
     if (filename.isEmpty()) return;
-//    if (! filename.endsWith(".csv")) filename.append(".csv");
+/*    if (! filename.endsWith(".csv")) filename.append(".csv"); */
     QFileInfo fileInfo(filename);
     saveDirectory = fileInfo.absolutePath();
     saveFile = saveDirectory.filePath(filename);
-    outFile = new QFile(saveFile);             // Open file for output
+    outFile = new QFile(saveFile);             /* Open file for output */
     if (! outFile->open(QIODevice::WriteOnly))
     {
         displayErrorMessage("Could not open the output file");
@@ -249,13 +298,13 @@ void WeatherStationGui::on_saveFileButton_clicked()
     }
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Save a line to the opened save file.
 
 */
 void WeatherStationGui::saveLine(QString line)
 {
-//! Check that the save file has been defined and is open.
+/* Check that the save file has been defined and is open. */
     if (saveFile.isEmpty())
     {
         displayErrorMessage("Output File not defined");
@@ -270,7 +319,7 @@ void WeatherStationGui::saveLine(QString line)
     out << line << "\n\r";
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Close the save file.
 
 */
@@ -283,11 +332,11 @@ void WeatherStationGui::on_closeFileButton_clicked()
     {
         outFile->close();
         delete outFile;
-//! Save the name to prevent the same file being used.
+/*! Save the name to prevent the same file being used. */
         saveFile = QString();
     }
 }
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Show an error condition in the Error label.
 
 @param[in] message: Message to be displayed.
@@ -298,7 +347,7 @@ void WeatherStationGui::displayErrorMessage(const QString message)
     WeatherStationMainUi.errorLabel->setText(message);
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Error Message
 
 @returns a message when the device didn't respond.
@@ -308,7 +357,7 @@ QString WeatherStationGui::error()
     return errorMessage;
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Successful establishment of serial port setup
 
 @returns TRUE if successful.
@@ -318,7 +367,7 @@ bool WeatherStationGui::success()
     return true;
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Close off the window and deallocate resources
 
 This may not be necessary as QT may implement it implicitly.
@@ -328,7 +377,7 @@ void WeatherStationGui::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Sleep for a number of centiseconds but keep processing events
 
 */
@@ -342,7 +391,7 @@ void WeatherStationGui::ssleep(int centiseconds)
     }
 }
 
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 /** @brief Attempt to connect to the remote system.
 
 For serial, if opening the port is successful, connect to the slot, otherwise
@@ -353,7 +402,7 @@ void WeatherStationGui::on_connectButton_clicked()
     if (port == NULL)
     {
         serialDevice = WeatherStationMainUi.sourceComboBox->currentText();
-// Setup serial port and attempt to open it
+/* Setup serial port and attempt to open it */
         port = new QSerialPort(serialDevice);
         if (port->open(QIODevice::ReadWrite))
         {

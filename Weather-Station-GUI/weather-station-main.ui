@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>723</width>
-    <height>626</height>
+    <height>632</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -302,7 +302,7 @@
   <widget class="QLabel" name="windSpeed">
    <property name="geometry">
     <rect>
-     <x>294</x>
+     <x>288</x>
      <y>372</y>
      <width>95</width>
      <height>41</height>
@@ -329,7 +329,7 @@
   <widget class="QLabel" name="windSpeedLabel">
    <property name="geometry">
     <rect>
-     <x>300</x>
+     <x>292</x>
      <y>420</y>
      <width>86</width>
      <height>17</height>
@@ -457,6 +457,19 @@
    </property>
    <property name="text">
     <string>Air Pressure</string>
+   </property>
+  </widget>
+  <widget class="QProgressBar" name="battery">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>50</y>
+     <width>118</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="value">
+    <number>24</number>
    </property>
   </widget>
  </widget>
