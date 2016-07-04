@@ -29,83 +29,87 @@
 #include "BaroSensor.h"
 #include "hardware.h"
 
-bool initialised;
-int8_t err;
-uint16_t c1,c2,c3,c4,c5,c6; // Calibration constants used in producing results
-
-uint32_t takeBaroReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level);
-
-/* i2c address of module */
+/* i2c address of barometric sensor module */
 #define BARO_ADDR 0x76
-
-/* delay to wait for sampling to complete, on each OSR level */
-const uint8_t SamplingDelayMs[6] PROGMEM = {
-  2,
-  4,
-  6,
-  10,
-  18,
-  34
-};
 
 /* module commands */
 #define CMD_RESET 0x1E
-#define CMD_PROM_READ(offs) (0xA0+(offs<<1)) /* Offset 0-7 */
+/* Offset 0-7 */
+#define CMD_PROM_READ(offs) (0xA0+(offs<<1))
+/* oversample_level is a parameter in function calls */
 #define CMD_START_D1(oversample_level) (0x40 + 2*(int)oversample_level)
 #define CMD_START_D2(oversample_level) (0x50 + 2*(int)oversample_level)
 #define CMD_READ_ADC 0x00
 
 /*--------------------------------------------------------------------------*/
+/* Globals */
+
+bool initialised;
+int8_t err;
+uint16_t c1,c2,c3,c4,c5,c6; // Calibration constants used in producing results
+
+/* delay to wait for sampling to complete, on each OSR level */
+const uint8_t SamplingDelayMs[6] = {2,4,6,10,18,34};
+
+/*--------------------------------------------------------------------------*/
+/* Local Prototypes */
+
+uint32_t takeBaroReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level);
+
+/*--------------------------------------------------------------------------*/
 /* @brief Initialization of sensor hardware
 
+Resets the module then pulls in calibration constants from the module ROM.
 */
+
 void initBaroSensor()
 {
+    uint8_t command[1];
+    uint16_t calibration[7];
     i2c1Setup();
-    i2c_initiate_transmission(I2C1,BARO_ADDR,I2C_WRITE);
-    i2c_transmit_single_byte(CMD_RESET);
+    command[0] = CMD_RESET;
+    i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
     if (i2c_check_error()) return;
 
     uint16_t prom[7];
     for (int i = 0; i < 7; i++)
     {
-        i2c_initiate_transmission(BARO_ADDR);
-        i2c_transmit_single_byte(CMD_PROM_READ(i));
+        command[0] = CMD_PROM_READ(i);
+        i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
         if (i2c_check_error()) return;
-        i2c_initiate_transmission(I2C1,BARO_ADDR,I2C_READ);
-        prom[i] = ((uint16_t)Wire.read()) << 8;
-        prom[i] |= Wire.read();
+        calibration[i] = i2c_master_read_two_bytes(I2C1, BARO_ADDR);
     }
 
-  // TODO verify CRC4 in top 4 bits of prom[0] (follows AN520 but not directly...)
+// TODO verify CRC4 in top 4 bits of prom[0] (follows AN520 but not directly...)
 
-  c1 = prom[1];
-  c2 = prom[2];
-  c3 = prom[3];
-  c4 = prom[4];
-  c5 = prom[5];
-  c6 = prom[6];
-  initialised = true;
+    c1 = calibration[1];
+    c2 = calibration[2];
+    c3 = calibration[3];
+    c4 = calibration[4];
+    c5 = calibration[5];
+    c6 = calibration[6];
+    initialised = true;
 }
 
 /*--------------------------------------------------------------------------*/
 float getTemperature(TempUnit scale, BaroOversampleLevel level)
 {
-  float result;
-  if(getTempAndPressure(&result, NULL, scale, level))
-    return result;
-  else
-    return NAN;
+/********* code to be corrected here on */
+    float result;
+    if(getTempAndPressure(&result, NULL, scale, level))
+        return result;
+    else
+        return NAN;
 }
 
 /*--------------------------------------------------------------------------*/
 float getPressure(BaroOversampleLevel level)
 {
-  float result;
-  if(getTempAndPressure(NULL, &result, CELSIUS, level))
-    return result;
-  else
-    return NAN;
+    float result;
+    if(getTempAndPressure(NULL, &result, CELSIUS, level))
+        return result;
+    else
+        return NAN;
 }
 
 /*--------------------------------------------------------------------------*/

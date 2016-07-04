@@ -9,12 +9,15 @@ K. Sarkies, 22 June 2016
 #include <stdint.h>
 
 void i2c_initialise(uint32_t i2c);
-void i2c_initiate_transmission(uint32_t i2c, uint8_t address, uint8_t rw);
-void i2c_transmit_single_byte (uint32_t i2c, uint8_t data);
-void i2c_transmit_multiple_byte (uint32_t i2c, uint8_t *data, uint8_t length);
-uint8_t i2c_read_single_byte(uint32_t i2c);
-uint16_t i2c_read_two_bytes(uint32_t i2c);
-uint16_t i2c_read_multiple_bytes(uint32_t i2c);
+void i2c_initiate_transmission_7_bit(uint32_t i2c, uint8_t address, uint8_t rw);
+void i2c_master_transmit_data(uint32_t i2c, uint8_t address, uint8_t length,
+                              uint8_t *data);
+uint8_t i2c_master_read_single_byte(uint32_t i2c, uint8_t address);
+uint16_t i2c_master_read_two_bytes(uint32_t i2c, uint8_t address);
+void i2c_master_read_multiple_bytes(uint32_t i2c, uint8_t address,
+                                    uint8_t length, uint8_t* data);
+uint8_t i2c_data_sent(uint32_t i2c);
+uint8_t i2c_master_mode(uint32_t i2c);
 uint8_t i2c_busy(uint32_t i2c);
 uint8_t i2c_start_generated(uint32_t i2c);
 uint8_t i2c_address_sent(uint32_t i2c);
