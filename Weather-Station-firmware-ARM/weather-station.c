@@ -17,7 +17,7 @@ allocations are:
 For battery charging the following are needed:
 - PA6 to measure battery voltage on ADC12-IN5.
 - PA7 to measure battery current on ADC12-IN6.
-- PB3 to switch the panel to charge the battery.
+- PB2 to switch the panel to charge the battery.
 - PB5 to switch the panel to the solar radiance current measurement circuit.
 
 USART1 is on PA8-PA12 with Tx on PA9 and Rx on PA10.
@@ -25,7 +25,7 @@ USART1 is on PA8-PA12 with Tx on PA9 and Rx on PA10.
 NOTE: The battery must be in place otherwise when the charger is disabled by
 the program the processor will power off.
 
-NOTE: the test ET-STM32 STAMP board has a faulty PB4.
+NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 */
 
 /*
@@ -64,7 +64,7 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4.
 #define MEASUREMENT_PERIOD      2000
 #define RADIANCE_SETTLE_TIME     100
 /* Resistor values times 10 */
-#define VOLTAGE_SENSE             12        
+#define BATTERY_SENSE             12        
 #define RADIANCE_SENSE            10       
 /* Amplification of current sense voltage */
 #define I_AMP                    110 
@@ -126,7 +126,7 @@ int main(void)
             delay(1);
         }
 /* Voltage times 256 for fixed point scaling, with sense resistor (x10)
-and amplification (x100) */
+and amplification (x100) will give results in volts. */
         uint32_t voltage = ((voltageRaw>>4)*256*V_AMP)/(1241*100);/* Volts */
         usart_print_string("dV,");
         usart_print_fixed_point(voltage);
@@ -134,7 +134,7 @@ and amplification (x100) */
 
 /* Read and send Battery Current. */
 
-        uint16_t currentRaw = 0;
+        uint32_t currentRaw = 0;
         channel[0] = ADC_CHANNEL7;          /* channel 7 battery current */
 	    adc_set_regular_sequence(ADC1, 1, channel);
         for (i=0; i<16; i++)                /* Average over 16 readings */
@@ -144,9 +144,10 @@ and amplification (x100) */
             currentRaw += adc_read_regular(ADC1);
         }
 /* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
-and current amplification (x10) */
+and current amplification (x10) and scale back to average 16 readings.
+Note order of computations to avoid 32 bit overflow. */
         uint32_t current = 
-                ((currentRaw>>4)*256*1000*VOLTAGE_SENSE)/(1241*I_AMP);
+                ((currentRaw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* mA */
         usart_print_string("dI,");
         usart_print_fixed_point(current);
         usart_print_string("\n\r");
@@ -184,20 +185,21 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 /* Read and send solar panel current. Use simple polling of the ADC. */
 
         enableRadianceMeasurement();
-        uint16_t radianceRaw = 0;
+        uint32_t radianceRaw = 0;
         channel[0] = ADC_CHANNEL4;          /* channel 4 radiance */
 	    adc_set_regular_sequence(ADC1, 1, channel);
         for (i=0; i<16; i++)                /* Average over 16 readings */
         {
             adc_start_conversion_direct(ADC1);
             while (! adc_eoc(ADC1));
-            radianceRaw = adc_read_regular(ADC1);
+            radianceRaw += adc_read_regular(ADC1);
         }
         disableRadianceMeasurement();       /* Puts charging back on */
 /* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
-and current amplification (x10) */
+and current amplification (x10) and scale back to average 16 readings.
+Note order of computations to avoid 32 bit overflow. */
         uint32_t radiance =
-                (radianceRaw>>4)*256*1000*RADIANCE_SENSE/(1241*I_AMP);
+                ((radianceRaw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* mA */
         usart_print_string("dL,");
         usart_print_fixed_point(radiance);
         usart_print_string("\n\r");
@@ -238,7 +240,7 @@ void enableRadianceMeasurement(void)
 {
     chargerIsActive = chargerActive();
     disableCharging();                  /* turn off charger */
-    gpio_set(GPIOB, GPIO3);             /* Turn on measurement switch */
+    gpio_set(GPIOB, GPIO2);             /* Turn on measurement switch */
     delay(RADIANCE_SETTLE_TIME);
 }
 
@@ -251,7 +253,7 @@ if it was in a charging state at the time of measurement.
 
 void disableRadianceMeasurement(void)
 {
-    gpio_clear(GPIOB, GPIO3);           /* Turn off measurement switch */
+    gpio_clear(GPIOB, GPIO2);           /* Turn off measurement switch */
     if (chargerIsActive) enableCharging();
     else disableCharging();
 }
@@ -343,11 +345,11 @@ void gpioSetup(void)
 /*    gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
                GPIO14 | GPIO15); */
 
-/* Set GPIO3, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
+/* Set GPIO2, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
     gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO3 | GPIO5);
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO2 | GPIO5);
 /* All MOSFET controls off. */
-    gpio_clear(GPIOB, GPIO3 | GPIO5);
+    gpio_clear(GPIOB, GPIO2 | GPIO5);
 }
 
 /*--------------------------------------------------------------------------*/
