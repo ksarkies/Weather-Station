@@ -46,6 +46,7 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include <stdint.h>
 
 #include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/usart.h>
@@ -55,6 +56,7 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/cortex.h>
+#include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/nvic.h>
 #include "../libs/buffer.h"
 #include "../libs/DHT.h"
@@ -91,6 +93,9 @@ static void disableRadianceMeasurement(void);
 static void enableCharging(void);
 static void disableCharging(void);
 static uint8_t chargerActive(void);
+static void peripheralEnable(void);
+static void peripheralDisable(void);
+static void peripheralSetup(void);
 static void hardwareSetup(void);
 static void i2c1Setup(void);
 static void adcSetup(void);
@@ -223,7 +228,11 @@ Note order of computations to avoid 32 bit overflow. */
         sei();
 
 /* Snooze for a while */
+        delay(20);                      /* Wait for USART to complete */
+        peripheralDisable();
         delaySleep(MEASUREMENT_PERIOD);
+        peripheralEnable();
+        delay(50);
 	}
 
 	return 0;
@@ -307,16 +316,71 @@ void hardwareSetup(void)
 
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
 
-    gpioSetup();
 //    systickSetup(1);            // Set systick to interrupt after 1 millisecond.
     systickSetup(1000);         // Set systick to interrupt after 1 second.
+    peripheralSetup();
+    sei();
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Peripheral Disables.
+
+This turns off power to all peripherals to reduce power drain during sleep.
+Systick and EXTI need to remain on.
+*/
+
+void peripheralSetup(void)
+{
+    gpioSetup();
     usart1Setup();
     timer2Setup(0xFFFF);
     adcSetup();
     dacSetup();
     i2c1Setup();
     extiSetup();
-    sei();
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Peripheral Disables.
+
+This turns off power to all peripherals to reduce power drain during sleep.
+Systick and EXTI need to remain on.
+*/
+
+void peripheralDisable(void)
+{
+    rcc_periph_clock_disable(RCC_AFIO);
+    rcc_periph_clock_disable(RCC_GPIOA);
+    rcc_periph_clock_disable(RCC_GPIOB);
+    rcc_periph_clock_disable(RCC_GPIOC);
+    rcc_periph_clock_disable(RCC_ADC1);
+	rcc_periph_clock_disable(RCC_DAC);
+	rcc_periph_clock_disable(RCC_I2C1);
+    rcc_periph_clock_disable(RCC_USART1);
+	rcc_periph_clock_disable(RCC_TIM2);
+    adc_power_off(ADC1);
+    dac_disable(CHANNEL_D);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Peripheral Enables.
+
+This turns on power to all peripherals needed.
+*/
+
+void peripheralEnable(void)
+{
+    rcc_periph_clock_enable(RCC_AFIO);
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
+    rcc_periph_clock_enable(RCC_ADC1);
+	rcc_periph_clock_enable(RCC_DAC);
+	rcc_periph_clock_enable(RCC_I2C1);
+    rcc_periph_clock_enable(RCC_USART1);
+	rcc_periph_clock_enable(RCC_TIM2);
+    adc_power_on(ADC1);
+    dac_enable(CHANNEL_2);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -383,7 +447,7 @@ void dacSetup(void)
 	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
 		          GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5);
 /* Enable the DAC clock on APB1 */
-	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_DACEN);
+	rcc_periph_clock_enable(RCC_DAC);
 /* Setup the DAC, software trigger source. Assume the DAC has
 woken up by the time the first interrupt occurs */
 	dac_enable(CHANNEL_2);

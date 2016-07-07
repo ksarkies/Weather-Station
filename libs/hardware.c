@@ -428,10 +428,10 @@ void usart1Setup(void)
 	usart_set_parity(USART1, USART_PARITY_NONE);
 	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
 	usart_set_mode(USART1, USART_MODE_TX_RX);
-	/* Enable USART1 receive interrupts. */
+/* Enable USART1 receive interrupts. */
 	usart_enable_rx_interrupt(USART1);
 	usart_disable_tx_interrupt(USART1);
-	/* Finally enable the USART. */
+/* Finally enable the USART. */
 	usart_enable(USART1);
 }
 
