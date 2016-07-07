@@ -517,7 +517,7 @@ net=PA2:1
 T 43300 40700 5 10 0 0 180 0 1
 device=none
 T 43400 41300 5 10 1 1 180 7 1
-value=PA7
+value=PB7
 }
 C 41700 40600 1 0 0 gnd-1.sym
 C 41700 43400 1 0 0 gnd-1.sym
