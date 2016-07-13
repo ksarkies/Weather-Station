@@ -7,7 +7,6 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/usart.h>
-#include "buffer.h"
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
@@ -15,13 +14,12 @@
 static void usart_print_string(char *ch);
 static void usart1_setup(void);
 static void rtc_setup(void);
+static void local_delay(int secs);
+static void local_rtc_awake_from_off(enum rcc_osc clock_source);
 
 /*--------------------------------------------------------------------------*/
 int main(void)
 {
-    uint32_t time = 0;
-    uint32_t previousTime = 0;
-
 /* Set the clock to 72MHz from the 8MHz external crystal */
 
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
@@ -34,13 +32,24 @@ int main(void)
 /* Set to stop mode and wait for RTC interrupt. */
 	while (1)
     {
+
+/* Pinched from rtc example in libopencm3-examples for STM32F103 */
+	    volatile uint32_t j = 0, c = 0;
+	    c = rtc_get_counter_val();
+        usart_print_string("Counter ");
+	    /* Display the current counter value in binary via USART1. */
+	    for (j = 0; j < 32; j++) {
+		    if ((c & (0x80000000 >> j)) != 0) {
+			    usart_send_blocking(USART1, '1');
+		    } else {
+			    usart_send_blocking(USART1, '0');
+		    }
+	    }
+	    usart_send_blocking(USART1, '\n');
+	    usart_send_blocking(USART1, '\r');
+
 /* Put in a delay to allow USART to finish */
-        while (time == previousTime)
-        {
-            previousTime = time;
-            time = rtc_get_counter_val();
-        }
-        previousTime = time;
+        local_delay(1);
 
 /* Set sleep mode and sleep */
         pwr_voltage_regulator_low_power_in_stop();
@@ -51,14 +60,9 @@ int main(void)
 
 /* Identify */
 /* Put in a delay to allow wakeup to finish */
-        while (time == previousTime)
-        {
-            previousTime = time;
-            time = rtc_get_counter_val();
-        }
-        previousTime = time;
+        local_delay(1);
 
-/* Repeat setup as clocks may have been reset */
+/* Repeat setup in case clocks were reset, and set a new alarm. */
 	    rcc_clock_setup_in_hse_8mhz_out_72mhz();
 	    usart1_setup();
         usart_print_string("Woken?\r\n");
@@ -120,14 +124,80 @@ void rtc_setup(void)
 {
 /* Wake up and clear RTC registers using the LSE as clock. */
 /* Set prescaler, using value for 1Hz out. */
-	rtc_awake_from_off(RCC_LSE);
+	local_rtc_awake_from_off(RCC_LSE);
 	rtc_set_prescale_val(0x7FFF);
 
-    rtc_set_counter_val(0);     /* Didn't reset in rtc_awake_from_off ?? */
+/* Clear again - some counts will occur before prescale is set. */
+    rtc_set_counter_val(0);
 
 /* Set the Alarm to trigger in event mode on EXTI17 for wakeup */
     exti_enable_request(EXTI17);
     exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
 }
 
+/*--------------------------------------------------------------------------*/
+/* @brief Seconds delay (rough)
+
+Uses the RTC to get delay in seconds, accurate to plus 0/minus 1 second.
+*/
+
+void local_delay(int secs)
+{
+    uint32_t time = rtc_get_counter_val();
+    uint32_t previousTime = time;
+    uint8_t i = 0;
+    for (i=0; i<secs; i++)
+    {
+        while (time == previousTime)
+        {
+            previousTime = time;
+            time = rtc_get_counter_val();
+        }
+        previousTime = time;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief RTC Set Operational from the Off state.
+
+Copied and modified from libopencm3 library. Debug of that version.
+
+Power up the backup domain clocks, enable write access to the backup domain,
+select the clock source, clear the RTC registers and enable the RTC.
+
+@param[in] clock_source ::rcc_osc. RTC clock source. Only the values HSE, LSE
+    and LSI are permitted.
+*/
+
+void local_rtc_awake_from_off(enum rcc_osc clock_source)
+{
+	uint32_t reg32;
+
+	/* Enable power and backup interface clocks. */
+	rcc_periph_clock_enable(RCC_PWR);
+	rcc_periph_clock_enable(RCC_BKP);
+
+	/* Enable access to the backup registers and the RTC. */
+	pwr_disable_backup_domain_write_protect();
+
+	/* Set the clock source */
+	rcc_set_rtc_clock_source(clock_source);
+
+	/* Enable the RTC. */
+	rcc_enable_rtc_clock();
+
+	/* Clear the Registers */
+	rtc_enter_config_mode();
+	RTC_PRLH = 0;
+	RTC_PRLL = 0;
+	RTC_CNTH = 0;
+	RTC_CNTL = 0;
+	RTC_ALRH = 0xFFFF;
+	RTC_ALRL = 0xFFFF;
+	rtc_exit_config_mode();
+
+	/* Wait for the RSF bit in RTC_CRL to be set by hardware. */
+	RTC_CRL &= ~RTC_CRL_RSF;
+	while ((reg32 = (RTC_CRL & RTC_CRL_RSF)) == 0);
+}
 
