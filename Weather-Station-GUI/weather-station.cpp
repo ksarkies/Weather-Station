@@ -251,7 +251,7 @@ alive. Also check for calibration as time messages stop during this process. */
 /* Battery Health. For now use voltage as fixed point number to scale. */
     if ((size > 0) && (firstField == "dV"))
     {
-        int batteryHealth = (secondField.toFloat()*100/6.5;
+        int batteryHealth = (secondField.toFloat())*100/6.5;
         if (batteryHealth > 100) batteryHealth = 100;
         if (size > 1) WeatherStationMainUi.battery
             ->setValue(batteryHealth);
