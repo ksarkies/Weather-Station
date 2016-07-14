@@ -26,7 +26,6 @@ moc_*
 ui_*
 qrc_*
 *.txt
-Makefile
 *.cmd
 *.net
 power-management

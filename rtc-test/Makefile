@@ -47,6 +47,6 @@ $(PROJECT).sym: $(PROJECT).elf
 	$(NM) -n $< > $@
 
 clean:
-	rm *.elf *.o *.d *.hex *.list *.sym *.bin ../libs/*.o ../libs/*.d
+	rm *.elf *.o *.d *.hex *.list *.sym *.bin
 
 

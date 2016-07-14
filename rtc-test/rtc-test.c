@@ -1,3 +1,39 @@
+/**
+@mainpage STM32F103 Test of Deep Sleep Modes for power saving
+@version 0.0.0
+@author Ken Sarkies (www.jiggerjuice.info)
+@date 14 July 2016
+
+This is a test of the use of the stop mode in the STM32F103 allowing response
+to EXTI and RTC Alarm interrupts. The stop mode is only awakened with an EXTI
+(external asynchronous interrupt) while in stop mode, as most clocks are not
+running. The RTC, whose low frequency clock LSE is running, has an alarm
+interrupt which is directed to EXTI 17. Thus it is the only timing source
+available in stop mode.
+
+This program sets up the RTC alarm to interrupt regularly to wake the processor
+for other activities, while dealing with asynchronous interrupts on other EXTI
+lines.
+
+Interrupt enabled sleep is needed to allow response to interrupts at all times
+whether or not the processor is in sleep mode.
+*/
+
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <unistd.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
@@ -9,13 +45,20 @@
 #include <libopencm3/stm32/usart.h>
 
 /*--------------------------------------------------------------------------*/
+/* Global Variables */
+
+static uint32_t exti_counter;           /* Counter interrupts, first source */
+static uint32_t counter2,counter3;      /* Counter interrupts, other sources */
+
+/*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
-static void usart_print_string(char *ch);
 static void usart1_setup(void);
 static void rtc_setup(void);
 static void local_delay(int secs);
-static void local_rtc_awake_from_off(enum rcc_osc clock_source);
+static void exti_setup(void);
+static void usart_print_int(int value);
+static void usart_print_string(char *ch);
 
 /*--------------------------------------------------------------------------*/
 int main(void)
@@ -27,47 +70,47 @@ int main(void)
     usart_print_string("RTC Alarm Test\n\r");
 	rtc_setup();
 	rtc_set_alarm_time(10);
+    exti_setup();
     usart_print_string("RTC Setup Complete\n\r");
 
 /* Set to stop mode and wait for RTC interrupt. */
 	while (1)
     {
 
-/* Pinched from rtc example in libopencm3-examples for STM32F103 */
-	    volatile uint32_t j = 0, c = 0;
-	    c = rtc_get_counter_val();
-        usart_print_string("Counter ");
-	    /* Display the current counter value in binary via USART1. */
-	    for (j = 0; j < 32; j++) {
-		    if ((c & (0x80000000 >> j)) != 0) {
-			    usart_send_blocking(USART1, '1');
-		    } else {
-			    usart_send_blocking(USART1, '0');
-		    }
-	    }
-	    usart_send_blocking(USART1, '\n');
-	    usart_send_blocking(USART1, '\r');
-
-/* Put in a delay to allow USART to finish */
+/* Put in a delay to allow USART to finish. This unfortunately is essential.
+The 1 second delay is more than needed but it is all we have. */
         local_delay(1);
 
-/* Set sleep mode and sleep */
+/* Set sleep mode and stop */
         pwr_voltage_regulator_low_power_in_stop();
-        pwr_set_stop_mode();                /* This only sets the power down */
-        exti_reset_request(0xFFFFF);        /* Clear the whole bloody lot */
-//        SCB_SCR |= SCB_SCR_SLEEPDEEP;       /* Set the deep sleep mode */
-        asm volatile("wfe");
+        pwr_set_stop_mode();                /* Don't set complete power down */
+        exti_reset_request(0xFFFFF);        /* Just clear the whole bloody lot */
+        SCB_SCR |= SCB_SCR_SLEEPDEEP;       /* Set deep sleep mode bit in SCB */
+        asm volatile("wfi");                /* Good night ! */
 
-/* Identify */
-/* Put in a delay to allow wakeup to finish */
-        local_delay(1);
-
-/* Repeat setup in case clocks were reset, and set a new alarm. */
+/* Repeat setup as clocks seem to have been reset. */
 	    rcc_clock_setup_in_hse_8mhz_out_72mhz();
-	    usart1_setup();
-        usart_print_string("Woken?\r\n");
-	    rtc_setup();
-	    rtc_set_alarm_time(10);
+/* Wake up the RTC from the stop condition */
+        rtc_auto_awake(RCC_LSE,0x7FFF);
+/* Check if the wakeup source was the alarm. If so reset the RTC counter and
+set the next alarm. */
+        if (rtc_check_flag(RTC_ALR))
+        {
+            rtc_clear_flag(RTC_ALR);
+            rtc_set_counter_val(0);
+	        rtc_set_alarm_time(10);
+/* At this point a whole bunch of other tasks would be done, according to the
+application. */
+            usart_print_string("Woken\r\n");
+            /* ....... */
+        }
+/* Otherwise just continue on looping. This block is just for testing. */
+        else
+        {
+            usart_print_string("Interrupted ");
+            usart_print_int(exti_counter);
+            usart_print_string("\r\n");
+        }
 	}
 
 	return 0;
@@ -82,6 +125,37 @@ void usart_print_string(char *ch)
 	{
      	usart_send_blocking(USART1, (*(ch++) & 0xFF));
   	}
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Print out an integer value in ASCII decimal form
+
+(ack Thomas Otto).
+
+@param[in] value: 16 bit signed integer.
+*/
+
+void usart_print_int(int value)
+{
+	uint8_t i;
+	uint8_t nr_digits = 0;
+	char buffer[25];
+
+	if (value < 0)
+	{
+		usart_send_blocking(USART1, '-');
+		value = value * -1;
+	}
+	if (value == 0) buffer[nr_digits++] = '0';
+	else while (value > 0)
+	{
+		buffer[nr_digits++] = "0123456789"[value % 10];
+		value /= 10;
+	}
+	for (i = nr_digits; i > 0; i--)
+	{
+		usart_send_blocking(USART1, buffer[i-1]);
+	}
 }
 
 /*--------------------------------------------------------------------------*/
@@ -124,14 +198,14 @@ void rtc_setup(void)
 {
 /* Wake up and clear RTC registers using the LSE as clock. */
 /* Set prescaler, using value for 1Hz out. */
-	local_rtc_awake_from_off(RCC_LSE);
-	rtc_set_prescale_val(0x7FFF);
+	rtc_auto_awake(RCC_LSE,0x7FFF);
 
-/* Clear again - some counts will occur before prescale is set. */
+/* Clear the RTC counter - some counts will occur before prescale is set. */
     rtc_set_counter_val(0);
 
-/* Set the Alarm to trigger in event mode on EXTI17 for wakeup */
-    exti_enable_request(EXTI17);
+/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
+    nvic_enable_irq(NVIC_RTC_ALARM_IRQ);
+    EXTI_IMR |= EXTI17;
     exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
 }
 
@@ -157,47 +231,79 @@ void local_delay(int secs)
     }
 }
 
-/*---------------------------------------------------------------------------*/
-/** @brief RTC Set Operational from the Off state.
+/*--------------------------------------------------------------------------*/
+/* @brief EXTI Setup.
 
-Copied and modified from libopencm3 library. Debug of that version.
-
-Power up the backup domain clocks, enable write access to the backup domain,
-select the clock source, clear the RTC registers and enable the RTC.
-
-@param[in] clock_source ::rcc_osc. RTC clock source. Only the values HSE, LSE
-    and LSI are permitted.
+This enables the external events on bits 0, 2 and 3 of the ports.
 */
 
-void local_rtc_awake_from_off(enum rcc_osc clock_source)
+#define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
+#define PA_DIGITAL_INPUTS   (GPIO0 | GPIO2 | GPIO3)
+
+void exti_setup(void)
 {
-	uint32_t reg32;
-
-	/* Enable power and backup interface clocks. */
-	rcc_periph_clock_enable(RCC_PWR);
-	rcc_periph_clock_enable(RCC_BKP);
-
-	/* Enable access to the backup registers and the RTC. */
-	pwr_disable_backup_domain_write_protect();
-
-	/* Set the clock source */
-	rcc_set_rtc_clock_source(clock_source);
-
-	/* Enable the RTC. */
-	rcc_enable_rtc_clock();
-
-	/* Clear the Registers */
-	rtc_enter_config_mode();
-	RTC_PRLH = 0;
-	RTC_PRLL = 0;
-	RTC_CNTH = 0;
-	RTC_CNTL = 0;
-	RTC_ALRH = 0xFFFF;
-	RTC_ALRL = 0xFFFF;
-	rtc_exit_config_mode();
-
-	/* Wait for the RSF bit in RTC_CRL to be set by hardware. */
-	RTC_CRL &= ~RTC_CRL_RSF;
-	while ((reg32 = (RTC_CRL & RTC_CRL_RSF)) == 0);
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
+                  PA_DIGITAL_INPUTS);
+    gpio_set(GPIOA,PA_DIGITAL_INPUTS);      // Pull up
+    exti_select_source(EXTI0, GPIOA);
+    exti_select_source(EXTI2, GPIOA);
+    exti_select_source(EXTI3, GPIOA);
+    nvic_enable_irq(NVIC_EXTI0_IRQ);
+    nvic_enable_irq(NVIC_EXTI2_IRQ);
+    nvic_enable_irq(NVIC_EXTI3_IRQ);
+    exti_set_trigger(EXTI_ENABLES, EXTI_TRIGGER_RISING);
+    EXTI_IMR |= EXTI_ENABLES;
 }
+
+/*--------------------------------------------------------------------------*/
+/* Interrupt Service Routines */
+/*--------------------------------------------------------------------------*/
+/* EXT0
+
+Bit 0 of each port used as a pin interrupt.
+*/
+
+void exti0_isr(void)
+{
+    exti_counter++;
+    exti_reset_request(EXTI0);
+}
+
+/*--------------------------------------------------------------------------*/
+/* EXT2
+
+Bit 2 of each port used as a pin interrupt.
+*/
+
+void exti2_isr(void)
+{
+    counter2++;
+    exti_reset_request(EXTI2);
+}
+
+/*--------------------------------------------------------------------------*/
+/* EXT3
+
+Bit 3 of each port used as a pin interrupt.
+*/
+
+void exti3_isr(void)
+{
+    counter3++;
+    exti_reset_request(EXTI3);
+}
+
+/*--------------------------------------------------------------------------*/
+/* EXT17/RTC Alarm ISR
+
+The RTC alarm appears as EXTI 17 which must be reset independently of the RTC
+alarm flag. Do not reset the latter here as it is needed to guide the main
+program to activate regular tasks.
+*/
+
+void rtc_alarm_isr(void)
+{
+    exti_reset_request(EXTI17);
+}
+
 
