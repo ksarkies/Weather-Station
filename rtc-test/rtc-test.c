@@ -47,15 +47,13 @@ whether or not the processor is in sleep mode.
 /*--------------------------------------------------------------------------*/
 /* Global Variables */
 
-static uint32_t exti_counter;           /* Counter interrupts, first source */
-static uint32_t counter2,counter3;      /* Counter interrupts, other sources */
+static uint32_t exti_counter;           /* interrupt counter */
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
 static void usart1_setup(void);
 static void rtc_setup(void);
-static void local_delay(int secs);
 static void exti_setup(void);
 static void usart_print_int(int value);
 static void usart_print_string(char *ch);
@@ -77,9 +75,11 @@ int main(void)
 	while (1)
     {
 
-/* Put in a delay to allow USART to finish. This unfortunately is essential.
-The 1 second delay is more than needed but it is all we have. */
-        local_delay(1);
+/* Put in a delay to allow USART to finish. */
+        uint32_t delay;
+        for (delay=0; delay < 40000; delay++) {
+            asm("nop");
+        }
 
 /* Set sleep mode and stop */
         pwr_voltage_regulator_low_power_in_stop();
@@ -210,35 +210,13 @@ void rtc_setup(void)
 }
 
 /*--------------------------------------------------------------------------*/
-/* @brief Seconds delay (rough)
-
-Uses the RTC to get delay in seconds, accurate to plus 0/minus 1 second.
-*/
-
-void local_delay(int secs)
-{
-    uint32_t time = rtc_get_counter_val();
-    uint32_t previousTime = time;
-    uint8_t i = 0;
-    for (i=0; i<secs; i++)
-    {
-        while (time == previousTime)
-        {
-            previousTime = time;
-            time = rtc_get_counter_val();
-        }
-        previousTime = time;
-    }
-}
-
-/*--------------------------------------------------------------------------*/
 /* @brief EXTI Setup.
 
 This enables the external events on bits 0, 2 and 3 of the ports.
 */
 
-#define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
-#define PA_DIGITAL_INPUTS   (GPIO0 | GPIO2 | GPIO3)
+#define EXTI_ENABLES        EXTI0
+#define PA_DIGITAL_INPUTS   GPIO0
 
 void exti_setup(void)
 {
@@ -267,30 +245,6 @@ void exti0_isr(void)
 {
     exti_counter++;
     exti_reset_request(EXTI0);
-}
-
-/*--------------------------------------------------------------------------*/
-/* EXT2
-
-Bit 2 of each port used as a pin interrupt.
-*/
-
-void exti2_isr(void)
-{
-    counter2++;
-    exti_reset_request(EXTI2);
-}
-
-/*--------------------------------------------------------------------------*/
-/* EXT3
-
-Bit 3 of each port used as a pin interrupt.
-*/
-
-void exti3_isr(void)
-{
-    counter3++;
-    exti_reset_request(EXTI3);
 }
 
 /*--------------------------------------------------------------------------*/
