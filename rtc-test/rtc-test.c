@@ -47,7 +47,8 @@ whether or not the processor is in sleep mode.
 /*--------------------------------------------------------------------------*/
 /* Global Variables */
 
-static uint32_t exti_counter;           /* interrupt counter */
+/* interrupt counter */
+static uint32_t exti_counter;
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
@@ -61,56 +62,56 @@ static void usart_print_string(char *ch);
 /*--------------------------------------------------------------------------*/
 int main(void)
 {
-/* Set the clock to 72MHz from the 8MHz external crystal */
+	/* Set the clock to 72MHz from the 8MHz external crystal */
 
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
 	usart1_setup();
-    usart_print_string("RTC Alarm Test\n\r");
+	usart_print_string("RTC Alarm Test\n\r");
 	rtc_setup();
 	rtc_set_alarm_time(10);
-    exti_setup();
-    usart_print_string("RTC Setup Complete\n\r");
+	exti_setup();
+	usart_print_string("RTC Setup Complete\n\r");
 
-/* Set to stop mode and wait for RTC interrupt. */
-	while (1)
-    {
+	/* Set to stop mode and wait for RTC interrupt. */
+	while (1) {
 
-/* Put in a delay to allow USART to finish. */
-        uint32_t delay;
-        for (delay=0; delay < 40000; delay++) {
-            asm("nop");
-        }
+		/* Put in a delay to allow USART to finish. */
+		uint32_t delay;
+		for (delay=0; delay < 40000; delay++) {
+			asm("nop");
+		}
 
-/* Set sleep mode and stop */
-        pwr_voltage_regulator_low_power_in_stop();
-        pwr_set_stop_mode();                /* Don't set complete power down */
-        exti_reset_request(0xFFFFF);        /* Just clear the whole bloody lot */
-        SCB_SCR |= SCB_SCR_SLEEPDEEP;       /* Set deep sleep mode bit in SCB */
-        asm volatile("wfi");                /* Good night ! */
+		/* Set sleep mode and stop */
+		pwr_voltage_regulator_low_power_in_stop();
+		/* Don't set complete power down (otherwise it goes to standby) */
+		pwr_set_stop_mode();
+		/* Just clear the whole bloody lot of exti pending requests */
+		exti_reset_request(0xFFFFF);
+		/* Set deep sleep mode bit in SCB to go to stop mode */
+		SCB_SCR |= SCB_SCR_SLEEPDEEP;
+		asm volatile("wfi");
 
-/* Repeat setup as clocks seem to have been reset. */
-	    rcc_clock_setup_in_hse_8mhz_out_72mhz();
-/* Wake up the RTC from the stop condition */
-        rtc_auto_awake(RCC_LSE,0x7FFF);
-/* Check if the wakeup source was the alarm. If so reset the RTC counter and
-set the next alarm. */
-        if (rtc_check_flag(RTC_ALR))
-        {
-            rtc_clear_flag(RTC_ALR);
-            rtc_set_counter_val(0);
-	        rtc_set_alarm_time(10);
-/* At this point a whole bunch of other tasks would be done, according to the
-application. */
-            usart_print_string("Woken\r\n");
-            /* ....... */
-        }
-/* Otherwise just continue on looping. This block is just for testing. */
-        else
-        {
-            usart_print_string("Interrupted ");
-            usart_print_int(exti_counter);
-            usart_print_string("\r\n");
-        }
+		/* Repeat setup as clocks seem to have been reset. */
+		rcc_clock_setup_in_hse_8mhz_out_72mhz();
+		/* Wake up the RTC from the stop condition */
+		rtc_auto_awake(RCC_LSE,0x7FFF);
+		/* Check if the wakeup source was the alarm. If so reset the RTC counter
+		and set the next alarm. */
+		if (rtc_check_flag(RTC_ALR)) {
+			rtc_clear_flag(RTC_ALR);
+			rtc_set_counter_val(0);
+			rtc_set_alarm_time(10);
+			/* At this point a whole bunch of other tasks would be done,
+			according to the application. */
+			usart_print_string("Woken\r\n");
+			/* ....... */
+		}
+		/* Otherwise just continue on looping. This block just for testing. */
+		else {
+			usart_print_string("Interrupted ");
+			usart_print_int(exti_counter);
+			usart_print_string("\r\n");
+		}
 	}
 
 	return 0;
@@ -123,7 +124,7 @@ void usart_print_string(char *ch)
 {
   	while(*ch)
 	{
-     	usart_send_blocking(USART1, (*(ch++) & 0xFF));
+	 	usart_send_blocking(USART1, (*(ch++) & 0xFF));
   	}
 }
 
@@ -166,23 +167,23 @@ USART 1 is configured for 38400 baud, no flow control and interrupt.
 
 void usart1_setup(void)
 {
-/* Enable clocks for GPIO port A (for GPIO_USART1_TX) and USART1. */
-    rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_AFIO);
-    rcc_periph_clock_enable(RCC_USART1);
-/* Enable the USART1 interrupt. */
+	/* Enable clocks for GPIO port A (for GPIO_USART1_TX) and USART1. */
+	rcc_periph_clock_enable(RCC_GPIOA);
+	rcc_periph_clock_enable(RCC_AFIO);
+	rcc_periph_clock_enable(RCC_USART1);
+	/* Enable the USART1 interrupt. */
 	nvic_enable_irq(NVIC_USART1_IRQ);
-/* Setup GPIO pin GPIO_USART1_TX on GPIO port A for transmit only. */
+	/* Setup GPIO pin GPIO_USART1_TX on GPIO port A for transmit only. */
 	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
-/* Setup UART parameters. */
+			  GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
+	/* Setup UART parameters. */
 	usart_set_baudrate(USART1, 38400);
 	usart_set_databits(USART1, 8);
 	usart_set_stopbits(USART1, USART_STOPBITS_1);
 	usart_set_parity(USART1, USART_PARITY_NONE);
 	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
 	usart_set_mode(USART1, USART_MODE_TX);
-/* Finally enable the USART. */
+	/* Finally enable the USART. */
 	usart_enable(USART1);
 }
 
@@ -196,17 +197,17 @@ The LSE clock appears to be already running.
 
 void rtc_setup(void)
 {
-/* Wake up and clear RTC registers using the LSE as clock. */
-/* Set prescaler, using value for 1Hz out. */
+	/* Wake up and clear RTC registers using the LSE as clock. */
+	/* Set prescaler, using value for 1Hz out. */
 	rtc_auto_awake(RCC_LSE,0x7FFF);
 
-/* Clear the RTC counter - some counts will occur before prescale is set. */
-    rtc_set_counter_val(0);
+	/* Clear the RTC counter - some counts will occur before prescale is set. */
+	rtc_set_counter_val(0);
 
-/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
-    nvic_enable_irq(NVIC_RTC_ALARM_IRQ);
-    EXTI_IMR |= EXTI17;
-    exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
+	/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
+	nvic_enable_irq(NVIC_RTC_ALARM_IRQ);
+	EXTI_IMR |= EXTI17;
+	exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -215,22 +216,18 @@ void rtc_setup(void)
 This enables the external events on bits 0, 2 and 3 of the ports.
 */
 
-#define EXTI_ENABLES        EXTI0
+#define EXTI_ENABLES		EXTI0
 #define PA_DIGITAL_INPUTS   GPIO0
 
 void exti_setup(void)
 {
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
-                  PA_DIGITAL_INPUTS);
-    gpio_set(GPIOA,PA_DIGITAL_INPUTS);      // Pull up
-    exti_select_source(EXTI0, GPIOA);
-    exti_select_source(EXTI2, GPIOA);
-    exti_select_source(EXTI3, GPIOA);
-    nvic_enable_irq(NVIC_EXTI0_IRQ);
-    nvic_enable_irq(NVIC_EXTI2_IRQ);
-    nvic_enable_irq(NVIC_EXTI3_IRQ);
-    exti_set_trigger(EXTI_ENABLES, EXTI_TRIGGER_RISING);
-    EXTI_IMR |= EXTI_ENABLES;
+	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
+				  PA_DIGITAL_INPUTS);
+	gpio_set(GPIOA,PA_DIGITAL_INPUTS);	  // Pull up
+	exti_select_source(EXTI0, GPIOA);
+	nvic_enable_irq(NVIC_EXTI0_IRQ);
+	exti_set_trigger(EXTI_ENABLES, EXTI_TRIGGER_RISING);
+	EXTI_IMR |= EXTI_ENABLES;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -243,8 +240,8 @@ Bit 0 of each port used as a pin interrupt.
 
 void exti0_isr(void)
 {
-    exti_counter++;
-    exti_reset_request(EXTI0);
+	exti_counter++;
+	exti_reset_request(EXTI0);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -257,7 +254,7 @@ program to activate regular tasks.
 
 void rtc_alarm_isr(void)
 {
-    exti_reset_request(EXTI17);
+	exti_reset_request(EXTI17);
 }
 
 
