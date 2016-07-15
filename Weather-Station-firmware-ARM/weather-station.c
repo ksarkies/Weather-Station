@@ -62,8 +62,9 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include "../libs/DHT.h"
 #include "../libs/hardware.h"
 
-/* 2 second period in milliseconds */
-#define MEASUREMENT_PERIOD      2000
+/* 10 second sleep/stop period */
+#define MEASUREMENT_PERIOD        10
+/* Time in ms to allow radiance current to settle after switching. */
 #define RADIANCE_SETTLE_TIME     100
 /* Resistor values times 10 */
 #define BATTERY_SENSE             12        
@@ -101,6 +102,7 @@ static void i2c1Setup(void);
 static void adcSetup(void);
 static void gpioSetup(void);
 static void dacSetup(void);
+static void rtc_setup(void);
 static void extiSetup(void);
 
 /*--------------------------------------------------------------------------*/
@@ -114,125 +116,148 @@ int main(void)
     uint8_t i=0;
     DHT sensorDHT = {DHT_PIN,DHT22,false};
     initDHT(&sensorDHT);
+    usart_print_string("Weather Station\n\r");
 
-	for (;;)
-    {
+    for (;;) {
+/* Snooze for a while in low power stop mode. */
+/* Wait for USART and any other outstanding operations to finish. */
+        while (! usart_get_flag(USART1, USART_SR_TC));
+		uint32_t cnt;
+		for (cnt=0; cnt < 40000; cnt++) {
+			asm("nop");
+		}
+    	rtc_set_alarm_time(MEASUREMENT_PERIOD);
+/* Turn off peripherals during stop mode (only ADC and DAC need to do this). */
+        peripheralDisable();
+/* Set sleep mode and stop */
+		pwr_voltage_regulator_low_power_in_stop();
+/* Don't set complete power down (otherwise it goes to standby) */
+		pwr_set_stop_mode();
+/* Just clear the whole bloody lot of exti pending requests */
+		exti_reset_request(0xFFFFF);
+/* Set deep sleep mode bit in SCB to go to stop mode */
+		SCB_SCR |= SCB_SCR_SLEEPDEEP;
+		asm volatile("wfi");
+/* Repeat setup as clocks seem to have been reset. */
+
+/* Restore hardware clocks and any config that may have been lost */
+        peripheralEnable();
+/* Wake up the RTC from the stop condition. */
+		rtc_auto_awake(RCC_LSE,0x7FFF);
+
+/* Check if the wakeup source was the alarm. If so reset the RTC counter
+and clear the alarm flag. */
+		if (rtc_check_flag(RTC_ALR)) {
+			rtc_clear_flag(RTC_ALR);
+			rtc_set_counter_val(0);
+
+/* These tasks are now performed whenever the RTC alarm wakes the processor.
+Other interrupts will activate their ISR but are ignored and the processor
+will go back into stop mode. */
 
 /* Read and send Battery Voltage. */
-
-        uint16_t voltageRaw = 0;
-        channel[0] = ADC_CHANNEL6;          /* channel 6 battery voltage */
-	    adc_set_regular_sequence(ADC1, 1, channel);
-        for (i=0; i<16; i++)                /* Average over 16 readings */
-        {
-            adc_start_conversion_direct(ADC1);
-            while (! adc_eoc(ADC1));
-            voltageRaw += adc_read_regular(ADC1);
-            delay(1);
-        }
+            uint16_t voltageRaw = 0;
+            channel[0] = ADC_CHANNEL6;          /* channel 6 battery voltage */
+	        adc_set_regular_sequence(ADC1, 1, channel);
+/* Average over 16 readings */
+            for (i=0; i<16; i++) {
+                adc_start_conversion_direct(ADC1);
+                while (! adc_eoc(ADC1));
+                voltageRaw += adc_read_regular(ADC1);
+                delay(1);
+            }
 /* Voltage times 256 for fixed point scaling, with sense resistor (x10)
 and amplification (x100) will give results in volts. */
-        uint32_t voltage = ((voltageRaw>>4)*256*V_AMP)/(1241*100);/* Volts */
-        usart_print_string("dV,");
-        usart_print_fixed_point(voltage);
-        usart_print_string("\n\r");
+            uint32_t voltage = ((voltageRaw>>4)*256*V_AMP)/(1241*100);/* Volts */
+            usart_print_string("dV,");
+            usart_print_fixed_point(voltage);
+            usart_print_string("\n\r");
 
 /* Read and send Battery Current. */
-
-        uint32_t currentRaw = 0;
-        channel[0] = ADC_CHANNEL7;          /* channel 7 battery current */
-	    adc_set_regular_sequence(ADC1, 1, channel);
-        for (i=0; i<16; i++)                /* Average over 16 readings */
-        {
-            adc_start_conversion_direct(ADC1);
-            while (! adc_eoc(ADC1));
-            currentRaw += adc_read_regular(ADC1);
-        }
+            uint32_t currentRaw = 0;
+            channel[0] = ADC_CHANNEL7;          /* channel 7 battery current */
+	        adc_set_regular_sequence(ADC1, 1, channel);
+/* Average over 16 readings */
+            for (i=0; i<16; i++) {
+                adc_start_conversion_direct(ADC1);
+                while (! adc_eoc(ADC1));
+                currentRaw += adc_read_regular(ADC1);
+            }
 /* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
 and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
-        uint32_t current = 
-                ((currentRaw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* mA */
-        usart_print_string("dI,");
-        usart_print_fixed_point(current);
-        usart_print_string("\n\r");
+            uint32_t current = 
+                    ((currentRaw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* mA */
+            usart_print_string("dI,");
+            usart_print_fixed_point(current);
+            usart_print_string("\n\r");
 
 /* Battery Charge Limit Setting */
-
-        chargeLimit = 4000;                 /* temporary for testing */
-        dac_load_data_buffer_single(chargeLimit, RIGHT12, CHANNEL_2);
-        dac_software_trigger(CHANNEL_2);
+            chargeLimit = 4000;                 /* temporary for testing */
+            dac_load_data_buffer_single(chargeLimit, RIGHT12, CHANNEL_2);
+            dac_software_trigger(CHANNEL_2);
 
 /* Control Battery Charging.
 This cycles between the absorption voltage limit and the float voltage limit. */
-
-        if (voltage > CHARGE_LIMIT)
-        {
-            disableCharging();              /* Turn off battery charging */
-        }
-        if (voltage < FLOAT_LIMIT)
-        {
-            enableCharging();               /* Turn on battery charging */
-        }
+            if (voltage > CHARGE_LIMIT) {
+                disableCharging();              /* Turn off battery charging */
+            }
+            if (voltage < FLOAT_LIMIT) {
+                enableCharging();               /* Turn on battery charging */
+            }
 
 /* Read and send Temperature and Humidity from the DTH22. */
-        uint32_t temperature = readTemperature(&sensorDHT, false);
-        uint32_t humidity = readHumidity(&sensorDHT);
-        usart_print_string("dT,");
-        usart_print_fixed_point(temperature);
-        usart_print_string("\n\r");
-        usart_print_string("dH,");
-        usart_print_fixed_point(humidity);
-        usart_print_string("\n\r");
+            uint32_t temperature = readTemperature(&sensorDHT, false);
+            uint32_t humidity = readHumidity(&sensorDHT);
+            usart_print_string("dT,");
+            usart_print_fixed_point(temperature);
+            usart_print_string("\n\r");
+            usart_print_string("dH,");
+            usart_print_fixed_point(humidity);
+            usart_print_string("\n\r");
 
 /* Read and send temperature and barometric pressure over i2c. */
+            usart_print_string("dP,");
+            usart_print_fixed_point(1000*256);
+            usart_print_string("\n\r");
 
 /* Read and send solar panel current. Use simple polling of the ADC. */
-
-        enableRadianceMeasurement();
-        uint32_t radianceRaw = 0;
-        channel[0] = ADC_CHANNEL4;          /* channel 4 radiance */
-	    adc_set_regular_sequence(ADC1, 1, channel);
-        for (i=0; i<16; i++)                /* Average over 16 readings */
-        {
-            adc_start_conversion_direct(ADC1);
-            while (! adc_eoc(ADC1));
-            radianceRaw += adc_read_regular(ADC1);
-        }
-        disableRadianceMeasurement();       /* Puts charging back on */
+            enableRadianceMeasurement();
+            uint32_t radianceRaw = 0;
+            channel[0] = ADC_CHANNEL4;          /* channel 4 radiance */
+	        adc_set_regular_sequence(ADC1, 1, channel);
+/* Average over 16 readings */
+            for (i=0; i<16; i++) {
+                adc_start_conversion_direct(ADC1);
+                while (! adc_eoc(ADC1));
+                radianceRaw += adc_read_regular(ADC1);
+            }
+            disableRadianceMeasurement();       /* Puts charging back on */
 /* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
 and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
-        uint32_t radiance =
-                ((radianceRaw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* mA */
-        usart_print_string("dL,");
-        usart_print_fixed_point(radiance);
-        usart_print_string("\n\r");
+            uint32_t radiance =
+                    ((radianceRaw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* mA */
+            usart_print_string("dL,");
+            usart_print_fixed_point(radiance);
+            usart_print_string("\n\r");
 
 /* Send rain gauge count. */
-
-        usart_print_string("dR,");
-        usart_print_int(rainfall);
-        usart_print_string("\n\r");
-        cli();
-        rainfall = 0;
-        sei();
+            usart_print_string("dR,");
+            usart_print_int(rainfall);
+            usart_print_string("\n\r");
+            cli();
+            rainfall = 0;
+            sei();
 
 /* Send wind speed count. */
-
-        usart_print_string("dS,");
-        usart_print_int(windSpeed);
-        usart_print_string("\n\r");
-        cli();
-        windSpeed = 0;
-        sei();
-
-/* Snooze for a while */
-        delay(20);                      /* Wait for USART to complete */
-        peripheralDisable();
-        delaySleep(MEASUREMENT_PERIOD);
-        peripheralEnable();
-        delay(50);
+            usart_print_string("dS,");
+            usart_print_int(windSpeed);
+            usart_print_string("\n\r");
+            cli();
+            windSpeed = 0;
+            sei();
+        }
 	}
 
 	return 0;
@@ -337,6 +362,7 @@ void peripheralSetup(void)
     adcSetup();
     dacSetup();
     i2c1Setup();
+	rtc_setup();
     extiSetup();
 }
 
@@ -344,7 +370,7 @@ void peripheralSetup(void)
 /* @brief Peripheral Disables.
 
 This turns off power to all peripherals to reduce power drain during sleep.
-Systick and EXTI need to remain on.
+RTC and EXTI need to remain on.
 */
 
 void peripheralDisable(void)
@@ -370,6 +396,7 @@ This turns on power to all peripherals needed.
 
 void peripheralEnable(void)
 {
+	rcc_clock_setup_in_hse_8mhz_out_72mhz();
     rcc_periph_clock_enable(RCC_AFIO);
     rcc_periph_clock_enable(RCC_GPIOA);
     rcc_periph_clock_enable(RCC_GPIOB);
@@ -473,6 +500,29 @@ void i2c1Setup(void)
 }
 
 /*--------------------------------------------------------------------------*/
+/* @brief RTC Setup.
+
+The RTC is woken up, cleared, set to use the external low frequency LSE clock
+(which must be provided on the board used) and set to prescale at 1Hz out.
+The LSE clock appears to be already running.
+*/
+
+void rtc_setup(void)
+{
+	/* Wake up and clear RTC registers using the LSE as clock. */
+	/* Set prescaler, using value for 1Hz out. */
+	rtc_auto_awake(RCC_LSE,0x7FFF);
+
+	/* Clear the RTC counter - some counts will occur before prescale is set. */
+	rtc_set_counter_val(0);
+
+	/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
+	nvic_enable_irq(NVIC_RTC_ALARM_IRQ);
+	EXTI_IMR |= EXTI17;
+	exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
+}
+
+/*--------------------------------------------------------------------------*/
 /* @brief EXTI Setup.
 
 This enables the external interrupts on bits 0, 2 and 3 of the ports.
@@ -534,6 +584,19 @@ void exti3_isr(void)
 {
 	gpio_toggle(GPIOB, GPIO12);      /* LED5 on/off. */
     exti_reset_request(EXTI3);
+}
+
+/*--------------------------------------------------------------------------*/
+/* EXT17/RTC Alarm ISR
+
+The RTC alarm appears as EXTI 17 which must be reset independently of the RTC
+alarm flag. Do not reset the latter here as it is needed to guide the main
+program to activate regular tasks.
+*/
+
+void rtc_alarm_isr(void)
+{
+	exti_reset_request(EXTI17);
 }
 
 /*--------------------------------------------------------------------------*/
