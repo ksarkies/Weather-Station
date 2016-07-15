@@ -83,39 +83,39 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 /* Global Variables */
 
 static uint32_t rainfall;               /* Counter of interrupts from sensor */
-static uint32_t wind_speed;              /* Counter of interrupts from sensor */
-static uint8_t charger_is_active;         /* Existing state of charger */
+static uint32_t windSpeed;              /* Counter of interrupts from sensor */
+static uint8_t chargerIsActive;         /* Existing state of charger */
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
-static void enable_radiance_measurement(void);
-static void disable_radiance_measurement(void);
-static void enable_charging(void);
-static void disable_charging(void);
-static uint8_t charger_active(void);
-static void peripheral_enable(void);
-static void peripheral_disable(void);
-static void peripheral_setup(void);
-static void hardware_setup(void);
+static void enableRadianceMeasurement(void);
+static void disableRadianceMeasurement(void);
+static void enableCharging(void);
+static void disableCharging(void);
+static uint8_t chargerActive(void);
+static void peripheralEnable(void);
+static void peripheralDisable(void);
+static void peripheralSetup(void);
+static void hardwareSetup(void);
 static void i2c1Setup(void);
-static void adc_setup(void);
-static void gpio_setup(void);
-static void dac_setup(void);
+static void adcSetup(void);
+static void gpioSetup(void);
+static void dacSetup(void);
 static void rtc_setup(void);
-static void exti_setup(void);
+static void extiSetup(void);
 
 /*--------------------------------------------------------------------------*/
 
 int main(void)
 {
-	hardware_setup();
-    charger_is_active = charger_active();
+	hardwareSetup();
+    chargerIsActive = chargerActive();
     uint8_t channel[1];                 /* Channel for A/D conversion */
-    uint16_t charge_limit = 0;           /* voltage limit for charging battery */
+    uint16_t chargeLimit = 0;           /* voltage limit for charging battery */
     uint8_t i=0;
-    DHT sensor_DHT = {DHT_PIN,DHT22,false};
-    init_DHT(&sensor_DHT);
+    DHT sensorDHT = {DHT_PIN,DHT22,false};
+    initDHT(&sensorDHT);
     usart_print_string("Weather Station\n\r");
 
     for (;;) {
@@ -128,7 +128,7 @@ int main(void)
 		}
     	rtc_set_alarm_time(MEASUREMENT_PERIOD);
 /* Turn off peripherals during stop mode (only ADC and DAC need to do this). */
-        peripheral_disable();
+        peripheralDisable();
 /* Set sleep mode and stop */
 		pwr_voltage_regulator_low_power_in_stop();
 /* Don't set complete power down (otherwise it goes to standby) */
@@ -141,7 +141,7 @@ int main(void)
 /* Repeat setup as clocks seem to have been reset. */
 
 /* Restore hardware clocks and any config that may have been lost */
-        peripheral_enable();
+        peripheralEnable();
 /* Wake up the RTC from the stop condition. */
 		rtc_auto_awake(RCC_LSE,0x7FFF);
 
@@ -156,59 +156,59 @@ Other interrupts will activate their ISR but are ignored and the processor
 will go back into stop mode. */
 
 /* Read and send Battery Voltage. */
-            uint16_t voltage_raw = 0;
+            uint16_t voltageRaw = 0;
             channel[0] = ADC_CHANNEL6;          /* channel 6 battery voltage */
 	        adc_set_regular_sequence(ADC1, 1, channel);
 /* Average over 16 readings */
             for (i=0; i<16; i++) {
                 adc_start_conversion_direct(ADC1);
                 while (! adc_eoc(ADC1));
-                voltage_raw += adc_read_regular(ADC1);
+                voltageRaw += adc_read_regular(ADC1);
                 delay(1);
             }
 /* Voltage times 256 for fixed point scaling, with sense resistor (x10)
 and amplification (x100) will give results in volts. */
-            uint32_t voltage = ((voltage_raw>>4)*256*V_AMP)/(1241*100);/* Volts */
+            uint32_t voltage = ((voltageRaw>>4)*256*V_AMP)/(1241*100);/* Volts */
             usart_print_string("dV,");
             usart_print_fixed_point(voltage);
             usart_print_string("\n\r");
 
 /* Read and send Battery Current. */
-            uint32_t current_raw = 0;
+            uint32_t currentRaw = 0;
             channel[0] = ADC_CHANNEL7;          /* channel 7 battery current */
 	        adc_set_regular_sequence(ADC1, 1, channel);
 /* Average over 16 readings */
             for (i=0; i<16; i++) {
                 adc_start_conversion_direct(ADC1);
                 while (! adc_eoc(ADC1));
-                current_raw += adc_read_regular(ADC1);
+                currentRaw += adc_read_regular(ADC1);
             }
-/* Current in m_a times 256 for fixed point scaling, with sense resistor (x10)
+/* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
 and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t current = 
-                    ((current_raw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* m_a */
+                    ((currentRaw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* mA */
             usart_print_string("dI,");
             usart_print_fixed_point(current);
             usart_print_string("\n\r");
 
 /* Battery Charge Limit Setting */
-            charge_limit = 4000;                 /* temporary for testing */
-            dac_load_data_buffer_single(charge_limit, RIGHT12, CHANNEL_2);
+            chargeLimit = 4000;                 /* temporary for testing */
+            dac_load_data_buffer_single(chargeLimit, RIGHT12, CHANNEL_2);
             dac_software_trigger(CHANNEL_2);
 
 /* Control Battery Charging.
 This cycles between the absorption voltage limit and the float voltage limit. */
             if (voltage > CHARGE_LIMIT) {
-                disable_charging();              /* Turn off battery charging */
+                disableCharging();              /* Turn off battery charging */
             }
             if (voltage < FLOAT_LIMIT) {
-                enable_charging();               /* Turn on battery charging */
+                enableCharging();               /* Turn on battery charging */
             }
 
 /* Read and send Temperature and Humidity from the DTH22. */
-            uint32_t temperature = read_temperature(&sensor_DHT, false);
-            uint32_t humidity = read_humidity(&sensor_DHT);
+            uint32_t temperature = readTemperature(&sensorDHT, false);
+            uint32_t humidity = readHumidity(&sensorDHT);
             usart_print_string("dT,");
             usart_print_fixed_point(temperature);
             usart_print_string("\n\r");
@@ -222,22 +222,22 @@ This cycles between the absorption voltage limit and the float voltage limit. */
             usart_print_string("\n\r");
 
 /* Read and send solar panel current. Use simple polling of the ADC. */
-            enable_radiance_measurement();
-            uint32_t radiance_raw = 0;
+            enableRadianceMeasurement();
+            uint32_t radianceRaw = 0;
             channel[0] = ADC_CHANNEL4;          /* channel 4 radiance */
 	        adc_set_regular_sequence(ADC1, 1, channel);
 /* Average over 16 readings */
             for (i=0; i<16; i++) {
                 adc_start_conversion_direct(ADC1);
                 while (! adc_eoc(ADC1));
-                radiance_raw += adc_read_regular(ADC1);
+                radianceRaw += adc_read_regular(ADC1);
             }
-            disable_radiance_measurement();       /* Puts charging back on */
-/* Current in m_a times 256 for fixed point scaling, with sense resistor (x10)
+            disableRadianceMeasurement();       /* Puts charging back on */
+/* Current in mA times 256 for fixed point scaling, with sense resistor (x10)
 and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t radiance =
-                    ((radiance_raw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* m_a */
+                    ((radianceRaw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* mA */
             usart_print_string("dL,");
             usart_print_fixed_point(radiance);
             usart_print_string("\n\r");
@@ -252,10 +252,10 @@ Note order of computations to avoid 32 bit overflow. */
 
 /* Send wind speed count. */
             usart_print_string("dS,");
-            usart_print_int(wind_speed);
+            usart_print_int(windSpeed);
             usart_print_string("\n\r");
             cli();
-            wind_speed = 0;
+            windSpeed = 0;
             sei();
         }
 	}
@@ -270,10 +270,10 @@ The measurement MOSFET must be turned on and the charging must be turned off.
 Delay for a while to allow settling of currents in the sense resistor.
 */
 
-void enable_radiance_measurement(void)
+void enableRadianceMeasurement(void)
 {
-    charger_is_active = charger_active();
-    disable_charging();                  /* turn off charger */
+    chargerIsActive = chargerActive();
+    disableCharging();                  /* turn off charger */
     gpio_set(GPIOB, GPIO2);             /* Turn on measurement switch */
     delay(RADIANCE_SETTLE_TIME);
 }
@@ -285,11 +285,11 @@ The measurement MOSFET must be turned off and the charging must be restored
 if it was in a charging state at the time of measurement.
 */
 
-void disable_radiance_measurement(void)
+void disableRadianceMeasurement(void)
 {
     gpio_clear(GPIOB, GPIO2);           /* Turn off measurement switch */
-    if (charger_is_active) enable_charging();
-    else disable_charging();
+    if (chargerIsActive) enableCharging();
+    else disableCharging();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -298,7 +298,7 @@ void disable_radiance_measurement(void)
 Output must be low to turn on the MOSFET.
 */
 
-void enable_charging(void)
+void enableCharging(void)
 {
     gpio_clear(GPIOB, GPIO5);
 }
@@ -309,7 +309,7 @@ void enable_charging(void)
 Output must be high to turn off the MOSFET.
 */
 
-void disable_charging(void)
+void disableCharging(void)
 {
     gpio_set(GPIOB, GPIO5);
 }
@@ -323,7 +323,7 @@ Delay for a while to allow settling of currents in the sense resistor.
 @returns uint8_t: true = charging active, false = charging inactive.
 */
 
-uint8_t charger_active(void)
+uint8_t chargerActive(void)
 {
     return (gpio_get(GPIOB, GPIO5) == 0);
 }
@@ -335,15 +335,15 @@ uint8_t charger_active(void)
 
 */
 
-void hardware_setup(void)
+void hardwareSetup(void)
 {
 /* Set the clock to 72MHz from the 8MHz external crystal */
 
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
 
-//    systick_setup(1);            // Set systick to interrupt after 1 millisecond.
-    systick_setup(1000);         // Set systick to interrupt after 1 second.
-    peripheral_setup();
+//    systickSetup(1);            // Set systick to interrupt after 1 millisecond.
+    systickSetup(1000);         // Set systick to interrupt after 1 second.
+    peripheralSetup();
     sei();
 }
 
@@ -354,16 +354,16 @@ This turns off power to all peripherals to reduce power drain during sleep.
 Systick and EXTI need to remain on.
 */
 
-void peripheral_setup(void)
+void peripheralSetup(void)
 {
-    gpio_setup();
+    gpioSetup();
     usart1Setup();
     timer2Setup(0xFFFF);
-    adc_setup();
-    dac_setup();
+    adcSetup();
+    dacSetup();
     i2c1Setup();
 	rtc_setup();
-    exti_setup();
+    extiSetup();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -373,7 +373,7 @@ This turns off power to all peripherals to reduce power drain during sleep.
 RTC and EXTI need to remain on.
 */
 
-void peripheral_disable(void)
+void peripheralDisable(void)
 {
     rcc_periph_clock_disable(RCC_AFIO);
     rcc_periph_clock_disable(RCC_GPIOA);
@@ -394,7 +394,7 @@ void peripheral_disable(void)
 This turns on power to all peripherals needed.
 */
 
-void peripheral_enable(void)
+void peripheralEnable(void)
 {
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
     rcc_periph_clock_enable(RCC_AFIO);
@@ -420,7 +420,7 @@ Sets the two MOSFET control outputs to low, which disables the measurement and
 enables the charging.
 */
 
-void gpio_setup(void)
+void gpioSetup(void)
 {
 /* Enable GPIOA, GPIOB and GPIOC clocks and alternate functions. */
     rcc_periph_clock_enable(RCC_GPIOA);
@@ -451,7 +451,7 @@ ADC1 is turned on and calibrated.
 
 #define ADC_INPUTS  (GPIO4 | GPIO6 | GPIO7)
 
-void adc_setup(void)
+void adcSetup(void)
 {
 /* Set ports on PA for ADC1 to analogue input. */
 	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, ADC_INPUTS);
@@ -468,7 +468,7 @@ void adc_setup(void)
 DAC channel 2 is setup on GPIO PA5.
 */
 
-void dac_setup(void)
+void dacSetup(void)
 {
 /* Set port PA5 for DAC1 to 'alternate function'. Output driver mode is ignored. */
 	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
@@ -531,7 +531,7 @@ This enables the external interrupts on bits 0, 2 and 3 of the ports.
 #define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
 #define PA_DIGITAL_INPUTS   (GPIO0 | GPIO2 | GPIO3)
 
-void exti_setup(void)
+void extiSetup(void)
 {
     gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
                   PA_DIGITAL_INPUTS);
@@ -570,7 +570,7 @@ Bit 2 of each port used as a pin interrupt. This is for wind speed.
 void exti2_isr(void)
 {
 	gpio_toggle(GPIOB, GPIO11);      /* LED4 on/off. */
-    wind_speed++;
+    windSpeed++;
     exti_reset_request(EXTI2);
 }
 

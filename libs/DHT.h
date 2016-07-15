@@ -51,18 +51,18 @@ typedef struct
 /* Sensor type */
     uint8_t type;
 /* Carry persistent variables in case it is used by more than one sensor */
-    bool firstReading;
-    unsigned long lastReadTime;
+    bool first_reading;
+    unsigned long last_read_time;
 /* integer/fraction humidity, integer/fraction temperature, checksum */
     uint8_t data[6];
 } DHT;
 
-bool readDHT(DHT *sensor);
-void initDHT(DHT *sensor);
-uint32_t readTemperature(DHT *sensor, bool S);
-uint32_t convertCtoF(uint32_t celsius);
-uint32_t readHumidity(DHT *sensor);
-bool readTemperatureHumidity(DHT *sensor, uint32_t *temperature,
+bool read_DHT(DHT *sensor);
+void init_DHT(DHT *sensor);
+uint32_t read_temperature(DHT *sensor, bool S);
+uint32_t convert_cto_f(uint32_t celsius);
+uint32_t read_humidity(DHT *sensor);
+bool read_temperature_humidity(DHT *sensor, uint32_t *temperature,
                               uint32_t *humidity, bool fahrenheit);
 
 #endif

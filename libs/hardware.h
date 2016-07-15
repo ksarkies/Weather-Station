@@ -29,20 +29,20 @@ with the port number in the next 4 bits (GPIOA = 0 etc). */
 #define DHT_PIN     1
 
 uint32_t elapsed();
-void pinMode(uint8_t pin, enum pinmodetype mode);
-void digitalWrite(uint8_t pin, uint8_t setting);
-uint8_t digitalRead(uint8_t pin);
+void pin_mode(uint8_t pin, enum pinmodetype mode);
+void digital_write(uint8_t pin, uint8_t setting);
+uint8_t digital_read(uint8_t pin);
 uint32_t millis();
-void delaySleep(uint32_t delayMs);
-void delay(uint32_t delaySec);
-void delayMicroseconds(uint16_t delayUs);
+void delay_sleep(uint32_t delay_ms);
+void delay(uint32_t delay_sec);
+void delay_microseconds(uint16_t delay_us);
 void cli(void);
 void sei(void);
 void usart_print_fixed_point(uint32_t value);
 void usart_print_int(int value);
 void usart_print_hex(uint16_t value);
 void usart_print_string(char *ch);
-void systickSetup(uint16_t period);
+void systick_setup(uint16_t period);
 void usart1Setup(void);
 void timer2Setup(uint32_t period);
 
