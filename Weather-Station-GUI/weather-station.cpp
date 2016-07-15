@@ -108,6 +108,8 @@ void WeatherStationGui::initMainWindow(Ui::WeatherStationMainDialog mainWindow)
     mainWindow.battery->setMinimum(0);
     mainWindow.battery->setMaximum(100);
     mainWindow.battery->setValue(0);
+
+    WeatherStationMainUi.batteryGroupBox->setVisible(false);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -225,17 +227,17 @@ alive. Also check for calibration as time messages stop during this process. */
     if ((size > 0) && (firstField == "dR"))
     {
         if (size > 1) WeatherStationMainUi.rainfall
-            ->setText(QString("%1").arg(secondField
-                .toFloat(),0,'f',1));
+            ->setText(QString("%1 mm").arg(secondField
+                .toFloat(),0,'f',0));
     }
 
-// TBD convert to suitable scaled value
-/* Solar Radiance */
+/* Solar Radiance. Current converted to a percentage of maximum current (330mA)
+for the Suntech STP005S12-5W */
     if ((size > 0) && (firstField == "dL"))
     {
         if (size > 1) WeatherStationMainUi.insolation
-            ->setText(QString("%1").arg(secondField
-                .toFloat(),0,'f',1));
+            ->setText(QString("%1%").arg(secondField
+                .toFloat()/3.3,0,'f',1));
     }
 
 // TBD convert to suitable scaled value
@@ -243,18 +245,30 @@ alive. Also check for calibration as time messages stop during this process. */
     if ((size > 0) && (firstField == "dP"))
     {
         if (size > 1) WeatherStationMainUi.airPressure
-            ->setText(QString("%1").arg(secondField
-                .toFloat(),0,'f',1));
+            ->setText(QString("%1 mbar").arg(secondField
+                .toFloat(),0,'f',0));
     }
 
 // TBD work at providing a better health measure
 /* Battery Health. For now use voltage as fixed point number to scale. */
     if ((size > 0) && (firstField == "dV"))
     {
-        int batteryHealth = (secondField.toFloat())*100/6.5;
+        float batteryVoltage = secondField.toFloat();
+        WeatherStationMainUi.voltage
+            ->setText(QString("%1 V").arg(secondField
+                .toFloat(),0,'f',2));
+        int batteryHealth = batteryVoltage*100/6.5;
         if (batteryHealth > 100) batteryHealth = 100;
         if (size > 1) WeatherStationMainUi.battery
             ->setValue(batteryHealth);
+    }
+
+/* Battery Current */
+    if ((size > 0) && (firstField == "dI"))
+    {
+        WeatherStationMainUi.current
+            ->setText(QString("%1 mA").arg(secondField
+                .toFloat(),0,'f',0));
     }
 
 /* This allows debug messages to be displayed on the terminal. */
@@ -263,6 +277,20 @@ alive. Also check for calibration as time messages stop during this process. */
         qDebug() << response;
         if (! saveFile.isEmpty()) saveLine(response);
     }
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief Show battery status.
+
+A group box is made visible to show the battery voltage and current.
+*/
+
+void WeatherStationGui::on_batteryPushButton_clicked()
+{
+    if (WeatherStationMainUi.batteryGroupBox->isVisible())
+        WeatherStationMainUi.batteryGroupBox->setVisible(false);
+    else
+        WeatherStationMainUi.batteryGroupBox->setVisible(true);
 }
 
 /*---------------------------------------------------------------------------*/

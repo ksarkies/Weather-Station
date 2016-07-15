@@ -13,11 +13,14 @@
   <property name="windowTitle">
    <string>Solar Power Management</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">background-color:white;</string>
+  </property>
   <widget class="QLabel" name="title">
    <property name="geometry">
     <rect>
-     <x>225</x>
-     <y>15</y>
+     <x>236</x>
+     <y>16</y>
      <width>231</width>
      <height>31</height>
     </rect>
@@ -48,8 +51,8 @@
   <widget class="QLabel" name="outsideTemperature">
    <property name="geometry">
     <rect>
-     <x>183</x>
-     <y>86</y>
+     <x>195</x>
+     <y>89</y>
      <width>95</width>
      <height>52</height>
     </rect>
@@ -58,6 +61,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightgreen;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -75,8 +81,8 @@
   <widget class="QLabel" name="outsideTemperatureLabel">
    <property name="geometry">
     <rect>
-     <x>160</x>
-     <y>140</y>
+     <x>172</x>
+     <y>143</y>
      <width>146</width>
      <height>17</height>
     </rect>
@@ -100,6 +106,9 @@
       <property name="toolTip">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;System configuration and advanced configuration choices for algorithms.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:black;color:white;</string>
+      </property>
       <property name="text">
        <string>Configure</string>
       </property>
@@ -109,6 +118,9 @@
      <widget class="QPushButton" name="recordingButton">
       <property name="toolTip">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open or close files on the BMS for recording history, and start and pause recording actions.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:black;color:white;</string>
       </property>
       <property name="text">
        <string>Record</string>
@@ -120,6 +132,9 @@
       <property name="toolTip">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save incoming data to a local file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:black;color:white;</string>
+      </property>
       <property name="text">
        <string>Open File</string>
       </property>
@@ -129,6 +144,9 @@
      <widget class="QPushButton" name="closeFileButton">
       <property name="toolTip">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save incoming data to a local file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:black;color:white;</string>
       </property>
       <property name="text">
        <string>Close File</string>
@@ -182,8 +200,8 @@
   <widget class="QLabel" name="insideTemperature">
    <property name="geometry">
     <rect>
-     <x>375</x>
-     <y>85</y>
+     <x>387</x>
+     <y>88</y>
      <width>95</width>
      <height>52</height>
     </rect>
@@ -192,6 +210,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightgreen;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -209,8 +230,8 @@
   <widget class="QLabel" name="insideTemperatureLabel">
    <property name="geometry">
     <rect>
-     <x>361</x>
-     <y>138</y>
+     <x>373</x>
+     <y>141</y>
      <width>136</width>
      <height>17</height>
     </rect>
@@ -222,8 +243,8 @@
   <widget class="QLabel" name="insideHumidity">
    <property name="geometry">
     <rect>
-     <x>374</x>
-     <y>177</y>
+     <x>386</x>
+     <y>180</y>
      <width>95</width>
      <height>52</height>
     </rect>
@@ -232,6 +253,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightgreen;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -249,8 +273,8 @@
   <widget class="QLabel" name="outsideHumidity">
    <property name="geometry">
     <rect>
-     <x>183</x>
-     <y>176</y>
+     <x>195</x>
+     <y>179</y>
      <width>95</width>
      <height>52</height>
     </rect>
@@ -259,6 +283,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightgreen;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -276,8 +303,8 @@
   <widget class="QLabel" name="outsideHumidityLabel">
    <property name="geometry">
     <rect>
-     <x>175</x>
-     <y>230</y>
+     <x>187</x>
+     <y>233</y>
      <width>121</width>
      <height>17</height>
     </rect>
@@ -289,8 +316,8 @@
   <widget class="QLabel" name="insideHumidityLabel">
    <property name="geometry">
     <rect>
-     <x>370</x>
-     <y>235</y>
+     <x>382</x>
+     <y>238</y>
      <width>111</width>
      <height>17</height>
     </rect>
@@ -302,7 +329,7 @@
   <widget class="QLabel" name="windSpeed">
    <property name="geometry">
     <rect>
-     <x>288</x>
+     <x>294</x>
      <y>372</y>
      <width>95</width>
      <height>41</height>
@@ -312,6 +339,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightpink;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -329,7 +359,7 @@
   <widget class="QLabel" name="windSpeedLabel">
    <property name="geometry">
     <rect>
-     <x>292</x>
+     <x>296</x>
      <y>420</y>
      <width>86</width>
      <height>17</height>
@@ -342,9 +372,9 @@
   <widget class="QLabel" name="insolation">
    <property name="geometry">
     <rect>
-     <x>465</x>
-     <y>455</y>
-     <width>95</width>
+     <x>458</x>
+     <y>456</y>
+     <width>113</width>
      <height>52</height>
     </rect>
    </property>
@@ -352,6 +382,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightblue;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -369,8 +402,8 @@
   <widget class="QLabel" name="rainfallLabel">
    <property name="geometry">
     <rect>
-     <x>126</x>
-     <y>513</y>
+     <x>136</x>
+     <y>512</y>
      <width>56</width>
      <height>17</height>
     </rect>
@@ -382,9 +415,9 @@
   <widget class="QLabel" name="rainfall">
    <property name="geometry">
     <rect>
-     <x>105</x>
-     <y>457</y>
-     <width>95</width>
+     <x>104</x>
+     <y>454</y>
+     <width>113</width>
      <height>52</height>
     </rect>
    </property>
@@ -392,6 +425,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightblue;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -409,7 +445,7 @@
   <widget class="QLabel" name="insolationLabel">
    <property name="geometry">
     <rect>
-     <x>475</x>
+     <x>480</x>
      <y>510</y>
      <width>71</width>
      <height>17</height>
@@ -422,9 +458,9 @@
   <widget class="QLabel" name="airPressure">
    <property name="geometry">
     <rect>
-     <x>290</x>
-     <y>455</y>
-     <width>95</width>
+     <x>272</x>
+     <y>454</y>
+     <width>137</width>
      <height>52</height>
     </rect>
    </property>
@@ -432,6 +468,9 @@
     <font>
      <pointsize>18</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightblue;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -470,6 +509,134 @@
    </property>
    <property name="value">
     <number>24</number>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="batteryGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>524</x>
+     <y>82</y>
+     <width>120</width>
+     <height>167</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="title">
+    <string>Battery Health</string>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+   <widget class="QLabel" name="voltage">
+    <property name="geometry">
+     <rect>
+      <x>6</x>
+      <y>28</y>
+      <width>95</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:lightpink;</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="current">
+    <property name="geometry">
+     <rect>
+      <x>8</x>
+      <y>92</y>
+      <width>95</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:lightpink;</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="currentLabel">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>134</y>
+      <width>59</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Charge
+Current</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignJustify|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="voltageLabel">
+    <property name="geometry">
+     <rect>
+      <x>24</x>
+      <y>70</y>
+      <width>64</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Voltage</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="batteryPushButton">
+   <property name="geometry">
+    <rect>
+     <x>404</x>
+     <y>52</y>
+     <width>16</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click to show battery status</string>
+   </property>
+   <property name="text">
+    <string/>
    </property>
   </widget>
  </widget>
