@@ -46,6 +46,14 @@ void usart_print_string(char *ch);
 void systick_setup(uint16_t period);
 void usart1_setup(void);
 void timer2_setup(uint32_t period);
+void peripheral_enable(void);
+void peripheral_disable(void);
+void i2c1Setup(void);
+void adc_setup(void);
+void gpio_setup(void);
+void dac_setup(void);
+void rtc_setup(void);
+void exti_setup(void);
 
 #endif
 

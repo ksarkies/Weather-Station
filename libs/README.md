@@ -11,7 +11,11 @@ The following libraries are provided:
 2. Buffer library to manage FIFO buffering for communications.
 
 3. Hardware library to emulate Arduino calls and other necessary features such
-   as initialization and ISR.
+   as peripheral initialization and timer ISRs.
+
+4. I2C library.
+
+5. BaroSensor library to handle the I2C barometric pressure sensor.
 
 (c) K. Sarkies 26/05/2016
 

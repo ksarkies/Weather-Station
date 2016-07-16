@@ -27,10 +27,14 @@ K. Sarkies, 10 May 2016
 #include <stdint.h>
 
 #include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/stm32/adc.h>
+#include <libopencm3/stm32/dac.h>
 #include <libopencm3/stm32/i2c.h>
+#include <libopencm3/stm32/exti.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
@@ -481,7 +485,201 @@ void timer2_setup(uint32_t period)
 }
 
 /*--------------------------------------------------------------------------*/
+/* @brief Peripheral Disables.
+
+This turns off power to all peripherals to reduce power drain during sleep.
+RTC and EXTI need to remain on.
+*/
+
+void peripheral_disable(void)
+{
+    rcc_periph_clock_disable(RCC_AFIO);
+    rcc_periph_clock_disable(RCC_GPIOA);
+    rcc_periph_clock_disable(RCC_GPIOB);
+    rcc_periph_clock_disable(RCC_GPIOC);
+    rcc_periph_clock_disable(RCC_ADC1);
+	rcc_periph_clock_disable(RCC_DAC);
+	rcc_periph_clock_disable(RCC_I2C1);
+    rcc_periph_clock_disable(RCC_USART1);
+	rcc_periph_clock_disable(RCC_TIM2);
+    adc_power_off(ADC1);
+    dac_disable(CHANNEL_D);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Peripheral Enables.
+
+This turns on power to all peripherals needed.
+*/
+
+void peripheral_enable(void)
+{
+	rcc_clock_setup_in_hse_8mhz_out_72mhz();
+    rcc_periph_clock_enable(RCC_AFIO);
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
+    rcc_periph_clock_enable(RCC_ADC1);
+	rcc_periph_clock_enable(RCC_DAC);
+	rcc_periph_clock_enable(RCC_I2C1);
+    rcc_periph_clock_enable(RCC_USART1);
+	rcc_periph_clock_enable(RCC_TIM2);
+    adc_power_on(ADC1);
+    dac_enable(CHANNEL_2);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief GPIO Setup.
+
+This sets the clocks for the GPIO and AFIO ports, and sets the LEDs on
+PB8 - PB15 to output and cleared.
+
+Sets the two MOSFET control outputs to low, which disables the measurement and
+enables the charging.
+*/
+
+void gpio_setup(void)
+{
+/* Enable GPIOA, GPIOB and GPIOC clocks and alternate functions. */
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
+    rcc_periph_clock_enable(RCC_AFIO);
+
+/* Set GPIO8-15 (in GPIO port B) to 'output push-pull' for the LEDs. */
+/*    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8 | GPIO9 | GPIO10 | GPIO11 |
+              GPIO12 | GPIO13 | GPIO14 | GPIO15); */
+/* All LEDS off */
+/*    gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
+               GPIO14 | GPIO15); */
+
+/* Set GPIO2, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO2 | GPIO5);
+/* All MOSFET controls off. */
+    gpio_clear(GPIOB, GPIO2 | GPIO5);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief ADC Setup.
+
+ADC1 is turned on and calibrated.
+*/
+
+#define ADC_INPUTS  (GPIO4 | GPIO6 | GPIO7)
+
+void adc_setup(void)
+{
+/* Set ports on PA for ADC1 to analogue input. */
+	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, ADC_INPUTS);
+/* Enable the ADC1 clock on APB2 */
+    rcc_periph_clock_enable(RCC_ADC1);
+/* Setup the ADC */
+    adc_power_on(ADC1);
+    adc_calibration(ADC1);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Setup DAC
+
+DAC channel 2 is setup on GPIO PA5.
+*/
+
+void dac_setup(void)
+{
+/* Set port PA5 for DAC1 to 'alternate function'. Output driver mode is ignored. */
+	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
+		          GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5);
+/* Enable the DAC clock on APB1 */
+	rcc_periph_clock_enable(RCC_DAC);
+/* Setup the DAC, software trigger source. Assume the DAC has
+woken up by the time the first interrupt occurs */
+	dac_enable(CHANNEL_2);
+	dac_trigger_enable(CHANNEL_2);
+	dac_set_trigger_source(DAC_CR_TSEL1_SW);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Setup I2C1
+
+The clocks and GPIO settings are established.
+*/
+
+void i2c1Setup(void)
+{
+/* Enable clocks for I2C1 and AFIO. */
+	rcc_periph_clock_enable(RCC_I2C1);
+	rcc_periph_clock_enable(RCC_AFIO);
+/* Set alternate functions for the SCL and SDA pins of I2C1. */
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
+		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
+		      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief RTC Setup.
+
+The RTC is woken up, cleared, set to use the external low frequency LSE clock
+(which must be provided on the board used) and set to prescale at 1Hz out.
+The LSE clock appears to be already running.
+*/
+
+void rtc_setup(void)
+{
+	/* Wake up and clear RTC registers using the LSE as clock. */
+	/* Set prescaler, using value for 1Hz out. */
+	rtc_auto_awake(RCC_LSE,0x7FFF);
+
+	/* Clear the RTC counter - some counts will occur before prescale is set. */
+	rtc_set_counter_val(0);
+
+	/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
+	nvic_enable_irq(NVIC_RTC_ALARM_IRQ);
+	EXTI_IMR |= EXTI17;
+	exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief EXTI Setup.
+
+This enables the external interrupts on bits 0, 2 and 3 of the ports.
+*/
+
+#define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
+#define PA_DIGITAL_INPUTS   (GPIO0 | GPIO2 | GPIO3)
+
+void exti_setup(void)
+{
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
+                  PA_DIGITAL_INPUTS);
+    gpio_set(GPIOA,PA_DIGITAL_INPUTS);      // Pull up
+    exti_select_source(EXTI0, GPIOA);
+    exti_select_source(EXTI2, GPIOA);
+    exti_select_source(EXTI3, GPIOA);
+    exti_set_trigger(EXTI_ENABLES, EXTI_TRIGGER_RISING);
+    nvic_enable_irq(NVIC_EXTI0_IRQ);
+    nvic_enable_irq(NVIC_EXTI2_IRQ);
+    nvic_enable_irq(NVIC_EXTI3_IRQ);
+    exti_enable_request(EXTI_ENABLES);
+}
+
+/*--------------------------------------------------------------------------*/
 /* Interrupt Service Routines */
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+/* EXT17/RTC Alarm ISR
+
+The RTC alarm appears as EXTI 17 which must be reset independently of the RTC
+alarm flag. Do not reset the latter here as it is needed to guide the main
+program to activate regular tasks.
+*/
+
+void rtc_alarm_isr(void)
+{
+	exti_reset_request(EXTI17);
+}
+
 /*--------------------------------------------------------------------------*/
 /** @Brief Systick Interrupt Handler
 

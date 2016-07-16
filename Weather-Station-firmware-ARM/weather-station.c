@@ -94,16 +94,7 @@ static void disable_radiance_measurement(void);
 static void enable_charging(void);
 static void disable_charging(void);
 static uint8_t charger_active(void);
-static void peripheral_enable(void);
-static void peripheral_disable(void);
-static void peripheral_setup(void);
 static void hardware_setup(void);
-static void i2c1Setup(void);
-static void adc_setup(void);
-static void gpio_setup(void);
-static void dac_setup(void);
-static void rtc_setup(void);
-static void exti_setup(void);
 
 /*--------------------------------------------------------------------------*/
 
@@ -120,7 +111,7 @@ int main(void)
 
     for (;;) {
 /* Snooze for a while in low power stop mode. */
-/* Wait for USART and any other outstanding operations to finish. */
+/* Wait a bit for USART and any other outstanding operations to finish. */
         while (! usart_get_flag(USART1, USART_SR_TC));
 		uint32_t cnt;
 		for (cnt=0; cnt < 40000; cnt++) {
@@ -150,7 +141,6 @@ and clear the alarm flag. */
 		if (rtc_check_flag(RTC_ALR)) {
 			rtc_clear_flag(RTC_ALR);
 			rtc_set_counter_val(0);
-			timer2_setup(0xFFFF);
 
 /* These tasks are now performed whenever the RTC alarm wakes the processor.
 Other interrupts will activate their ISR but are ignored and the processor
@@ -207,8 +197,9 @@ This cycles between the absorption voltage limit and the float voltage limit. */
                 enable_charging();               /* Turn on battery charging */
             }
 
-/* Read and send Temperature and Humidity from the DTH22. */
+/* Offset for time that systick was asleep */
 			millis_offset(MEASUREMENT_PERIOD * 1000);
+/* Read and send Temperature and Humidity from the DTH22. */
             uint32_t temperature = read_temperature(&sensor_DHT, false);
             uint32_t humidity = read_humidity(&sensor_DHT);
             usart_print_string("dT,");
@@ -263,6 +254,28 @@ Note order of computations to avoid 32 bit overflow. */
 	}
 
 	return 0;
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Hardware Setup.
+
+*/
+
+void hardware_setup(void)
+{
+/* Set the clock to 72MHz from the 8MHz external crystal */
+	rcc_clock_setup_in_hse_8mhz_out_72mhz();
+
+    systick_setup(1000);         // Set systick to interrupt after 1 second.
+    gpio_setup();
+    usart1_setup();
+    timer2_setup(0xFFFF);
+    adc_setup();
+    dac_setup();
+    i2c1Setup();
+	rtc_setup();
+    exti_setup();
+    sei();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -331,224 +344,6 @@ uint8_t charger_active(void)
 }
 
 /*--------------------------------------------------------------------------*/
-/* @brief      Hardware specific settings  */
-/*--------------------------------------------------------------------------*/
-/* @brief Hardware Setup.
-
-*/
-
-void hardware_setup(void)
-{
-/* Set the clock to 72MHz from the 8MHz external crystal */
-
-	rcc_clock_setup_in_hse_8mhz_out_72mhz();
-
-//    systick_setup(1);            // Set systick to interrupt after 1 millisecond.
-    systick_setup(1000);         // Set systick to interrupt after 1 second.
-    peripheral_setup();
-    sei();
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Peripheral Disables.
-
-This turns off power to all peripherals to reduce power drain during sleep.
-Systick and EXTI need to remain on.
-*/
-
-void peripheral_setup(void)
-{
-    gpio_setup();
-    usart1_setup();
-    timer2_setup(0xFFFF);
-    adc_setup();
-    dac_setup();
-    i2c1Setup();
-	rtc_setup();
-    exti_setup();
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Peripheral Disables.
-
-This turns off power to all peripherals to reduce power drain during sleep.
-RTC and EXTI need to remain on.
-*/
-
-void peripheral_disable(void)
-{
-    rcc_periph_clock_disable(RCC_AFIO);
-    rcc_periph_clock_disable(RCC_GPIOA);
-    rcc_periph_clock_disable(RCC_GPIOB);
-    rcc_periph_clock_disable(RCC_GPIOC);
-    rcc_periph_clock_disable(RCC_ADC1);
-	rcc_periph_clock_disable(RCC_DAC);
-	rcc_periph_clock_disable(RCC_I2C1);
-    rcc_periph_clock_disable(RCC_USART1);
-	rcc_periph_clock_disable(RCC_TIM2);
-    adc_power_off(ADC1);
-    dac_disable(CHANNEL_D);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Peripheral Enables.
-
-This turns on power to all peripherals needed.
-*/
-
-void peripheral_enable(void)
-{
-	rcc_clock_setup_in_hse_8mhz_out_72mhz();
-    rcc_periph_clock_enable(RCC_AFIO);
-    rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_GPIOB);
-    rcc_periph_clock_enable(RCC_GPIOC);
-    rcc_periph_clock_enable(RCC_ADC1);
-	rcc_periph_clock_enable(RCC_DAC);
-	rcc_periph_clock_enable(RCC_I2C1);
-    rcc_periph_clock_enable(RCC_USART1);
-	rcc_periph_clock_enable(RCC_TIM2);
-    adc_power_on(ADC1);
-    dac_enable(CHANNEL_2);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief GPIO Setup.
-
-This sets the clocks for the GPIO and AFIO ports, and sets the LEDs on
-PB8 - PB15 to output and cleared.
-
-Sets the two MOSFET control outputs to low, which disables the measurement and
-enables the charging.
-*/
-
-void gpio_setup(void)
-{
-/* Enable GPIOA, GPIOB and GPIOC clocks and alternate functions. */
-    rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_GPIOB);
-    rcc_periph_clock_enable(RCC_GPIOC);
-    rcc_periph_clock_enable(RCC_AFIO);
-
-/* Set GPIO8-15 (in GPIO port B) to 'output push-pull' for the LEDs. */
-/*    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8 | GPIO9 | GPIO10 | GPIO11 |
-              GPIO12 | GPIO13 | GPIO14 | GPIO15); */
-/* All LEDS off */
-/*    gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
-               GPIO14 | GPIO15); */
-
-/* Set GPIO2, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
-    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO2 | GPIO5);
-/* All MOSFET controls off. */
-    gpio_clear(GPIOB, GPIO2 | GPIO5);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief ADC Setup.
-
-ADC1 is turned on and calibrated.
-*/
-
-#define ADC_INPUTS  (GPIO4 | GPIO6 | GPIO7)
-
-void adc_setup(void)
-{
-/* Set ports on PA for ADC1 to analogue input. */
-	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, ADC_INPUTS);
-/* Enable the ADC1 clock on APB2 */
-    rcc_periph_clock_enable(RCC_ADC1);
-/* Setup the ADC */
-    adc_power_on(ADC1);
-    adc_calibration(ADC1);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Setup DAC
-
-DAC channel 2 is setup on GPIO PA5.
-*/
-
-void dac_setup(void)
-{
-/* Set port PA5 for DAC1 to 'alternate function'. Output driver mode is ignored. */
-	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-		          GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5);
-/* Enable the DAC clock on APB1 */
-	rcc_periph_clock_enable(RCC_DAC);
-/* Setup the DAC, software trigger source. Assume the DAC has
-woken up by the time the first interrupt occurs */
-	dac_enable(CHANNEL_2);
-	dac_trigger_enable(CHANNEL_2);
-	dac_set_trigger_source(DAC_CR_TSEL1_SW);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Setup I2C1
-
-The clocks and GPIO settings are established.
-*/
-
-void i2c1Setup(void)
-{
-/* Enable clocks for I2C1 and AFIO. */
-	rcc_periph_clock_enable(RCC_I2C1);
-	rcc_periph_clock_enable(RCC_AFIO);
-/* Set alternate functions for the SCL and SDA pins of I2C1. */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
-		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-		      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief RTC Setup.
-
-The RTC is woken up, cleared, set to use the external low frequency LSE clock
-(which must be provided on the board used) and set to prescale at 1Hz out.
-The LSE clock appears to be already running.
-*/
-
-void rtc_setup(void)
-{
-	/* Wake up and clear RTC registers using the LSE as clock. */
-	/* Set prescaler, using value for 1Hz out. */
-	rtc_auto_awake(RCC_LSE,0x7FFF);
-
-	/* Clear the RTC counter - some counts will occur before prescale is set. */
-	rtc_set_counter_val(0);
-
-	/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
-	nvic_enable_irq(NVIC_RTC_ALARM_IRQ);
-	EXTI_IMR |= EXTI17;
-	exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief EXTI Setup.
-
-This enables the external interrupts on bits 0, 2 and 3 of the ports.
-*/
-
-#define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
-#define PA_DIGITAL_INPUTS   (GPIO0 | GPIO2 | GPIO3)
-
-void exti_setup(void)
-{
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
-                  PA_DIGITAL_INPUTS);
-    gpio_set(GPIOA,PA_DIGITAL_INPUTS);      // Pull up
-    exti_select_source(EXTI0, GPIOA);
-    exti_select_source(EXTI2, GPIOA);
-    exti_select_source(EXTI3, GPIOA);
-    exti_set_trigger(EXTI_ENABLES, EXTI_TRIGGER_RISING);
-    nvic_enable_irq(NVIC_EXTI0_IRQ);
-    nvic_enable_irq(NVIC_EXTI2_IRQ);
-    nvic_enable_irq(NVIC_EXTI3_IRQ);
-    exti_enable_request(EXTI_ENABLES);
-}
-
-/*--------------------------------------------------------------------------*/
 /* Interrupt Service Routines */
 /*--------------------------------------------------------------------------*/
 /* EXT0
@@ -586,19 +381,6 @@ void exti3_isr(void)
 {
 	gpio_toggle(GPIOB, GPIO12);      /* LED5 on/off. */
     exti_reset_request(EXTI3);
-}
-
-/*--------------------------------------------------------------------------*/
-/* EXT17/RTC Alarm ISR
-
-The RTC alarm appears as EXTI 17 which must be reset independently of the RTC
-alarm flag. Do not reset the latter here as it is needed to guide the main
-program to activate regular tasks.
-*/
-
-void rtc_alarm_isr(void)
-{
-	exti_reset_request(EXTI17);
 }
 
 /*--------------------------------------------------------------------------*/
