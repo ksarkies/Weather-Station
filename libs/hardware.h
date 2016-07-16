@@ -32,6 +32,7 @@ uint32_t elapsed();
 void pin_mode(uint8_t pin, enum pinmodetype mode);
 void digital_write(uint8_t pin, uint8_t setting);
 uint8_t digital_read(uint8_t pin);
+void millis_offset(uint32_t offset);
 uint32_t millis();
 void delay_sleep(uint32_t delay_ms);
 void delay(uint32_t delay_sec);
@@ -43,8 +44,8 @@ void usart_print_int(int value);
 void usart_print_hex(uint16_t value);
 void usart_print_string(char *ch);
 void systick_setup(uint16_t period);
-void usart1Setup(void);
-void timer2Setup(uint32_t period);
+void usart1_setup(void);
+void timer2_setup(uint32_t period);
 
 #endif
 

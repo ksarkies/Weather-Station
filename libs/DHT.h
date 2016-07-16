@@ -60,7 +60,7 @@ typedef struct
 bool read_DHT(DHT *sensor);
 void init_DHT(DHT *sensor);
 uint32_t read_temperature(DHT *sensor, bool S);
-uint32_t convert_cto_f(uint32_t celsius);
+uint32_t convert_c_to_f(uint32_t celsius);
 uint32_t read_humidity(DHT *sensor);
 bool read_temperature_humidity(DHT *sensor, uint32_t *temperature,
                               uint32_t *humidity, bool fahrenheit);

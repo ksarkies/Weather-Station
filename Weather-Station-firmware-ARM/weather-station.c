@@ -150,6 +150,7 @@ and clear the alarm flag. */
 		if (rtc_check_flag(RTC_ALR)) {
 			rtc_clear_flag(RTC_ALR);
 			rtc_set_counter_val(0);
+			timer2_setup(0xFFFF);
 
 /* These tasks are now performed whenever the RTC alarm wakes the processor.
 Other interrupts will activate their ISR but are ignored and the processor
@@ -207,6 +208,7 @@ This cycles between the absorption voltage limit and the float voltage limit. */
             }
 
 /* Read and send Temperature and Humidity from the DTH22. */
+			millis_offset(MEASUREMENT_PERIOD * 1000);
             uint32_t temperature = read_temperature(&sensor_DHT, false);
             uint32_t humidity = read_humidity(&sensor_DHT);
             usart_print_string("dT,");
@@ -357,8 +359,8 @@ Systick and EXTI need to remain on.
 void peripheral_setup(void)
 {
     gpio_setup();
-    usart1Setup();
-    timer2Setup(0xFFFF);
+    usart1_setup();
+    timer2_setup(0xFFFF);
     adc_setup();
     dac_setup();
     i2c1Setup();

@@ -159,6 +159,20 @@ void sei(void)
 }
 
 /*--------------------------------------------------------------------------*/
+/*      Millisecond System Time Offset
+
+The milliseconds timer is incremented by a fixed amount. This is useful if the
+systick timer stops running for a period, such as during sleep.
+
+@param[in] uint32_t. Time offset in milliseconds.
+*/
+
+void millis_offset(uint32_t offset)
+{
+	last_reload_value += offset * MS_COUNT;
+}
+
+/*--------------------------------------------------------------------------*/
 /*      Millisecond System Time
 
 The systick time is updated only at the end of a systick timer countdown to 0.
@@ -373,7 +387,7 @@ void usart_print_string(char *ch)
 /*--------------------------------------------------------------------------*/
 /** @brief Initialise Systick
 
-Setup Sys_tick Timer for interrupts, enable clock and Systick-Interrupt.
+Setup Systick Timer for interrupts, enable clock and Systick-Interrupt.
 Timing is defined for a 72MHz system clock.
 
 The AHB clock can be divided by 8 to give a 9MHz clock. The period can be up
@@ -392,7 +406,7 @@ void systick_setup(uint16_t period)
 /* 72MHz / 8 => 9,000,000 counts per second */
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
 /* 9000000/9000 = 1000 overflows per second - every period ms one interrupt */
-/* Sys_tick interrupt every N clock pulses: set reload to N-1 */
+/* Systick interrupt every N clock pulses: set reload to N-1 */
     systick_set_reload(MS_COUNT*(uint32_t)period - 1);
     systick_interrupt_enable();
 /* Start counting. */
@@ -407,7 +421,7 @@ void systick_setup(uint16_t period)
 USART 1 is configured for 38400 baud, no flow control and interrupt.
 */
 
-void usart1Setup(void)
+void usart1_setup(void)
 {
 /* Enable clocks for GPIO port A (for GPIO_USART1_TX) and USART1. */
     rcc_periph_clock_enable(RCC_GPIOA);
@@ -446,7 +460,7 @@ For longer periods use the systick counter.
 @param[in] period: uint32_t tick period in 1 microsecond cycles.
 */
 
-void timer2Setup(uint32_t period)
+void timer2_setup(uint32_t period)
 {
 	rcc_periph_clock_enable(RCC_TIM2);
 	nvic_enable_irq(NVIC_TIM2_IRQ);
@@ -480,7 +494,7 @@ Globals: systick_time: running count of milliseconds from an arbitrary time.
          last_reload_value: reload value used for the countdown just finished.
 */
 
-void sys_tick_handler(void)
+void systick_handler(void)
 {
 //    systick_time++;
     systick_time += last_reload_value/MS_COUNT;

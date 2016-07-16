@@ -98,7 +98,7 @@ uint32_t read_temperature(DHT *sensor, bool fahrenheit)
         case DHT11:
             temperature = sensor->data[2];
             if (fahrenheit)
-                temperature = convert_cto_f(temperature);
+                temperature = convert_c_to_f(temperature);
             return temperature;
         case DHT22:
         case DHT21:
@@ -108,7 +108,7 @@ uint32_t read_temperature(DHT *sensor, bool fahrenheit)
             if (sensor->data[2] & 0x80)
     	        temperature = -temperature;
             if (fahrenheit)
-    	        temperature = convert_cto_f(temperature);
+    	        temperature = convert_c_to_f(temperature);
             return temperature;
         }
     }
@@ -122,7 +122,7 @@ uint32_t read_temperature(DHT *sensor, bool fahrenheit)
 @returns uint32_t: Fahrenheit temperature.
 */
 
-uint32_t convert_cto_f(uint32_t celsius)
+uint32_t convert_c_to_f(uint32_t celsius)
 {
 	return 9*celsius/5 + 32*256;
 }
@@ -151,7 +151,7 @@ bool read_temperature_humidity(DHT *sensor, uint32_t *temperature,
             *humidity = sensor->data[0];
             *temperature = sensor->data[2];
             if (fahrenheit)
-                *temperature = convert_cto_f(*temperature);
+                *temperature = convert_c_to_f(*temperature);
             return true;
         case DHT22:
         case DHT21:
@@ -164,7 +164,7 @@ bool read_temperature_humidity(DHT *sensor, uint32_t *temperature,
             if (sensor->data[2] & 0x80)
     	        *temperature = -*temperature;
             if (fahrenheit)
-    	        *temperature = convert_cto_f(*temperature);
+    	        *temperature = convert_c_to_f(*temperature);
             return true;
         }
     }
