@@ -200,8 +200,19 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 /* Offset for time that systick was asleep */
 			millis_offset(MEASUREMENT_PERIOD * 1000);
 /* Read and send Temperature and Humidity from the DTH22. */
-            uint32_t temperature = read_temperature(&sensor_DHT, false);
-            uint32_t humidity = read_humidity(&sensor_DHT);
+            uint32_t temperature;
+            uint32_t humidity;
+			bool error = ! read_temperature_humidity(&sensor_DHT, &temperature,
+												   &humidity, false);
+			if (error)
+			{
+	            usart_print_string("D");
+	            for (i=0; i<5; i++) {
+			        usart_print_string(",");
+			        usart_print_int(sensor_DHT.data[i]);
+				}
+	            usart_print_string("\n\r");
+			}
             usart_print_string("dT,");
             usart_print_fixed_point(temperature);
             usart_print_string("\n\r");

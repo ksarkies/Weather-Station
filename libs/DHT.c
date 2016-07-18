@@ -78,44 +78,6 @@ void init_DHT(DHT *sensor)
 }
 
 /*--------------------------------------------------------------------------*/
-/* @brief Read the Temperature from the sensor
-
-Temperature comes as (data[2]*256+data[3])/10 celcius. Expressed as fixed point.
-
-@param[in] *sensor: DHT for the sensor used.
-@param[in] boolean fahrenheit: Scale, True = Farenheit; False = Celcius
-@returns uint32_t: temperature. Na_n if an error occurred.
-*/
-
-uint32_t read_temperature(DHT *sensor, bool fahrenheit)
-{
-    uint32_t temperature;
-
-    if (read_DHT(sensor))
-    {
-        switch (sensor->type)
-        {
-        case DHT11:
-            temperature = sensor->data[2];
-            if (fahrenheit)
-                temperature = convert_c_to_f(temperature);
-            return temperature;
-        case DHT22:
-        case DHT21:
-            temperature = (sensor->data[2] & 0x7F) << 16;
-            temperature += (sensor->data[3] << 8);
-            temperature /= 10;
-            if (sensor->data[2] & 0x80)
-    	        temperature = -temperature;
-            if (fahrenheit)
-    	        temperature = convert_c_to_f(temperature);
-            return temperature;
-        }
-    }
-    return NAN;
-}
-
-/*--------------------------------------------------------------------------*/
 /* @brief Conversion Celsius to Fahrenheit
 
 @param[in] uint32_t c: Celcius temperature
@@ -128,7 +90,7 @@ uint32_t convert_c_to_f(uint32_t celsius)
 }
 
 /*--------------------------------------------------------------------------*/
-/* @brief Read humidity from the sensor
+/* @brief Read humidity and temperature together from the sensor
 
 Humidity comes as (data[0]*256+data[1])/10 percent. Expressed as fixed point.
 Temperature comes as (data[2]*256+data[3])/10 celcius. Expressed as fixed point.
@@ -169,36 +131,6 @@ bool read_temperature_humidity(DHT *sensor, uint32_t *temperature,
         }
     }
     return false;
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Read humidity and temperature together from the sensor
-
-Humidity comes as (data[0]*256+data[1])/10 percent. Expressed as fixed point.
-
-@param[in] *sensor: DHT for the sensor used.
-@returns uint32_t: Humidity 0 to 100. Na_n if an error occurred.
-*/
-
-uint32_t read_humidity(DHT *sensor)
-{
-    uint32_t humidity;
-    if (read_DHT(sensor))
-    {
-        switch (sensor->type)
-        {
-        case DHT11:
-            humidity = sensor->data[0];
-            return humidity;
-        case DHT22:
-        case DHT21:
-            humidity = (sensor->data[0]) << 16;
-            humidity += (sensor->data[1]) << 8;
-            humidity /= 10;
-            return humidity;
-        }
-    }
-    return NAN;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -245,7 +177,10 @@ previously stored value. */
     delay(250);
 
 // data array: integer/fraction humidity, integer/fraction temperature, checksum
-    sensor->data[0] = sensor->data[1] = sensor->data[2] = sensor->data[3] = sensor->data[4] = 0;
+    for ( i=0; i< 5; i++)
+	{
+	    sensor->data[i] = 0;
+	}
   
 /* Now pull it low for ~20 milliseconds, then set it high again.
 (the specification only requires 1ms minimum time).
@@ -255,7 +190,7 @@ This initiates a reading. */
     cli();                  // Prevent any interrupt interfering with timing.
     digital_write(sensor->pin, HIGH);
 
-// Determine lowest space period as sometimes it exceeds the long mark period
+// Determine shortest space period as sometimes it exceeds the long mark period
 // at the beginning of a byte (seems to be just before checksum is issued).
     uint16_t minlowcounter = 255;
 // Wait for first space period in sync phase to be established
@@ -303,8 +238,9 @@ This initiates a reading. */
     sei();
   
 // check we read 40 bits and that the checksum matches
-    if ((j >= 40) && (sensor->data[4] == ((sensor->data[0] + sensor->data[1]
-                                         + sensor->data[2] + sensor->data[3]) & 0xFF)))
+    if ((j >= 40) && 
+		(sensor->data[4] == ((sensor->data[0] + sensor->data[1]
+                            + sensor->data[2] + sensor->data[3]) & 0xFF)))
         return true;
 
     return false;
