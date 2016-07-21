@@ -80,7 +80,7 @@ private:
     bool synchronized;
     QString errorMessage;
     QString response;
-    QSerialPort* port;           //!< Serial port object pointer
+    QSerialPort* port;           	//!< Serial port object pointer
     QDir saveDirectory;
     QString saveFile;
     QFile* outFile;

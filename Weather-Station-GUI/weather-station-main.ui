@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>723</width>
-    <height>632</height>
+    <height>650</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -38,9 +38,9 @@
   <widget class="QLabel" name="errorLabel">
    <property name="geometry">
     <rect>
-     <x>42</x>
-     <y>555</y>
-     <width>461</width>
+     <x>50</x>
+     <y>620</y>
+     <width>587</width>
      <height>20</height>
     </rect>
    </property>
