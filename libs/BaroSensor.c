@@ -72,8 +72,7 @@ void initBaroSensor()
     if (i2c_check_error()) return;
 
     uint16_t prom[7];
-    for (int i = 0; i < 7; i++)
-    {
+    for (int i = 0; i < 7; i++) {
         command[0] = CMD_PROM_READ(i);
         i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
         if (i2c_check_error()) return;
@@ -92,105 +91,87 @@ void initBaroSensor()
 }
 
 /*--------------------------------------------------------------------------*/
-float getTemperature(TempUnit scale, BaroOversampleLevel level)
-{
-/********* code to be corrected here on */
-    float result;
-    if(getTempAndPressure(&result, NULL, scale, level))
-        return result;
-    else
-        return NAN;
-}
-
-/*--------------------------------------------------------------------------*/
-float getPressure(BaroOversampleLevel level)
-{
-    float result;
-    if(getTempAndPressure(NULL, &result, CELSIUS, level))
-        return result;
-    else
-        return NAN;
-}
-
-/*--------------------------------------------------------------------------*/
 bool getTempAndPressure(float *temperature, float *pressure, TempUnit tempScale,
                         BaroOversampleLevel level)
 {
-  if(err || !initialised)
-    return false;
+    if(err || !initialised)
+        return false;
 
-  int32_t d2 = takeReading(CMD_START_D2(level), level);
-  if(d2 == 0)
-    return false;
-  int64_t dt = d2 - c5 * (1L<<8);
+    int32_t d2 = takeBaroReading(CMD_START_D2(level), level);
+    if(d2 == 0)
+        return false;
+    int64_t dt = d2 - c5 * (1L<<8);
 
-  int32_t temp = 2000 + (dt * c6) / (1L<<23);
+    int32_t temp = 2000 + (dt * c6) / (1L<<23);
 
-  /* Second order temperature compensation */
-  int64_t t2;
-  if(temp >= 2000) {
-    /* High temperature */
-    t2 = 5 * (dt * dt) / (1LL<<38);
-  } else {
-      /* Low temperature */
-    t2 = 3 * (dt * dt) / (1LL<<33);
-  }
-
-  if(temperature != NULL) {
-    *temperature = (float)(temp - t2) / 100;
-    if(tempScale == FAHRENHEIT)
-      *temperature = *temperature * 9 / 5 + 32;
-  }
-
-  if(pressure != NULL) {
-    int32_t d1 = takeReading(CMD_START_D1(level), level);
-    if(d1 == 0)
-      return false;
-
-    int64_t off = c2 * (1LL<<17) + (c4 * dt) / (1LL<<6);
-    int64_t sens = c1 * (1LL<<16) + (c3 * dt) / (1LL<<7);
-
-    /* Second order temperature compensation for pressure */
-    if(temp < 2000) {
-      /* Low temperature */
-      int32_t tx = temp-2000;
-      tx *= tx;
-      int32_t off2 = 61 * tx / (1<<4);
-      int32_t sens2 = 29 * tx / (1<<4);
-      if(temp < -1500) {
-        /* Very low temperature */
-        tx = temp+1500;
-        tx *= tx;
-        off2 += 17 * tx;
-        sens2 += 9 * tx;
-      }
-      off -= off2;
-      sens -= sens2;
+    /* Second order temperature compensation */
+    int64_t t2;
+    if(temp >= 2000) {
+        /* High temperature */
+        t2 = 5 * (dt * dt) / (1LL<<38);
+    } else {
+        /* Low temperature */
+        t2 = 3 * (dt * dt) / (1LL<<33);
     }
 
-    int32_t p = ((int64_t)d1 * sens/(1LL<<21) - off) / (1LL << 15);
-    *pressure = (float)p / 100;
-  }
-  return true;
+    if(temperature != NULL) {
+        *temperature = (float)(temp - t2) / 100;
+        if(tempScale == FAHRENHEIT)
+            *temperature = *temperature * 9 / 5 + 32;
+    }
+
+    if(pressure != NULL) {
+        int32_t d1 = takeBaroReading(CMD_START_D1(level), level);
+        if(d1 == 0)
+            return false;
+
+        int64_t off = c2 * (1LL<<17) + (c4 * dt) / (1LL<<6);
+        int64_t sens = c1 * (1LL<<16) + (c3 * dt) / (1LL<<7);
+
+        /* Second order temperature compensation for pressure */
+        if(temp < 2000) {
+            /* Low temperature */
+            int32_t tx = temp-2000;
+            tx *= tx;
+            int32_t off2 = 61 * tx / (1<<4);
+            int32_t sens2 = 29 * tx / (1<<4);
+            if(temp < -1500) {
+                /* Very low temperature */
+                tx = temp+1500;
+                tx *= tx;
+                off2 += 17 * tx;
+                sens2 += 9 * tx;
+            }
+            off -= off2;
+            sens -= sens2;
+        }
+
+        int32_t p = ((int64_t)d1 * sens/(1LL<<21) - off) / (1LL << 15);
+        *pressure = (float)p / 100;
+    }
+    return true;
 }
 
 /*--------------------------------------------------------------------------*/
-uint32_t takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level)
+uint32_t takeBaroReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level)
 {
-  Wire.beginTransmission(BARO_ADDR);
-  Wire.write(trigger_cmd);
-  err = _endTransmission();
+    uint8_t command[1];
+    command[0] = trigger_cmd;
+    i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
+    err = i2c_check_error();
 
-  if(err)
-    return 0;
-  uint8_t sampling_delay = pgm_read_byte(SamplingDelayMs + (int)oversample_level);
-  delay(sampling_delay);
+    if(err)
+        return 0;
+    uint8_t sampling_delay = pgm_read_byte(SamplingDelayMs + (int)oversample_level);
+    delay(sampling_delay);
 
-  Wire.beginTransmission(BARO_ADDR);
-  Wire.write(CMD_READ_ADC);
-  err = _endTransmission(false);
-  if(err)
-    return 0;
+    command[0] = CMD_READ_ADC;
+    i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
+    err = i2c_check_error();
+    if(err)
+        return 0;
+    uint8_t data[3];
+    i2c_master_read_multiple_bytes(I2C1, BARO_ADDR, 3, data);
   int req = Wire.requestFrom(BARO_ADDR, 3);
   if(req != 3)
     req = Wire.requestFrom(BARO_ADDR, 3); // Sometimes first read fails...?

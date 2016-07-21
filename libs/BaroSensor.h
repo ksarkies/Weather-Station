@@ -34,10 +34,7 @@
 #include <libopencm3/stm32/i2c.h>
 
 /* Module supports a range of lower oversampling levels, for faster
-   less accurate results.
-
-   Default is maximum accuracy.
- */
+less accurate results. Default is maximum accuracy. */
 enum BaroOversampleLevel {
   OSR_256, OSR_512, OSR_1024, OSR_2048, OSR_4096, OSR_8192 };
 
@@ -51,24 +48,13 @@ typedef enum {
 #define ERR_BAD_READLEN -2
 #define ERR_NEEDS_BEGIN -3
 
-    void initBaro();
+void initBaro();
 
-/* Return temperature in C or Fahrenheit */
-    float getBaroTemperature(TempUnit scale = CELSIUS,
-                             BaroOversampleLevel level = OSR_8192);
-/* Return pressure in mbar */
-    float getBaroPressure(BaroOversampleLevel level = OSR_8192);
-
-/* Update both temperature and pressure together. This takes less
-time than calling each function separately (as pressure result
-depends on temperature.) Returns true for success, false on an
-error */
-    bool getBaroTempAndPressure(float *temperature,
+bool getBaroTempAndPressure(float *temperature,
                             float *pressure,
                             TempUnit tempScale = CELSIUS,
                             BaroOversampleLevel level = OSR_8192);
-
-    inline bool isBaroOK() { return initialised && err == 0; }
-    inline byte getBaroError() { return initialised ? err : ERR_NEEDS_BEGIN; }
+inline bool isBaroOK() { return initialised && err == 0; }
+inline byte getBaroError() { return initialised ? err : ERR_NEEDS_BEGIN; }
 
 #endif
