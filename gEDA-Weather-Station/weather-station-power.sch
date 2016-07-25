@@ -412,7 +412,7 @@ net=PA7:1
 T 41500 47900 5 10 0 0 0 2 1
 device=none
 T 41400 48500 5 10 1 1 0 7 1
-value=PB2
+value=PB4
 }
 C 42300 40900 1 0 1 output-2.sym
 {
