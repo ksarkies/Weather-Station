@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name WeatherStation)(type KiCad)(uri "$(KIPRJMOD)/modules/WeatherStation.pretty")(options "")(descr ""))
+)
