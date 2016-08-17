@@ -11,8 +11,9 @@ allocations are:
 - PA1: Temperature and Humidity. Freetronics DHT22.
 - PA2: Wind Speed. Reed switch.
 - PA3: Wind Direction. Reed switch.
-- PA4: Solar Radiance (scale dependent on the panel material). Suntech-STP005S12-5W.
-- Air Pressure. Freetronics MS-5637-02BA03. I2C-1 on PB6 for SCL and PB7 for SDA.
+- PA4: Solar Radiance (scale dependent on the panel material).
+       Suntech-STP005S12-5W.
+- Air Pressure. Freetronics MS-5637-02BA03. I2C-1 on PB6 for SCL, PB7 for SDA.
 
 For battery charging the following are needed:
 - PA6 to measure battery voltage on ADC12-IN5.
@@ -22,8 +23,15 @@ For battery charging the following are needed:
 
 USART1 is on PA8-PA12 with Tx on PA9 and Rx on PA10.
 
-NOTE: The battery must be in place otherwise when the charger is disabled by
-the program the processor will power off.
+For Memory card SPI interface:
+- PD2: for memory card present signal.
+- PB12: for memory card select.
+- PB13: for memory card SCK.
+- PB14: for memory card MISO.
+- PB15: for memory card MOSI.
+
+NOTE: The battery must be in place during operation otherwise when the charger
+is disabled by the program the processor will power off.
 
 NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 */
@@ -45,7 +53,6 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 
 #include <stdint.h>
 
-#include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
@@ -60,6 +67,8 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include <libopencm3/cm3/nvic.h>
 #include "../libs/buffer.h"
 #include "../libs/DHT.h"
+#include "../libs/BaroSensor.h"
+#include "../libs/i2c.h"
 #include "../libs/hardware.h"
 
 /* 10 second sleep/stop period */
@@ -83,8 +92,9 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 /* Global Variables */
 
 static uint32_t rainfall;               /* Counter of interrupts from sensor */
-static uint32_t wind_speed;              /* Counter of interrupts from sensor */
-static uint8_t charger_is_active;         /* Existing state of charger */
+static uint32_t wind_speed;             /* Counter of interrupts from sensor */
+static uint8_t charger_is_active;       /* Existing state of charger */
+static uint32_t measurement_period;
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
@@ -95,6 +105,7 @@ static void enable_charging(void);
 static void disable_charging(void);
 static uint8_t charger_active(void);
 static void hardware_setup(void);
+static void parse_command(uint8_t* line);
 
 /*--------------------------------------------------------------------------*/
 
@@ -103,11 +114,16 @@ int main(void)
 	hardware_setup();
     charger_is_active = charger_active();
     uint8_t channel[1];                 /* Channel for A/D conversion */
-    uint16_t charge_limit = 0;           /* voltage limit for charging battery */
+    uint16_t charge_limit = 0;          /* voltage limit for charging battery */
     uint8_t i=0;
     DHT sensor_DHT = {DHT_PIN,DHT22,false};
     init_DHT(&sensor_DHT);
+//    initBaroSensor();
     usart_print_string("Weather Station\n\r");
+    uint8_t characterPosition = 0;
+    uint8_t line[80];
+    measurement_period = MEASUREMENT_PERIOD;
+    uint32_t measurement_time = measurement_period;
 
     for (;;) {
 /* Snooze for a while in low power stop mode. */
@@ -117,7 +133,8 @@ int main(void)
 		for (cnt=0; cnt < 40000; cnt++) {
 			asm("nop");
 		}
-    	rtc_set_alarm_time(MEASUREMENT_PERIOD);
+
+    	rtc_set_alarm_time(measurement_time);
 /* Turn off peripherals during stop mode (only ADC and DAC need to do this). */
         peripheral_disable();
 /* Set sleep mode and stop */
@@ -126,21 +143,22 @@ int main(void)
 		pwr_set_stop_mode();
 /* Just clear the whole bloody lot of exti pending requests */
 		exti_reset_request(0xFFFFF);
+/* Use light sleep if USART interrupts are to be triggered */
+#ifdef DEEPSLEEP
 /* Set deep sleep mode bit in SCB to go to stop mode */
 		SCB_SCR |= SCB_SCR_SLEEPDEEP;
+#endif
 		asm volatile("wfi");
 /* Repeat setup as clocks seem to have been reset. */
 
-/* Restore hardware clocks and any config that may have been lost */
+/* Restore hardware clocks and any config that may have been lost. */
         peripheral_enable();
-/* Wake up the RTC from the stop condition. */
-		rtc_auto_awake(RCC_LSE,0x7FFF);
 
-/* Check if the wakeup source was the alarm. If so reset the RTC counter
-and clear the alarm flag. */
+/* Check if the wakeup source was the alarm. If so clear the alarm flag and
+reset the alarm value ahead of the RTC. */
 		if (rtc_check_flag(RTC_ALR)) {
 			rtc_clear_flag(RTC_ALR);
-			rtc_set_counter_val(0);
+            measurement_time = rtc_get_counter_val() + measurement_period;
 
 /* These tasks are now performed whenever the RTC alarm wakes the processor.
 Other interrupts will activate their ISR but are ignored and the processor
@@ -198,7 +216,7 @@ This cycles between the absorption voltage limit and the float voltage limit. */
             }
 
 /* Offset for time that systick was asleep */
-			millis_offset(MEASUREMENT_PERIOD * 1000);
+			millis_offset(measurement_period * 1000);
 /* Read and send Temperature and Humidity from the DTH22. */
             uint32_t temperature;
             uint32_t humidity;
@@ -227,7 +245,13 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 
 /* Read and send solar panel current. Use simple polling of the ADC. */
             enable_radiance_measurement();
-            uint32_t radiance_raw = 0;
+            usart_print_string("D");
+            for (i=0; i<5; i++) {
+		        usart_print_string(",");
+		        usart_print_int(sensor_DHT.data[i]);
+			}
+            usart_print_string("\n\r");
+            int32_t radiance_raw = 0;
             channel[0] = ADC_CHANNEL4;          /* channel 4 radiance */
 	        adc_set_regular_sequence(ADC1, 1, channel);
 /* Average over 16 readings */
@@ -262,9 +286,38 @@ Note order of computations to avoid 32 bit overflow. */
             wind_speed = 0;
             sei();
         }
+        else {
+            uint16_t value = check_receive_buffer();
+            char receive_buffer_empty = (value >> 8);
+            if (! receive_buffer_empty)
+            {
+                char character = (value & 0xFF);
+                if ((character == 0x0D) || (character == 0x0A) ||
+                    (characterPosition > 78))
+                {
+                    line[characterPosition] = 0;
+                    characterPosition = 0;
+                    parse_command(line);
+                }
+                else line[characterPosition++] = character;
+            }
+        }
 	}
 
 	return 0;
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Action a received USART command line.
+
+*/
+
+void parse_command(uint8_t* line)
+{
+    usart_print_string("D");
+    usart_print_string(",");
+    usart_print_string(line);
+    usart_print_string("\n\r");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -277,13 +330,13 @@ void hardware_setup(void)
 /* Set the clock to 72MHz from the 8MHz external crystal */
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
 
-    systick_setup(1000);         // Set systick to interrupt after 1 second.
+    systick_setup(1000);         /* Set systick to interrupt after 1 second. */
     gpio_setup();
     usart1_setup();
     timer2_setup(0xFFFF);
     adc_setup();
     dac_setup();
-    i2c1Setup();
+    i2c1_setup();
 	rtc_setup();
     exti_setup();
     sei();

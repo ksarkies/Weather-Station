@@ -16,6 +16,7 @@ uint8_t i2c_master_read_single_byte(uint32_t i2c, uint8_t address);
 uint16_t i2c_master_read_two_bytes(uint32_t i2c, uint8_t address);
 void i2c_master_read_multiple_bytes(uint32_t i2c, uint8_t address,
                                     uint8_t length, uint8_t* data);
+uint8_t i2c_check_error(uint32_t i2c);
 uint8_t i2c_data_sent(uint32_t i2c);
 uint8_t i2c_master_mode(uint32_t i2c);
 uint8_t i2c_busy(uint32_t i2c);

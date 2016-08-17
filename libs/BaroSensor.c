@@ -4,6 +4,7 @@
 @author Angus Gratton (angus at freetronics dot com)
 @author modified for general use by Ken Sarkies (www.jiggerjuice.info)
 @date 04 June 2016
+*/
 
 /******************************************************************************
  *
@@ -26,6 +27,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
+
+#include <stdint.h>
+#include <stddef.h>
+
+#include <libopencm3/stm32/i2c.h>
+#include "i2c.h"
 #include "BaroSensor.h"
 #include "hardware.h"
 
@@ -44,12 +51,12 @@
 /*--------------------------------------------------------------------------*/
 /* Globals */
 
-bool initialised;
-int8_t err;
-uint16_t c1,c2,c3,c4,c5,c6; // Calibration constants used in producing results
+static bool initialised;
+static int8_t err;
+static uint16_t c1,c2,c3,c4,c5,c6;      /* Calibration constants */
 
 /* delay to wait for sampling to complete, on each OSR level */
-const uint8_t SamplingDelayMs[6] = {2,4,6,10,18,34};
+static const uint8_t SamplingDelayMs[6] = {2,4,6,10,18,34};
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
@@ -62,20 +69,20 @@ uint32_t takeBaroReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_lev
 Resets the module then pulls in calibration constants from the module ROM.
 */
 
-void initBaroSensor()
+void initBaroSensor(void)
 {
     uint8_t command[1];
     uint16_t calibration[7];
-    i2c1Setup();
+    i2c1_setup();
     command[0] = CMD_RESET;
     i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    if (i2c_check_error()) return;
+    if (i2c_check_error(I2C1)) return;
 
-    uint16_t prom[7];
+/* Pull in the calibration constants */
     for (int i = 0; i < 7; i++) {
         command[0] = CMD_PROM_READ(i);
         i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-        if (i2c_check_error()) return;
+        if (i2c_check_error(I2C1)) return;
         calibration[i] = i2c_master_read_two_bytes(I2C1, BARO_ADDR);
     }
 
@@ -88,6 +95,18 @@ void initBaroSensor()
     c5 = calibration[5];
     c6 = calibration[6];
     initialised = true;
+}
+
+/*--------------------------------------------------------------------------*/
+bool isBaroOK()
+{
+    return initialised && (err == 0);
+}
+
+/*--------------------------------------------------------------------------*/
+uint8_t getBaroError()
+{
+    return initialised ? err : ERR_NEEDS_BEGIN;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -158,30 +177,23 @@ uint32_t takeBaroReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_lev
     uint8_t command[1];
     command[0] = trigger_cmd;
     i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    err = i2c_check_error();
+    err = i2c_check_error(I2C1);
 
     if(err)
         return 0;
-    uint8_t sampling_delay = pgm_read_byte(SamplingDelayMs + (int)oversample_level);
+    uint8_t sampling_delay = SamplingDelayMs[(uint32_t)oversample_level];
     delay(sampling_delay);
 
     command[0] = CMD_READ_ADC;
     i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    err = i2c_check_error();
+    err = i2c_check_error(I2C1);
     if(err)
         return 0;
     uint8_t data[3];
     i2c_master_read_multiple_bytes(I2C1, BARO_ADDR, 3, data);
-  int req = Wire.requestFrom(BARO_ADDR, 3);
-  if(req != 3)
-    req = Wire.requestFrom(BARO_ADDR, 3); // Sometimes first read fails...?
-  if(req != 3) {
-    err = ERR_BAD_READLEN;
-    return 0;
-  }
-  uint32_t result = (uint32_t)Wire.read() << 16;
-  result |= (uint32_t)Wire.read() << 8;
-  result |= Wire.read();
-  return result;
+    uint32_t result = (uint32_t)data[0] << 16;
+    result |= (uint32_t)data[1] << 8;
+    result |= data[2];
+    return result;
 }
 

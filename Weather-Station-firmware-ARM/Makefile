@@ -25,7 +25,10 @@ LDFLAGS		    += -I . -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group \
 		   	       -mthumb -mfix-cortex-m3-ldrd -msoft-float
 
 # The libopencm3 library is assumed to exist in libopencm3/lib, otherwise add files here
-CFILES		= $(PROJECT).c ../libs/hardware.c ../libs/DHT.c ../libs/buffer.c ../libs/i2c.c
+CFILES		= $(PROJECT).c
+#CFILES     += $(PROJECT)-file.c
+CFILES     += ../libs/hardware.c ../libs/DHT.c ../libs/BaroSensor.c
+CFILES     += ../libs/buffer.c ../libs/i2c.c 
 
 OBJS		= $(CFILES:.c=.o)
 

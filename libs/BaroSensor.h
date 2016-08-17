@@ -31,16 +31,16 @@
 #define _BAROLIBRARY_H
 
 #include "hardware.h"
-#include <libopencm3/stm32/i2c.h>
 
 /* Module supports a range of lower oversampling levels, for faster
 less accurate results. Default is maximum accuracy. */
-enum BaroOversampleLevel {
-  OSR_256, OSR_512, OSR_1024, OSR_2048, OSR_4096, OSR_8192 };
+typedef enum {
+    OSR_256, OSR_512, OSR_1024, OSR_2048, OSR_4096, OSR_8192
+} BaroOversampleLevel;
 
 typedef enum {
-  CELSIUS,
-  FAHRENHEIT
+    CELSIUS,
+    FAHRENHEIT
 } TempUnit;
 
 /* error codes */
@@ -48,13 +48,13 @@ typedef enum {
 #define ERR_BAD_READLEN -2
 #define ERR_NEEDS_BEGIN -3
 
-void initBaro();
+void initBaroSensor();
 
 bool getBaroTempAndPressure(float *temperature,
                             float *pressure,
-                            TempUnit tempScale = CELSIUS,
-                            BaroOversampleLevel level = OSR_8192);
-inline bool isBaroOK() { return initialised && err == 0; }
-inline byte getBaroError() { return initialised ? err : ERR_NEEDS_BEGIN; }
+                            TempUnit tempScale,
+                            BaroOversampleLevel level);
+bool isBaroOK();
+uint8_t getBaroError();
 
 #endif

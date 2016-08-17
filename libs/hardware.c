@@ -40,6 +40,7 @@ K. Sarkies, 10 May 2016
 #include <libopencm3/cm3/nvic.h>
 #include "buffer.h"
 #include "DHT.h"
+#include "i2c.h"
 #include "hardware.h"
 
 #define  _BV(bit) (1 << (bit))
@@ -281,6 +282,18 @@ whether to quit this loop. */
 }
 
 /*--------------------------------------------------------------------------*/
+/*      Return a character from the receive buffer
+
+@returns uint16_t. Lower 8 bits has character. Upper 8 bits has 0x100 if no
+                   character has been received.
+*/
+
+uint32_t check_receive_buffer(void)
+{
+    return buffer_get(receive_buffer);
+}
+
+/*--------------------------------------------------------------------------*/
 /* @brief Print out a fixed point value in ASCII decimal form.
 
 Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
@@ -493,14 +506,16 @@ RTC and EXTI need to remain on.
 
 void peripheral_disable(void)
 {
+#ifdef DEEPSLEEP
     rcc_periph_clock_disable(RCC_AFIO);
     rcc_periph_clock_disable(RCC_GPIOA);
+    rcc_periph_clock_disable(RCC_USART1);
+#endif
     rcc_periph_clock_disable(RCC_GPIOB);
     rcc_periph_clock_disable(RCC_GPIOC);
     rcc_periph_clock_disable(RCC_ADC1);
 	rcc_periph_clock_disable(RCC_DAC);
 	rcc_periph_clock_disable(RCC_I2C1);
-    rcc_periph_clock_disable(RCC_USART1);
 	rcc_periph_clock_disable(RCC_TIM2);
     adc_power_off(ADC1);
     dac_disable(CHANNEL_D);
@@ -606,7 +621,7 @@ woken up by the time the first interrupt occurs */
 The clocks and GPIO settings are established.
 */
 
-void i2c1Setup(void)
+void i2c1_setup(void)
 {
 /* Enable clocks for I2C1 and AFIO. */
 	rcc_periph_clock_enable(RCC_I2C1);
@@ -615,6 +630,7 @@ void i2c1Setup(void)
 	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
 		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
 		      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
+    i2c_initialise(I2C1);
 }
 
 /*--------------------------------------------------------------------------*/

@@ -15,7 +15,6 @@ The hardware library is libopencm3.
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/i2c.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/cortex.h>
@@ -23,6 +22,7 @@ The hardware library is libopencm3.
 #include "buffer.h"
 #include "DHT.h"
 #include "i2c.h"
+#include "hardware.h"       /* TO BE REMOVED */
 
 #define  _BV(bit) (1 << (bit))
 #define BUFFER_SIZE 128
@@ -118,7 +118,7 @@ void i2c_master_transmit_data(uint32_t i2c, uint8_t address, uint8_t length,
     i2c_initiate_transmission_7_bit(i2c, address, I2C_WRITE);
 /* Send the data bytes. */
     uint8_t i = 0;
-    while (i < length)
+    while (i++ < length)
     {
     	i2c_send_data(i2c, data[i]);
 
@@ -126,7 +126,6 @@ void i2c_master_transmit_data(uint32_t i2c, uint8_t address, uint8_t length,
 the BTF flag will be set and must be cleared by reading SR1. */
 	    while (! (i2c_byte_transfer_finished(i2c) || i2c_data_sent(i2c)));
     }
-
 /* Wait for the Byte Transfer Finished BTF flag to be set. */
 	while (! i2c_byte_transfer_finished(i2c));
 
@@ -215,14 +214,14 @@ This automatically clears the SB bit by reading the SR1 register. */
 /* Send destination address. */
 	i2c_send_7bit_address(i2c, address, I2C_READ);
 
-/* Waiting for address to be transferred.
-This automatically reads the SR1 register. */
-	while (! i2c_address_sent(i2c));
-
 /* Enable the ACK signal and set NACK to occur on the next byte transfer.
 This is an exceptional case. */
 	i2c_enable_ack(i2c);
     i2c_nack_next(i2c);
+
+/* Waiting for address to be transferred.
+This automatically reads the SR1 register. */
+	while (! i2c_address_sent(i2c));
 
 /* Reading the SR2 register as well is needed to cause the ADDR bit to be
 cleared.  */
@@ -238,9 +237,9 @@ ensure that when the next byte arrives it holds up the slave. */
 /* Generate the STOP condition before reading the second byte. */
 	i2c_send_stop(i2c);
 
-	data = (i2c_get_data(i2c) << 8);        /* MSB */
+	data = (i2c_get_data(i2c) << 8);            /* MSB */
     while (! (i2c_byte_transfer_finished(i2c) || i2c_data_received(i2c)));
-	data |= i2c_get_data(i2c);               /* LSB */
+	data |= i2c_get_data(i2c);                  /* LSB */
 
 /* Set the NACK to occur on the current byte for any future communications. */
 	i2c_nack_current(i2c);
@@ -301,12 +300,21 @@ set when the second last byte arrives in the shift register. */
 /*--------------------------------------------------------------------------*/
 /* @brief Check if an error condition occurred on I2C
 
-@returns uint8_t: 0 if no error.
+* bit 0 bus error
+* bit 1 arbitration lost
+* bit 2 acknowledge failure
+* bit 3 overrun/underrun
+* bit 4 PEC error in reception
+* bit 5 reserved: always 0
+* bit 6 timeout
+* bit 7 SMB alert
+
+@returns uint8_t: 0 if no error, otherwise error code as above.
 */
 
-uint8_t i2c_check_error()
+uint8_t i2c_check_error(uint32_t i2c)
 {
-    return 0;
+    return (I2C_SR1(i2c) >> 8);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -365,11 +373,7 @@ uint8_t i2c_start_generated(uint32_t i2c)
 */
 uint8_t i2c_address_sent(uint32_t i2c)
 {
-	if ((I2C_SR1(i2c) & I2C_SR1_ADDR) != 0) {
-		//(void)I2C_SR2(i2c);
-		return 1;
-	}
-	return 0;
+	return ((I2C_SR1(i2c) & I2C_SR1_ADDR) != 0);
 }
 
 /*---------------------------------------------------------------------------*/
