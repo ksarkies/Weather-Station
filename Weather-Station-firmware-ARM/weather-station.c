@@ -118,7 +118,6 @@ int main(void)
     uint8_t i=0;
     DHT sensor_DHT = {DHT_PIN,DHT22,false};
     init_DHT(&sensor_DHT);
-//    initBaroSensor();
     usart_print_string("Weather Station\n\r");
     uint8_t characterPosition = 0;
     uint8_t line[80];
@@ -217,7 +216,7 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 
 /* Offset for time that systick was asleep */
 			millis_offset(measurement_period * 1000);
-/* Read and send Temperature and Humidity from the DTH22. */
+/* Read and send (Temperature and) Humidity from the DTH22. */
             uint32_t temperature;
             uint32_t humidity;
 			bool error = ! read_temperature_humidity(&sensor_DHT, &temperature,
@@ -226,31 +225,38 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 			{
 	            usart_print_string("D");
 	            for (i=0; i<5; i++) {
-			        usart_print_string(",");
+			        usart_print_string(",Humidity,");
 			        usart_print_int(sensor_DHT.data[i]);
 				}
 	            usart_print_string("\n\r");
 			}
-            usart_print_string("dT,");
-            usart_print_fixed_point(temperature);
-            usart_print_string("\n\r");
+//            usart_print_string("dT,");
+//            usart_print_fixed_point(temperature);
+//            usart_print_string("\n\r");
             usart_print_string("dH,");
             usart_print_fixed_point(humidity);
             usart_print_string("\n\r");
 
 /* Read and send temperature and barometric pressure over i2c. */
+            int32_t temp;
+            int32_t pressure;
+            error = ! getBaroTempAndPressure(&temp,&pressure,CELSIUS,OSR_4096);
+			if (error)
+			{
+	            usart_print_string("D");
+		        usart_print_string(",Pressure,");
+		        usart_print_int(0);
+	            usart_print_string("\n\r");
+			}
+            usart_print_string("dT,");
+            usart_print_fixed_point(temp);
+            usart_print_string("\n\r");
             usart_print_string("dP,");
-            usart_print_fixed_point(1000*256);
+            usart_print_fixed_point(pressure);
             usart_print_string("\n\r");
 
 /* Read and send solar panel current. Use simple polling of the ADC. */
             enable_radiance_measurement();
-            usart_print_string("D");
-            for (i=0; i<5; i++) {
-		        usart_print_string(",");
-		        usart_print_int(sensor_DHT.data[i]);
-			}
-            usart_print_string("\n\r");
             int32_t radiance_raw = 0;
             channel[0] = ADC_CHANNEL4;          /* channel 4 radiance */
 	        adc_set_regular_sequence(ADC1, 1, channel);

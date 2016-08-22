@@ -41,7 +41,7 @@ void cli(void);
 void sei(void);
 uint32_t check_receive_buffer(void);
 void usart_print_fixed_point(uint32_t value);
-void usart_print_int(int value);
+void usart_print_int(int64_t value);
 void usart_print_hex(uint16_t value);
 void usart_print_string(char *ch);
 void systick_setup(uint16_t period);

@@ -2,7 +2,7 @@
 @mainpage BaroSensor library, for Freetronics BARO module (MS5637-02BA03)
 @version 0.0
 @author Angus Gratton (angus at freetronics dot com)
-@author modified for general use by Ken Sarkies (www.jiggerjuice.info)
+@author modified for libopencm3 by Ken Sarkies (www.jiggerjuice.info)
 @date 04 June 2016
 */
 
@@ -53,7 +53,7 @@
 
 static bool initialised;
 static int8_t err;
-static uint16_t c1,c2,c3,c4,c5,c6;      /* Calibration constants */
+static uint16_t cal[7];
 
 /* delay to wait for sampling to complete, on each OSR level */
 static const uint8_t SamplingDelayMs[6] = {2,4,6,10,18,34};
@@ -61,7 +61,8 @@ static const uint8_t SamplingDelayMs[6] = {2,4,6,10,18,34};
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
-uint32_t takeBaroReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level);
+static uint32_t takeBaroReading(uint8_t trigger_cmd,
+                                BaroOversampleLevel oversample_level);
 
 /*--------------------------------------------------------------------------*/
 /* @brief Initialization of sensor hardware
@@ -71,29 +72,25 @@ Resets the module then pulls in calibration constants from the module ROM.
 
 void initBaroSensor(void)
 {
+	uint32_t reg32 __attribute__((unused));
     uint8_t command[1];
-    uint16_t calibration[7];
     i2c1_setup();
+/* Reset Module */
     command[0] = CMD_RESET;
     i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
+    i2c_send_stop(I2C1);
+
     if (i2c_check_error(I2C1)) return;
 
+    int i = 0;
 /* Pull in the calibration constants */
-    for (int i = 0; i < 7; i++) {
+    for (i = 0; i < 7; i++) {
         command[0] = CMD_PROM_READ(i);
         i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
         if (i2c_check_error(I2C1)) return;
-        calibration[i] = i2c_master_read_two_bytes(I2C1, BARO_ADDR);
+        cal[i] = i2c_master_read_two_bytes(I2C1, BARO_ADDR);
     }
 
-// TODO verify CRC4 in top 4 bits of prom[0] (follows AN520 but not directly...)
-
-    c1 = calibration[1];
-    c2 = calibration[2];
-    c3 = calibration[3];
-    c4 = calibration[4];
-    c5 = calibration[5];
-    c6 = calibration[6];
     initialised = true;
 }
 
@@ -104,58 +101,63 @@ bool isBaroOK()
 }
 
 /*--------------------------------------------------------------------------*/
-uint8_t getBaroError()
-{
-    return initialised ? err : ERR_NEEDS_BEGIN;
-}
+/* @brief Compute Temperature and Pressure
 
-/*--------------------------------------------------------------------------*/
-bool getTempAndPressure(float *temperature, float *pressure, TempUnit tempScale,
-                        BaroOversampleLevel level)
-{
-    if(err || !initialised)
-        return false;
+@param[out] *temperature: int32_t value returned as fixed point 8-bit fraction.
+@param[out] *pressure: int32_t value returned as fixed point 8-bit fraction.
+@param[in] TempUnit: tempScale CELSIUS or FAHRENHEIT.
+@param[in] BaroOversampleLevel: oversampling delay level.
+*/
 
+bool getBaroTempAndPressure(int32_t *temperature, int32_t *pressure,
+                            TempUnit tempScale, BaroOversampleLevel level)
+{
+/* Call to initialise. Global calibration values don't seem to be held over
+between calls, despite being declared static */
+    initBaroSensor();
+    if(! isBaroOK()) return false;
+
+/* Temperature computation */
     int32_t d2 = takeBaroReading(CMD_START_D2(level), level);
-    if(d2 == 0)
-        return false;
-    int64_t dt = d2 - c5 * (1L<<8);
+    if(d2 == 0) return false;
 
-    int32_t temp = 2000 + (dt * c6) / (1L<<23);
+    int64_t dt = d2 - (cal[5]<<8);
 
-    /* Second order temperature compensation */
+    int32_t temp = 2000 + ((dt * cal[6]) >> 23);
+
+/* Second order temperature compensation */
     int64_t t2;
     if(temp >= 2000) {
-        /* High temperature */
-        t2 = 5 * (dt * dt) / (1LL<<38);
+/* High temperature */
+        t2 = 5 * ((dt * dt) >> 38);
     } else {
-        /* Low temperature */
-        t2 = 3 * (dt * dt) / (1LL<<33);
+/* Low temperature */
+        t2 = 3 * ((dt * dt) >> 33);
     }
 
     if(temperature != NULL) {
-        *temperature = (float)(temp - t2) / 100;
+        *temperature = (int32_t)((temp - t2) * 256 / 100);
         if(tempScale == FAHRENHEIT)
-            *temperature = *temperature * 9 / 5 + 32;
+            *temperature = (*temperature * 9 + 160*256) / 5;
     }
 
+/* Pressure computation */
     if(pressure != NULL) {
         int32_t d1 = takeBaroReading(CMD_START_D1(level), level);
-        if(d1 == 0)
-            return false;
+        if(d1 == 0) return false;
 
-        int64_t off = c2 * (1LL<<17) + (c4 * dt) / (1LL<<6);
-        int64_t sens = c1 * (1LL<<16) + (c3 * dt) / (1LL<<7);
+        int64_t off = ((int64_t)cal[2]<<17) + (((int64_t)cal[4] * dt)>>6);
+        int64_t sens = ((int64_t)cal[1]<<16) + (((int64_t)cal[3] * dt)>>7);
 
-        /* Second order temperature compensation for pressure */
+/* Second order temperature compensation for pressure */
         if(temp < 2000) {
-            /* Low temperature */
+/* Low temperature */
             int32_t tx = temp-2000;
             tx *= tx;
-            int32_t off2 = 61 * tx / (1<<4);
-            int32_t sens2 = 29 * tx / (1<<4);
+            int32_t off2 = 61 * (tx>>4);
+            int32_t sens2 = 29 * (tx>>4);
             if(temp < -1500) {
-                /* Very low temperature */
+/* Very low temperature */
                 tx = temp+1500;
                 tx *= tx;
                 off2 += 17 * tx;
@@ -165,30 +167,35 @@ bool getTempAndPressure(float *temperature, float *pressure, TempUnit tempScale,
             sens -= sens2;
         }
 
-        int32_t p = ((int64_t)d1 * sens/(1LL<<21) - off) / (1LL << 15);
-        *pressure = (float)p / 100;
+        int32_t p = (((((int64_t)d1 * sens)>>21) - off)>>15);
+        *pressure = (int32_t)p *256 / 100;
     }
     return true;
 }
 
 /*--------------------------------------------------------------------------*/
-uint32_t takeBaroReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level)
+/* @brief Read the sensor
+
+@param[in] trigger_cmd: int8_t choice of reading to make (T or P).
+@param[in] BaroOversampleLevel: oversampling delay level.
+@return uint32_t value read back.
+*/
+
+uint32_t takeBaroReading(uint8_t trigger_cmd,
+                         BaroOversampleLevel oversample_level)
 {
     uint8_t command[1];
     command[0] = trigger_cmd;
     i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    err = i2c_check_error(I2C1);
+    i2c_send_stop(I2C1);
 
-    if(err)
-        return 0;
+    if(i2c_check_error(I2C1)) return 0;
     uint8_t sampling_delay = SamplingDelayMs[(uint32_t)oversample_level];
     delay(sampling_delay);
 
     command[0] = CMD_READ_ADC;
     i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    err = i2c_check_error(I2C1);
-    if(err)
-        return 0;
+    if(i2c_check_error(I2C1)) return 0;
     uint8_t data[3];
     i2c_master_read_multiple_bytes(I2C1, BARO_ADDR, 3, data);
     uint32_t result = (uint32_t)data[0] << 16;

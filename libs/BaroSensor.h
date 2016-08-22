@@ -49,12 +49,8 @@ typedef enum {
 #define ERR_NEEDS_BEGIN -3
 
 void initBaroSensor();
-
-bool getBaroTempAndPressure(float *temperature,
-                            float *pressure,
-                            TempUnit tempScale,
-                            BaroOversampleLevel level);
 bool isBaroOK();
-uint8_t getBaroError();
+bool getBaroTempAndPressure(int32_t *temperature, int32_t *pressure,
+                            TempUnit tempScale, BaroOversampleLevel level);
 
 #endif

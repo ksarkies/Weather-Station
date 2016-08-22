@@ -94,10 +94,10 @@ This automatically clears the SB bit by reading the SR1 register. */
 	i2c_send_7bit_address(i2c, address, rw);
 
 /* Waiting for address to be transferred.
-This automatically reads the SR1 register. */
+This reads the SR1 register. */
 	while (! i2c_address_sent(i2c));
 
-/* and reading the SR2 register as well is needed to cause the ADDR bit to be
+/* Reading the SR2 register as well is needed to cause the ADDR bit to be
 cleared.  */
 	reg32 = I2C_SR2(i2c);
 }
@@ -105,8 +105,9 @@ cleared.  */
 /*--------------------------------------------------------------------------*/
 /* @brief Transmission of Byte Array on I2C as Master
 
-After sending the last byte this waits for TxE and/or BTF to be set, at which a
-stop is executed.
+After sending the last byte this waits for TxE and/or BTF to be set.
+This function does not send a stop condition so that a restart may be used by a
+following command. Therefore a stop condition must be sent separately.
 
 @param[in] uint32_t i2c: i2c channel to use (I2C1 or I2C2).
 @param[in] uint8_t *data: Data byte array to send.
@@ -118,9 +119,9 @@ void i2c_master_transmit_data(uint32_t i2c, uint8_t address, uint8_t length,
     i2c_initiate_transmission_7_bit(i2c, address, I2C_WRITE);
 /* Send the data bytes. */
     uint8_t i = 0;
-    while (i++ < length)
+    while (i < length)
     {
-    	i2c_send_data(i2c, data[i]);
+    	i2c_send_data(i2c, data[i++]);
 
 /* Wait for the TxE flag to be set ready for next byte. If this is missed then
 the BTF flag will be set and must be cleared by reading SR1. */
@@ -130,7 +131,7 @@ the BTF flag will be set and must be cleared by reading SR1. */
 	while (! i2c_byte_transfer_finished(i2c));
 
 /* Send STOP condition. */
-	i2c_send_stop(i2c);
+//	i2c_send_stop(i2c);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -233,13 +234,13 @@ cleared.  */
 /* Now the slave should begin to send the first byte. Await BTF as we need to
 ensure that when the next byte arrives it holds up the slave. */
 	while (! i2c_byte_transfer_finished(i2c));
+	data = (i2c_get_data(i2c) << 8);            /* MSB */
 
 /* Generate the STOP condition before reading the second byte. */
 	i2c_send_stop(i2c);
-
-	data = (i2c_get_data(i2c) << 8);            /* MSB */
-    while (! (i2c_byte_transfer_finished(i2c) || i2c_data_received(i2c)));
 	data |= i2c_get_data(i2c);                  /* LSB */
+
+//    while (! (i2c_byte_transfer_finished(i2c) || i2c_data_received(i2c)));
 
 /* Set the NACK to occur on the current byte for any future communications. */
 	i2c_nack_current(i2c);

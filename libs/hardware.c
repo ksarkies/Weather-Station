@@ -334,10 +334,10 @@ void usart_print_fixed_point(uint32_t value)
 interrupt must be re-enabled in the main program after each call to this
 function.
 
-@param[in] value: 16 bit signed integer.
+@param[in] value: 64 bit signed integer.
 */
 
-void usart_print_int(int value)
+void usart_print_int(int64_t value)
 {
 	uint8_t i;
 	uint8_t nr_digits = 0;
