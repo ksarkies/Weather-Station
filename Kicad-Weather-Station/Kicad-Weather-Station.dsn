@@ -1,0 +1,719 @@
+(pcb "/home/ksarkies/Projects/Weather-Station/Kicad-Weather-Station/Kicad-Weather-Station.dsn"
+  (parser
+    (string_quote ")
+    (space_in_quoted_tokens on)
+    (host_cad "KiCad's Pcbnew")
+    (host_version "4.0.2+e4-6225~38~ubuntu14.04.1-stable")
+  )
+  (resolution um 10)
+  (unit um)
+  (structure
+    (layer F.Cu
+      (type signal)
+      (property
+        (index 0)
+      )
+    )
+    (layer B.Cu
+      (type signal)
+      (property
+        (index 1)
+      )
+    )
+    (boundary
+      (path pcb 0  60000 -55000  60000 -105000  160000 -105000  160000 -55000
+            60000 -55000  60000 -55000)
+    )
+    (via "Via[0-1]_600:400_um")
+    (rule
+      (width 250)
+      (clearance 200.1)
+      (clearance 200.1 (type default_smd))
+      (clearance 50 (type smd_smd))
+    )
+  )
+  (placement
+    (component WeatherStation:SM0603_Capa
+      (place C1 89000 -67100 front 270 (PN 0.1uF))
+    )
+    (component WeatherStation:SM1206POL
+      (place C2 85100 -67700 front 270 (PN 100uF))
+      (place C3 150000 -68000 front 90 (PN 100uF))
+      (place C4 135000 -85000 front 0 (PN 100uF))
+    )
+    (component WeatherStation:BARREL_JACK
+      (place CON1 64100 -70300 front 0 (PN "Solar Panel"))
+    )
+    (component "WeatherStation:SOD-123"
+      (place D1 144000 -71000 front 180 (PN MBR0520LT1G))
+    )
+    (component "WeatherStation:SOD-523"
+      (place D2 153000 -74000 front 90 (PN 1N4148))
+    )
+    (component "WeatherStation:PINHEAD1-3"
+      (place JP1 75600 -88200 front 270 (PN JUMPER3))
+      (place P4 63000 -90000 front 270 (PN Temperature/Humidity))
+    )
+    (component WeatherStation:Pin_Header_Straight_1x25
+      (place P1 86360 -99060 front 90 (PN CONN_01X25))
+      (place P2 147320 -60960 front 270 (PN CONN_01X25))
+    )
+    (component "WeatherStation:PINHEAD1-2"
+      (place P3 74000 -102000 front 0 (PN "Rain Gauge"))
+      (place P5 63200 -81000 front 270 (PN "Wind Speed"))
+      (place P7 157000 -69000 front 90 (PN Battery))
+    )
+    (component "WeatherStation:PINHEAD1-4"
+      (place P6 76000 -58000 front 180 (PN "Air Pressure"))
+    )
+    (component WeatherStation:SOT23EBC
+      (place Q1 93000 -72100 front 180 (PN MMBT3904))
+      (place Q2 98200 -67300 front 180 (PN MMBT3904))
+      (place Q3 98200 -72100 front 180 (PN MMBT3906))
+      (place Q5 115000 -72100 front 180 (PN MMBT3904))
+      (place Q6 110700 -72100 front 180 (PN MMBT3904))
+      (place Q7 120300 -67500 front 180 (PN MMBT3904))
+      (place Q8 120200 -71900 front 180 (PN MMBT3906))
+    )
+    (component "WeatherStation:TO-252-2Lead"
+      (place Q4 104500 -67800 front 180 (PN "SUD45P03-12-GE3"))
+      (place Q9 127400 -67700 front 180 (PN "SUD45P03-12-GE3"))
+      (place U2 137100 -75600 front 0 (PN 78M05))
+    )
+    (component WeatherStation:SM0603_Resistor
+      (place R1 97900 -75800 front 0 (PN 10K))
+      (place R2 114900 -78900 front 180 (PN 10K))
+      (place R3 104700 -86900 front 270 (PN 100K))
+      (place R4 101900 -86900 front 90 (PN 10K))
+      (place R5 92900 -75800 front 0 (PN 100K))
+      (place R6 114900 -76300 front 0 (PN 100K))
+      (place R7 104600 -79800 front 180 (PN 100K))
+      (place R8 93000 -67100 front 270 (PN 10K))
+      (place R9 111400 -82600 front 0 (PN 1))
+      (place R10 141000 -84000 front 0 (PN 100K))
+      (place R11 141000 -86000 front 0 (PN 100K))
+      (place R12 141000 -88000 front 180 (PN 100K))
+      (place R13 141000 -90000 front 0 (PN 100K))
+      (place R14 141000 -92000 front 180 (PN 100K))
+      (place R15 69000 -88000 front 90 (PN 100K))
+      (place R16 111000 -67000 front 270 (PN 10K))
+      (place R17 115000 -67000 front 180 (PN 100K))
+      (place R18 81000 -83000 front 90 (PN 100K))
+      (place R19 69000 -82000 front 270 (PN 100K))
+      (place R20 117000 -93000 front 90 (PN 100K))
+      (place R21 120000 -93000 front 270 (PN 10K))
+      (place R22 144000 -67000 front 0 (PN 470))
+      (place R23 156000 -74000 front 270 (PN 1))
+      (place R24 126000 -83000 front 270 (PN 100K))
+      (place R25 126000 -87000 front 270 (PN 68K))
+    )
+    (component "SOIC_Packages:SOIC-14_3.9x8.7mm_Pitch1.27mm"
+      (place U1 110490 -90170 front 0 (PN LMV324))
+    )
+    (component "WeatherStation:SOT23-5"
+      (place U3 140000 -80000 front 180 (PN TPS77033))
+    )
+    (component Potentiometers:Potentiometer_Bourns_3339P_Angular_ScrewUp
+      (place RV1 73100 -77900 front 0 (PN 100K))
+    )
+    (component "WeatherStation:MountingHole_3-5mm"
+      (place REF2 65000 -100000 front 0 (PN "MountingHole_3-5mm"))
+      (place REF4 155000 -100000 front 0 (PN "MountingHole_3-5mm"))
+      (place REF3 155000 -60000 front 0 (PN "MountingHole_3-5mm"))
+      (place REF1 65000 -60000 front 0 (PN "MountingHole_3-5mm"))
+    )
+    (component WeatherStation:Conn_uSDcard
+      (place J1 156000 -85000 front 90 (PN MicroSD))
+    )
+  )
+  (library
+    (image WeatherStation:SM0603_Capa
+      (outline (path signal 119.38  500.38 -650.24  1198.88 -650.24))
+      (outline (path signal 119.38  -500.38 -650.24  -1198.88 -650.24))
+      (outline (path signal 119.38  500.38 650.24  1198.88 650.24))
+      (outline (path signal 119.38  -1198.88 650.24  -500.38 650.24))
+      (outline (path signal 119.38  1198.88 635  1198.88 -635))
+      (outline (path signal 119.38  -1198.88 -635  -1198.88 635))
+      (pin Rect[T]Pad_635x1143_um 1 -762 0)
+      (pin Rect[T]Pad_635x1143_um 2 762 0)
+    )
+    (image WeatherStation:SM1206POL
+      (outline (path signal 127  -2540 1143  -2794 1143))
+      (outline (path signal 127  -2794 1143  -2794 -1143))
+      (outline (path signal 127  -2794 -1143  -2540 -1143))
+      (outline (path signal 127  -2540 1143  -2540 -1143))
+      (outline (path signal 127  -2540 -1143  -889 -1143))
+      (outline (path signal 127  889 1143  2540 1143))
+      (outline (path signal 127  2540 1143  2540 -1143))
+      (outline (path signal 127  2540 -1143  889 -1143))
+      (outline (path signal 127  -889 1143  -2540 1143))
+      (pin Rect[T]Pad_1524x2032_um 1 -1651 0)
+      (pin Rect[T]Pad_1524x2032_um 2 1651 0)
+    )
+    (image WeatherStation:BARREL_JACK
+      (outline (path signal 150  -4000.5 4500.88  -4000.5 -4500.88))
+      (outline (path signal 150  -7500.62 4500.88  -7500.62 -4500.88))
+      (outline (path signal 150  -7500.62 -4500.88  7000.24 -4500.88))
+      (outline (path signal 150  7000.24 -4500.88  7000.24 4500.88))
+      (outline (path signal 150  7000.24 4500.88  -7500.62 4500.88))
+      (pin Rect[A]Pad_3500.12x3500.12_um 1 6200.14 0)
+      (pin Rect[A]Pad_3500.12x3500.12_um 2 200.66 0)
+      (pin Rect[A]Pad_3500.12x3500.12_um 3 3200.4 -4699)
+    )
+    (image "WeatherStation:SOD-123"
+      (outline (path signal 150  317.5 0  698.5 0))
+      (outline (path signal 150  -698.5 0  -317.5 0))
+      (outline (path signal 150  -317.5 0  317.5 381))
+      (outline (path signal 150  317.5 381  317.5 -381))
+      (outline (path signal 150  317.5 -381  -317.5 0))
+      (outline (path signal 150  -317.5 508  -317.5 -508))
+      (outline (path signal 50  -2250 1050  2250 1050))
+      (outline (path signal 50  2250 1050  2250 -1050))
+      (outline (path signal 50  2250 -1050  -2250 -1050))
+      (outline (path signal 50  -2250 1050  -2250 -1050))
+      (outline (path signal 150  -2000 -900  1540 -900))
+      (outline (path signal 150  -2000 900  1540 900))
+      (pin Rect[T]Pad_910x1220_um 1 -1635 0)
+      (pin Rect[T]Pad_910x1220_um 2 1635 0)
+    )
+    (image "WeatherStation:SOD-523"
+      (outline (path signal 150  -400 -600  1150 -600))
+      (outline (path signal 150  -400 600  1150 600))
+      (pin Rect[T]Pad_600x700_um 2 -700 0)
+      (pin Rect[T]Pad_600x700_um 1 700 0)
+    )
+    (image "WeatherStation:PINHEAD1-3"
+      (outline (path signal 150  -3810 3175  -3810 -3175))
+      (outline (path signal 150  3810 3175  3810 -3175))
+      (outline (path signal 150  3810 1270  -3810 1270))
+      (outline (path signal 150  -3810 3175  3810 3175))
+      (outline (path signal 150  3810 -3175  -3810 -3175))
+      (pin Oval[A]Pad_1506.22x3014.98_um 1 -2540 0)
+      (pin Oval[A]Pad_1506.22x3014.98_um 2 0 0)
+      (pin Oval[A]Pad_1506.22x3014.98_um 3 2540 0)
+    )
+    (image WeatherStation:Pin_Header_Straight_1x25
+      (outline (path signal 50  -1750 1750  -1750 -62750))
+      (outline (path signal 50  1750 1750  1750 -62750))
+      (outline (path signal 50  -1750 1750  1750 1750))
+      (outline (path signal 50  -1750 -62750  1750 -62750))
+      (outline (path signal 150  -1270 -1270  -1270 -62230))
+      (outline (path signal 150  -1270 -62230  1270 -62230))
+      (outline (path signal 150  1270 -62230  1270 -1270))
+      (outline (path signal 150  1550 1550  1550 0))
+      (outline (path signal 150  1270 -1270  -1270 -1270))
+      (outline (path signal 150  -1550 0  -1550 1550))
+      (outline (path signal 150  -1550 1550  1550 1550))
+      (pin Rect[A]Pad_2032x1727.2_um 1 0 0)
+      (pin Oval[A]Pad_2032x1727.2_um 2 0 -2540)
+      (pin Oval[A]Pad_2032x1727.2_um 3 0 -5080)
+      (pin Oval[A]Pad_2032x1727.2_um 4 0 -7620)
+      (pin Oval[A]Pad_2032x1727.2_um 5 0 -10160)
+      (pin Oval[A]Pad_2032x1727.2_um 6 0 -12700)
+      (pin Oval[A]Pad_2032x1727.2_um 7 0 -15240)
+      (pin Oval[A]Pad_2032x1727.2_um 8 0 -17780)
+      (pin Oval[A]Pad_2032x1727.2_um 9 0 -20320)
+      (pin Oval[A]Pad_2032x1727.2_um 10 0 -22860)
+      (pin Oval[A]Pad_2032x1727.2_um 11 0 -25400)
+      (pin Oval[A]Pad_2032x1727.2_um 12 0 -27940)
+      (pin Oval[A]Pad_2032x1727.2_um 13 0 -30480)
+      (pin Oval[A]Pad_2032x1727.2_um 14 0 -33020)
+      (pin Oval[A]Pad_2032x1727.2_um 15 0 -35560)
+      (pin Oval[A]Pad_2032x1727.2_um 16 0 -38100)
+      (pin Oval[A]Pad_2032x1727.2_um 17 0 -40640)
+      (pin Oval[A]Pad_2032x1727.2_um 18 0 -43180)
+      (pin Oval[A]Pad_2032x1727.2_um 19 0 -45720)
+      (pin Oval[A]Pad_2032x1727.2_um 20 0 -48260)
+      (pin Oval[A]Pad_2032x1727.2_um 21 0 -50800)
+      (pin Oval[A]Pad_2032x1727.2_um 22 0 -53340)
+      (pin Oval[A]Pad_2032x1727.2_um 23 0 -55880)
+      (pin Oval[A]Pad_2032x1727.2_um 24 0 -58420)
+      (pin Oval[A]Pad_2032x1727.2_um 25 0 -60960)
+    )
+    (image "WeatherStation:PINHEAD1-2"
+      (outline (path signal 150  2540 1270  -2540 1270))
+      (outline (path signal 150  2540 -3175  -2540 -3175))
+      (outline (path signal 150  -2540 3175  2540 3175))
+      (outline (path signal 150  -2540 3175  -2540 -3175))
+      (outline (path signal 150  2540 3175  2540 -3175))
+      (pin Oval[A]Pad_1506.22x3014.98_um 1 -1270 0)
+      (pin Oval[A]Pad_1506.22x3014.98_um 2 1270 0)
+    )
+    (image "WeatherStation:PINHEAD1-4"
+      (outline (path signal 150  -5080 -3175  5080 -3175))
+      (outline (path signal 150  -5080 1270  5080 1270))
+      (outline (path signal 150  -5080 3175  5080 3175))
+      (outline (path signal 150  -5080 3175  -5080 -3175))
+      (outline (path signal 150  5080 3175  5080 -3175))
+      (pin Oval[A]Pad_1506.22x3014.98_um 4 3810 0)
+      (pin Oval[A]Pad_1506.22x3014.98_um 1 -3810 0)
+      (pin Oval[A]Pad_1506.22x3014.98_um 2 -1270 0)
+      (pin Oval[A]Pad_1506.22x3014.98_um 3 1270 0)
+    )
+    (image WeatherStation:SOT23EBC
+      (outline (path signal 127  -1524 381  1524 381))
+      (outline (path signal 127  1524 381  1524 -381))
+      (outline (path signal 127  1524 -381  -1524 -381))
+      (outline (path signal 127  -1524 -381  -1524 381))
+      (pin Rect[T]Pad_914.4x914.4_um 1 -889 1016)
+      (pin Rect[T]Pad_914.4x914.4_um 2 889 1016)
+      (pin Rect[T]Pad_914.4x914.4_um 3 0 -1016)
+    )
+    (image "WeatherStation:TO-252-2Lead"
+      (outline (path signal 150  1397 1524  1397 -1651))
+      (outline (path signal 150  1397 -1651  3175 -1651))
+      (outline (path signal 150  3175 -1651  3175 1524))
+      (outline (path signal 150  -3175 1524  -3175 -1651))
+      (outline (path signal 150  -3175 -1651  -1397 -1651))
+      (outline (path signal 150  -1397 -1651  -1397 1524))
+      (outline (path signal 150  3429 7620  3429 1524))
+      (outline (path signal 150  3429 1524  -3429 1524))
+      (outline (path signal 150  -3429 1524  -3429 9398))
+      (outline (path signal 150  -3429 9525  3429 9525))
+      (outline (path signal 150  3429 9398  3429 7620))
+      (pin Rect[T]Pad_1651x3048_um 1 -2286 0)
+      (pin Rect[T]Pad_6096x6096_um 2 0 6350)
+      (pin Rect[T]Pad_1651x3048_um 3 2286 0)
+    )
+    (image WeatherStation:SM0603_Resistor
+      (outline (path signal 127  -500.38 698.5  -1206.5 698.5))
+      (outline (path signal 127  -1206.5 698.5  -1206.5 -698.5))
+      (outline (path signal 127  -1206.5 -698.5  -500.38 -698.5))
+      (outline (path signal 127  1206.5 698.5  500.38 698.5))
+      (outline (path signal 127  1206.5 698.5  1206.5 -698.5))
+      (outline (path signal 127  1206.5 -698.5  500.38 -698.5))
+      (pin Rect[T]Pad_635x1143_um 1 -762 0)
+      (pin Rect[T]Pad_635x1143_um 2 762 0)
+    )
+    (image "SOIC_Packages:SOIC-14_3.9x8.7mm_Pitch1.27mm"
+      (outline (path signal 50  -3700 4650  -3700 -4650))
+      (outline (path signal 50  3700 4650  3700 -4650))
+      (outline (path signal 50  -3700 4650  3700 4650))
+      (outline (path signal 50  -3700 -4650  3700 -4650))
+      (outline (path signal 150  -2075 4450  -2075 4335))
+      (outline (path signal 150  2075 4450  2075 4335))
+      (outline (path signal 150  2075 -4450  2075 -4335))
+      (outline (path signal 150  -2075 -4450  -2075 -4335))
+      (outline (path signal 150  -2075 4450  2075 4450))
+      (outline (path signal 150  -2075 -4450  2075 -4450))
+      (outline (path signal 150  -2075 4335  -3450 4335))
+      (pin Rect[T]Pad_1500x600_um 1 -2700 3810)
+      (pin Rect[T]Pad_1500x600_um 2 -2700 2540)
+      (pin Rect[T]Pad_1500x600_um 3 -2700 1270)
+      (pin Rect[T]Pad_1500x600_um 4 -2700 0)
+      (pin Rect[T]Pad_1500x600_um 5 -2700 -1270)
+      (pin Rect[T]Pad_1500x600_um 6 -2700 -2540)
+      (pin Rect[T]Pad_1500x600_um 7 -2700 -3810)
+      (pin Rect[T]Pad_1500x600_um 8 2700 -3810)
+      (pin Rect[T]Pad_1500x600_um 9 2700 -2540)
+      (pin Rect[T]Pad_1500x600_um 10 2700 -1270)
+      (pin Rect[T]Pad_1500x600_um 11 2700 0)
+      (pin Rect[T]Pad_1500x600_um 12 2700 1270)
+      (pin Rect[T]Pad_1500x600_um 13 2700 2540)
+      (pin Rect[T]Pad_1500x600_um 14 2700 3810)
+    )
+    (image "WeatherStation:SOT23-5"
+      (outline (path signal 127  1524 889  1524 -889))
+      (outline (path signal 127  1524 -889  -1524 -889))
+      (outline (path signal 127  -1524 -889  -1524 889))
+      (outline (path signal 127  -1524 889  1524 889))
+      (pin Rect[T]Pad_508x762_um 1 -952.5 -1270)
+      (pin Rect[T]Pad_508x762_um 3 952.5 -1270)
+      (pin Rect[T]Pad_508x762_um 5 -952.5 1270)
+      (pin Rect[T]Pad_508x762_um 2 0 -1270)
+      (pin Rect[T]Pad_508x762_um 4 952.5 1270)
+    )
+    (image Potentiometers:Potentiometer_Bourns_3339P_Angular_ScrewUp
+      (outline (path signal 150  5334 -2667  4953 -2286))
+      (outline (path signal 150  5969 -1778  5588 -1524))
+      (outline (path signal 150  -762 -1778  -381 -1524))
+      (outline (path signal 150  -127 -2667  127 -2413))
+      (outline (path signal 150  3048 3302  3048 3683))
+      (outline (path signal 150  2159 3302  2159 3683))
+      (outline (path signal 150  5842 0  5680.39 -1020.37  5211.37 -1940.87  4480.87 -2671.37
+            3560.37 -3140.39  2540 -3302  1519.63 -3140.39  599.133 -2671.37
+            -131.374 -1940.87  -600.389 -1020.37  -762 0  -600.389 1020.37
+            -131.374 1940.87  599.133 2671.37  1519.63 3140.39  2540 3302
+            3560.37 3140.39  4480.87 2671.37  5211.37 1940.87  5680.39 1020.37))
+      (outline (path signal 150  6350 0  6163.52 -1177.36  5622.35 -2239.46  4779.46 -3082.36
+            3717.36 -3623.53  2540 -3810  1362.64 -3623.53  300.538 -3082.36
+            -542.355 -2239.46  -1083.53 -1177.36  -1270 0  -1083.53 1177.36
+            -542.355 2239.46  300.538 3082.36  1362.64 3623.53  2540 3810
+            3717.36 3623.53  4779.46 3082.36  5622.35 2239.46  6163.52 1177.36))
+      (pin Round[A]Pad_1524_um 2 2540 2540)
+      (pin Round[A]Pad_1524_um 1 0 0)
+      (pin Round[A]Pad_1524_um 3 5080 0)
+    )
+    (image "WeatherStation:MountingHole_3-5mm"
+      (outline (path signal 381  3500 0  3328.7 -1081.56  2831.56 -2057.25  2057.25 -2831.56
+            1081.56 -3328.7  0 -3500  -1081.56 -3328.7  -2057.25 -2831.56
+            -2831.56 -2057.25  -3328.7 -1081.56  -3500 0  -3328.7 1081.56
+            -2831.56 2057.25  -2057.25 2831.56  -1081.56 3328.7  0 3500
+            1081.56 3328.7  2057.25 2831.56  2831.56 2057.25  3328.7 1081.56))
+      (keepout "" (circle F.Cu 3500))
+      (keepout "" (circle B.Cu 3500))
+    )
+    (image WeatherStation:Conn_uSDcard
+      (outline (path signal 150  -7400 -2000  -7400 -1000))
+      (outline (path signal 150  7400 -1000  7400 -2000))
+      (outline (path signal 50  0 -3300  1700 -3400))
+      (outline (path signal 50  1700 -3400  3500 -3700))
+      (outline (path signal 50  3500 -3700  4700 -4000))
+      (outline (path signal 150  -7400 1900  -7400 9000))
+      (outline (path signal 150  7400 9000  7400 1800))
+      (outline (path signal 150  2800 10000  5800 10000))
+      (outline (path signal 50  -6550 -8600  -6550 -3300))
+      (outline (path signal 50  -5850 -9300  3950 -9300))
+      (outline (path signal 50  4650 -8600  4650 -4000))
+      (outline (path signal 50  4650 -4000  7350 -4000))
+      (outline (path signal 50  -7350 -3300  0 -3300))
+      (outline (path signal 50  8000 -4500  -8000 -4500))
+      (outline (path signal 50  -7350 10000  7350 10000))
+      (outline (path signal 50  7350 10000  7350 -4000))
+      (outline (path signal 50  -7350 10000  -7350 -3300))
+      (pin Rect[T]Pad_1200x2200_um 6 7750 400)
+      (pin Rect[T]Pad_1200x2200_um 6@1 -7750 400)
+      (pin Rect[T]Pad_1600x1400_um 6@2 6850 10000)
+      (pin Rect[T]Pad_1200x1400_um 6@3 -7750 10000)
+      (pin Rect[T]Pad_700x1600_um 9 -6600 10500)
+      (pin Rect[T]Pad_700x1600_um 7 -4400 10500)
+      (pin Rect[T]Pad_700x1600_um 8 -5500 10500)
+      (pin Rect[T]Pad_700x1600_um 6@4 -3300 10500)
+      (pin Rect[T]Pad_700x1600_um 5 -2200 10500)
+      (pin Rect[T]Pad_700x1600_um 4 -1100 10500)
+      (pin Rect[T]Pad_700x1600_um 1 2200 10500)
+      (pin Rect[T]Pad_700x1600_um 2 1100 10500)
+      (pin Rect[T]Pad_700x1600_um 3 0 10500)
+      (keepout "" (circle F.Cu 1000 3050 0))
+      (keepout "" (circle B.Cu 1000 3050 0))
+      (keepout "" (circle F.Cu 1000 -4930 0))
+      (keepout "" (circle B.Cu 1000 -4930 0))
+    )
+    (padstack Round[A]Pad_1524_um
+      (shape (circle F.Cu 1524))
+      (shape (circle B.Cu 1524))
+      (attach off)
+    )
+    (padstack Oval[A]Pad_1506.22x3014.98_um
+      (shape (path F.Cu 1506.22  0 -754.38  0 754.38))
+      (shape (path B.Cu 1506.22  0 -754.38  0 754.38))
+      (attach off)
+    )
+    (padstack Oval[A]Pad_2032x1727.2_um
+      (shape (path F.Cu 1727.2  -152.4 0  152.4 0))
+      (shape (path B.Cu 1727.2  -152.4 0  152.4 0))
+      (attach off)
+    )
+    (padstack Rect[A]Pad_2032x1727.2_um
+      (shape (rect F.Cu -1016 -863.6 1016 863.6))
+      (shape (rect B.Cu -1016 -863.6 1016 863.6))
+      (attach off)
+    )
+    (padstack Rect[A]Pad_3500.12x3500.12_um
+      (shape (rect F.Cu -1750.06 -1750.06 1750.06 1750.06))
+      (shape (rect B.Cu -1750.06 -1750.06 1750.06 1750.06))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_508x762_um
+      (shape (rect F.Cu -254 -381 254 381))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_600x700_um
+      (shape (rect F.Cu -300 -350 300 350))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_6096x6096_um
+      (shape (rect F.Cu -3048 -3048 3048 3048))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_635x1143_um
+      (shape (rect F.Cu -317.5 -571.5 317.5 571.5))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_700x1600_um
+      (shape (rect F.Cu -350 -800 350 800))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_910x1220_um
+      (shape (rect F.Cu -455 -610 455 610))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_914.4x914.4_um
+      (shape (rect F.Cu -457.2 -457.2 457.2 457.2))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_1200x2200_um
+      (shape (rect F.Cu -600 -1100 600 1100))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_1200x1400_um
+      (shape (rect F.Cu -600 -700 600 700))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_1500x600_um
+      (shape (rect F.Cu -750 -300 750 300))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_1524x2032_um
+      (shape (rect F.Cu -762 -1016 762 1016))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_1600x1400_um
+      (shape (rect F.Cu -800 -700 800 700))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_1651x3048_um
+      (shape (rect F.Cu -825.5 -1524 825.5 1524))
+      (attach off)
+    )
+    (padstack "Via[0-1]_600:400_um"
+      (shape (circle F.Cu 600))
+      (shape (circle B.Cu 600))
+      (attach off)
+    )
+  )
+  (network
+    (net "Net-(C1-Pad1)"
+      (pins C1-1 C2-1 CON1-1 Q2-3 Q4-3 Q7-3 Q9-3 R8-1 R16-1)
+    )
+    (net Earth
+      (pins C1-2 C2-2 C3-2 C4-2 CON1-2 CON1-3 D2-2 P2-25 P3-2 P4-3 P5-2 P6-4 Q1-1
+        Q3-3 Q5-1 Q6-1 Q8-3 R1-2 R2-2 R4-2 R9-2 R18-2 U1-11 U3-3 U3-2 RV1-3 J1-6 J1-6@1
+        J1-6@2 J1-6@3 J1-6@4 R21-2 R22-2 R23-2 R25-2)
+    )
+    (net "Net-(C3-Pad1)"
+      (pins C3-1 D1-1 P7-1 U3-1 R24-1)
+    )
+    (net +3.3V
+      (pins C4-1 P1-25 P4-1 P6-1 R10-1 R11-1 R12-1 R13-1 R14-1 R15-1 R19-2 U1-4 U3-5
+        RV1-1 J1-4)
+    )
+    (net "Net-(D1-Pad2)"
+      (pins D1-2 U2-3)
+    )
+    (net "Net-(D2-Pad1)"
+      (pins D2-1 P7-2 U1-10 R23-1)
+    )
+    (net "Net-(JP1-Pad1)"
+      (pins JP1-1 RV1-2)
+    )
+    (net "Net-(JP1-Pad2)"
+      (pins JP1-2 U1-5)
+    )
+    (net PA5
+      (pins JP1-3 P1-6 R18-1)
+    )
+    (net PA0
+      (pins P1-1 P3-1 R15-2)
+    )
+    (net PA1
+      (pins P1-2 P4-2)
+    )
+    (net PA2
+      (pins P1-3 P5-1 R19-1)
+    )
+    (net "Net-(P1-Pad4)"
+      (pins P1-4)
+    )
+    (net PA4
+      (pins P1-5 R3-1 U1-1)
+    )
+    (net PA6
+      (pins P1-7 R24-2 R25-1)
+    )
+    (net PA7
+      (pins P1-8 R20-1 U1-8)
+    )
+    (net "Net-(P1-Pad9)"
+      (pins P1-9)
+    )
+    (net "Net-(P1-Pad10)"
+      (pins P1-10)
+    )
+    (net "Net-(P1-Pad11)"
+      (pins P1-11)
+    )
+    (net "Net-(P1-Pad12)"
+      (pins P1-12)
+    )
+    (net "Net-(P1-Pad13)"
+      (pins P1-13)
+    )
+    (net "Net-(P1-Pad14)"
+      (pins P1-14)
+    )
+    (net "Net-(P1-Pad15)"
+      (pins P1-15)
+    )
+    (net "Net-(P1-Pad16)"
+      (pins P1-16)
+    )
+    (net "Net-(P1-Pad17)"
+      (pins P1-17)
+    )
+    (net "Net-(P1-Pad18)"
+      (pins P1-18)
+    )
+    (net "Net-(P1-Pad19)"
+      (pins P1-19)
+    )
+    (net "Net-(P1-Pad20)"
+      (pins P1-20)
+    )
+    (net PB4
+      (pins P1-21 R1-1 R5-2 R7-2)
+    )
+    (net PB5
+      (pins P1-22 R2-1 R6-2)
+    )
+    (net PB6
+      (pins P1-23 P6-2)
+    )
+    (net "Net-(P1-Pad24)"
+      (pins P1-24)
+    )
+    (net PB7
+      (pins P2-1 P6-3)
+    )
+    (net "Net-(P2-Pad2)"
+      (pins P2-2)
+    )
+    (net "Net-(P2-Pad3)"
+      (pins P2-3)
+    )
+    (net "Net-(P2-Pad4)"
+      (pins P2-4)
+    )
+    (net "Net-(P2-Pad5)"
+      (pins P2-5)
+    )
+    (net "Net-(P2-Pad10)"
+      (pins P2-10)
+    )
+    (net "Net-(P2-Pad11)"
+      (pins P2-11)
+    )
+    (net "Net-(P2-Pad12)"
+      (pins P2-12)
+    )
+    (net "Net-(P2-Pad13)"
+      (pins P2-13)
+    )
+    (net "Net-(P2-Pad14)"
+      (pins P2-14)
+    )
+    (net "Net-(P2-Pad15)"
+      (pins P2-15)
+    )
+    (net "Net-(P2-Pad16)"
+      (pins P2-16)
+    )
+    (net "Net-(P2-Pad17)"
+      (pins P2-17)
+    )
+    (net "Net-(P2-Pad18)"
+      (pins P2-18)
+    )
+    (net "Net-(P2-Pad19)"
+      (pins P2-19)
+    )
+    (net "Net-(P2-Pad20)"
+      (pins P2-20)
+    )
+    (net "Net-(P2-Pad21)"
+      (pins P2-21)
+    )
+    (net "Net-(P2-Pad22)"
+      (pins P2-22)
+    )
+    (net "Net-(P2-Pad23)"
+      (pins P2-23)
+    )
+    (net "Net-(P2-Pad24)"
+      (pins P2-24)
+    )
+    (net "Net-(Q1-Pad2)"
+      (pins Q1-2 R5-1)
+    )
+    (net "Net-(Q1-Pad3)"
+      (pins Q1-3 Q2-2 Q3-2 R8-2)
+    )
+    (net "Net-(Q2-Pad1)"
+      (pins Q2-1 Q3-1 Q4-1)
+    )
+    (net "Net-(Q4-Pad2)"
+      (pins Q4-2 R9-1 U1-3)
+    )
+    (net "Net-(Q5-Pad2)"
+      (pins Q5-2 R6-1)
+    )
+    (net "Net-(Q5-Pad3)"
+      (pins Q5-3 Q6-3 R16-2 R17-2)
+    )
+    (net "Net-(Q6-Pad2)"
+      (pins Q6-2 R7-1)
+    )
+    (net "Net-(Q7-Pad1)"
+      (pins Q7-1 Q8-1 Q9-1)
+    )
+    (net "Net-(Q7-Pad2)"
+      (pins Q7-2 Q8-2 R17-1)
+    )
+    (net "Net-(Q9-Pad2)"
+      (pins Q9-2 U2-1)
+    )
+    (net "Net-(R3-Pad2)"
+      (pins R3-2 R4-1 U1-2)
+    )
+    (net "Net-(U3-Pad4)"
+      (pins U3-4)
+    )
+    (net PB14
+      (pins P2-8 R12-2 J1-7)
+    )
+    (net RSRVD
+      (pins R14-2 J1-8)
+    )
+    (net PB13
+      (pins P2-7 R11-2 J1-5)
+    )
+    (net "Net-(J1-Pad1)"
+      (pins J1-1)
+    )
+    (net PB12
+      (pins P2-6 R10-2 J1-2)
+    )
+    (net PB15
+      (pins P2-9 R13-2 J1-3)
+    )
+    (net "Net-(R20-Pad2)"
+      (pins R20-2 U1-9 R21-1)
+    )
+    (net "Net-(R22-Pad1)"
+      (pins U1-6 U1-7 U2-2 R22-1)
+    )
+    (class kicad_default "" +3.3V Earth "Net-(C1-Pad1)" "Net-(C3-Pad1)" "Net-(D1-Pad2)"
+      "Net-(D2-Pad1)" "Net-(J1-Pad1)" "Net-(JP1-Pad1)" "Net-(JP1-Pad2)" "Net-(P1-Pad10)"
+      "Net-(P1-Pad11)" "Net-(P1-Pad12)" "Net-(P1-Pad13)" "Net-(P1-Pad14)"
+      "Net-(P1-Pad15)" "Net-(P1-Pad16)" "Net-(P1-Pad17)" "Net-(P1-Pad18)"
+      "Net-(P1-Pad19)" "Net-(P1-Pad20)" "Net-(P1-Pad24)" "Net-(P1-Pad4)" "Net-(P1-Pad9)"
+      "Net-(P2-Pad10)" "Net-(P2-Pad11)" "Net-(P2-Pad12)" "Net-(P2-Pad13)"
+      "Net-(P2-Pad14)" "Net-(P2-Pad15)" "Net-(P2-Pad16)" "Net-(P2-Pad17)"
+      "Net-(P2-Pad18)" "Net-(P2-Pad19)" "Net-(P2-Pad2)" "Net-(P2-Pad20)" "Net-(P2-Pad21)"
+      "Net-(P2-Pad22)" "Net-(P2-Pad23)" "Net-(P2-Pad24)" "Net-(P2-Pad3)" "Net-(P2-Pad4)"
+      "Net-(P2-Pad5)" "Net-(Q1-Pad2)" "Net-(Q1-Pad3)" "Net-(Q2-Pad1)" "Net-(Q4-Pad2)"
+      "Net-(Q5-Pad2)" "Net-(Q5-Pad3)" "Net-(Q6-Pad2)" "Net-(Q7-Pad1)" "Net-(Q7-Pad2)"
+      "Net-(Q9-Pad2)" "Net-(R20-Pad2)" "Net-(R22-Pad1)" "Net-(R3-Pad2)" "Net-(U3-Pad4)"
+      PA0 PA1 PA2 PA4 PA5 PA6 PA7 PB12 PB13 PB14 PB15 PB4 PB5 PB6 PB7 RSRVD
+      (circuit
+        (use_via Via[0-1]_600:400_um)
+      )
+      (rule
+        (width 250)
+        (clearance 200.1)
+      )
+    )
+  )
+  (wiring
+  )
+)

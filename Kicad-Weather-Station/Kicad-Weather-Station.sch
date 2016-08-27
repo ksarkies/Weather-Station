@@ -1006,7 +1006,6 @@ NoConn ~ 1750 6100
 NoConn ~ 1650 6100
 NoConn ~ 1550 6100
 NoConn ~ 1450 6100
-NoConn ~ 2900 5150
 NoConn ~ 2800 5150
 NoConn ~ 2700 5150
 NoConn ~ 2600 5150
@@ -1055,11 +1054,11 @@ F 3 "" H 9400 1500 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L MicroSD J1
+L MicroSD_Amph_114_00841_68 J1
 U 1 1 5798C59E
 P 1950 7200
 F 0 "J1" H 1750 7900 60  0000 C CNN
-F 1 "MicroSD" H 1750 6500 60  0000 C CNN
+F 1 "MicroSD" H 1750 6250 60  0000 C CNN
 F 2 "WeatherStation:Conn_uSDcard_Amph_114_00841_68" H 2050 7350 60  0001 C CNN
 F 3 "" H 2050 7350 60  0000 C CNN
 	1    1950 7200
@@ -1081,15 +1080,15 @@ Text GLabel 1950 7000 1    60   Input ~ 0
 PB14
 Text GLabel 1550 7000 1    60   Input ~ 0
 PB15
-Text GLabel 3850 6700 1    60   Input ~ 0
+Text GLabel 4050 6500 1    60   Input ~ 0
 +3.3V
-Text GLabel 3550 6850 0    60   Input ~ 0
+Text GLabel 3750 6850 0    60   Input ~ 0
 PB12
-Text GLabel 3550 7000 0    60   Input ~ 0
+Text GLabel 3750 7000 0    60   Input ~ 0
 PB13
-Text GLabel 3550 7150 0    60   Input ~ 0
+Text GLabel 3750 7150 0    60   Input ~ 0
 PB14
-Text GLabel 3550 7300 0    60   Input ~ 0
+Text GLabel 3750 7300 0    60   Input ~ 0
 PB15
 Text GLabel 1650 7000 1    60   Input ~ 0
 +3.3V
@@ -1150,7 +1149,7 @@ F 3 "" H 2550 7000 50  0000 C CNN
 $EndComp
 Text GLabel 2050 7000 1    60   Input ~ 0
 RSRVD
-Text GLabel 3550 7450 0    60   Input ~ 0
+Text GLabel 3750 7450 0    60   Input ~ 0
 RSRVD
 $Comp
 L 78M05 U2
@@ -1166,56 +1165,56 @@ $EndComp
 $Comp
 L R R10
 U 1 1 579728DF
-P 3700 6850
-F 0 "R10" V 3780 6850 50  0000 C CNN
-F 1 "100K" V 3700 6850 50  0000 C CNN
-F 2 "WeatherStation:SM0603_Resistor" V 3630 6850 50  0001 C CNN
-F 3 "" H 3700 6850 50  0000 C CNN
-	1    3700 6850
+P 3900 6850
+F 0 "R10" V 3980 6850 50  0000 C CNN
+F 1 "100K" V 3900 6850 50  0000 C CNN
+F 2 "WeatherStation:SM0603_Resistor" V 3830 6850 50  0001 C CNN
+F 3 "" H 3900 6850 50  0000 C CNN
+	1    3900 6850
 	0    1    1    0   
 $EndComp
 $Comp
 L R R11
 U 1 1 57972AB3
-P 3700 7000
-F 0 "R11" V 3780 7000 50  0000 C CNN
-F 1 "100K" V 3700 7000 50  0000 C CNN
-F 2 "WeatherStation:SM0603_Resistor" V 3630 7000 50  0001 C CNN
-F 3 "" H 3700 7000 50  0000 C CNN
-	1    3700 7000
+P 3900 7000
+F 0 "R11" V 3980 7000 50  0000 C CNN
+F 1 "100K" V 3900 7000 50  0000 C CNN
+F 2 "WeatherStation:SM0603_Resistor" V 3830 7000 50  0001 C CNN
+F 3 "" H 3900 7000 50  0000 C CNN
+	1    3900 7000
 	0    1    1    0   
 $EndComp
 $Comp
 L R R12
 U 1 1 57972B68
-P 3700 7150
-F 0 "R12" V 3780 7150 50  0000 C CNN
-F 1 "100K" V 3700 7150 50  0000 C CNN
-F 2 "WeatherStation:SM0603_Resistor" V 3630 7150 50  0001 C CNN
-F 3 "" H 3700 7150 50  0000 C CNN
-	1    3700 7150
+P 3900 7150
+F 0 "R12" V 3980 7150 50  0000 C CNN
+F 1 "100K" V 3900 7150 50  0000 C CNN
+F 2 "WeatherStation:SM0603_Resistor" V 3830 7150 50  0001 C CNN
+F 3 "" H 3900 7150 50  0000 C CNN
+	1    3900 7150
 	0    1    1    0   
 $EndComp
 $Comp
 L R R13
 U 1 1 57972C20
-P 3700 7300
-F 0 "R13" V 3780 7300 50  0000 C CNN
-F 1 "100K" V 3700 7300 50  0000 C CNN
-F 2 "WeatherStation:SM0603_Resistor" V 3630 7300 50  0001 C CNN
-F 3 "" H 3700 7300 50  0000 C CNN
-	1    3700 7300
+P 3900 7300
+F 0 "R13" V 3980 7300 50  0000 C CNN
+F 1 "100K" V 3900 7300 50  0000 C CNN
+F 2 "WeatherStation:SM0603_Resistor" V 3830 7300 50  0001 C CNN
+F 3 "" H 3900 7300 50  0000 C CNN
+	1    3900 7300
 	0    1    1    0   
 $EndComp
 $Comp
 L R R14
 U 1 1 57972CDF
-P 3700 7450
-F 0 "R14" V 3780 7450 50  0000 C CNN
-F 1 "100K" V 3700 7450 50  0000 C CNN
-F 2 "WeatherStation:SM0603_Resistor" V 3630 7450 50  0001 C CNN
-F 3 "" H 3700 7450 50  0000 C CNN
-	1    3700 7450
+P 3900 7450
+F 0 "R14" V 3980 7450 50  0000 C CNN
+F 1 "100K" V 3900 7450 50  0000 C CNN
+F 2 "WeatherStation:SM0603_Resistor" V 3830 7450 50  0001 C CNN
+F 3 "" H 3900 7450 50  0000 C CNN
+	1    3900 7450
 	0    1    1    0   
 $EndComp
 Wire Wire Line
@@ -1289,7 +1288,7 @@ Wire Wire Line
 	3550 2500 3550 4400
 Connection ~ 3400 900 
 Wire Wire Line
-	3400 1200 3400 900 
+	3400 900  3400 1200
 Wire Wire Line
 	2550 900  6750 900 
 Connection ~ 2550 1100
@@ -1373,16 +1372,16 @@ Connection ~ 3100 900
 Connection ~ 2800 900 
 Connection ~ 9050 1500
 Wire Wire Line
-	3100 1200 2550 1200
+	2550 1200 3100 1200
 Connection ~ 2550 1200
 Connection ~ 2800 1200
 Connection ~ 9400 1500
 Wire Wire Line
-	3850 6700 3850 7450
-Connection ~ 3850 6850
-Connection ~ 3850 7000
-Connection ~ 3850 7150
-Connection ~ 3850 7300
+	4050 6500 4050 7450
+Connection ~ 4050 6850
+Connection ~ 4050 7000
+Connection ~ 4050 7150
+Connection ~ 4050 7300
 NoConn ~ 1350 7000
 $Comp
 L CONN_01X01 P8
@@ -1505,4 +1504,33 @@ F 3 "" H 8750 4900 50  0000 C CNN
 	1    8750 4900
 	1    0    0    -1  
 $EndComp
+$Comp
+L Earth #PWR044
+U 1 1 57C198FD
+P 2750 7000
+F 0 "#PWR044" H 2750 6750 50  0001 C CNN
+F 1 "Earth" H 2750 6850 50  0001 C CNN
+F 2 "" H 2750 7000 50  0000 C CNN
+F 3 "" H 2750 7000 50  0000 C CNN
+	1    2750 7000
+	-1   0    0    1   
+$EndComp
+$Comp
+L R R26
+U 1 1 57C19F76
+P 3900 6700
+F 0 "R26" V 3980 6700 50  0000 C CNN
+F 1 "100K" V 3900 6700 50  0000 C CNN
+F 2 "WeatherStation:SM0603_Resistor" V 3830 6700 50  0001 C CNN
+F 3 "" H 3900 6700 50  0000 C CNN
+	1    3900 6700
+	0    1    1    0   
+$EndComp
+Text GLabel 2900 5150 1    60   Input ~ 0
+PA8
+Text GLabel 3750 6700 0    60   Input ~ 0
+PA8
+Text GLabel 2650 7000 1    60   Input ~ 0
+PA8
+Connection ~ 4050 6700
 $EndSCHEMATC

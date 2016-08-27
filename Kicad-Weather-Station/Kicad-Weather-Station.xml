@@ -1,0 +1,1153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>/home/ksarkies/Projects/Weather-Station/Kicad-Weather-Station/Kicad-Weather-Station.sch</source>
+    <date>Wed 10 Aug 2016 15:56:40 ACST</date>
+    <tool>Eeschema 4.0.2+e4-6225~38~ubuntu14.04.1-stable</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>Kicad-Weather-Station.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="Q1">
+      <value>MMBT3904</value>
+      <footprint>WeatherStation:SOT23EBC</footprint>
+      <libsource lib="device" part="Q_NPN_EBC"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579469B0</tstamp>
+    </comp>
+    <comp ref="Q2">
+      <value>MMBT3904</value>
+      <footprint>WeatherStation:SOT23EBC</footprint>
+      <libsource lib="device" part="Q_NPN_EBC"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57946B6D</tstamp>
+    </comp>
+    <comp ref="Q3">
+      <value>MMBT3906</value>
+      <footprint>WeatherStation:SOT23EBC</footprint>
+      <libsource lib="device" part="Q_PNP_EBC"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57946B8E</tstamp>
+    </comp>
+    <comp ref="Q4">
+      <value>SUD45P03-12-GE3</value>
+      <footprint>WeatherStation:TO-252-2Lead</footprint>
+      <libsource lib="device" part="Q_PMOS_GDS"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57946BC6</tstamp>
+    </comp>
+    <comp ref="R8">
+      <value>10K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57946E13</tstamp>
+    </comp>
+    <comp ref="R5">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57946ED8</tstamp>
+    </comp>
+    <comp ref="R1">
+      <value>10K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57946F81</tstamp>
+    </comp>
+    <comp ref="CON1">
+      <value>Solar Panel</value>
+      <footprint>WeatherStation:BARREL_JACK</footprint>
+      <libsource lib="conn" part="BARREL_JACK"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57947748</tstamp>
+    </comp>
+    <comp ref="R9">
+      <value>1</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57947CC0</tstamp>
+    </comp>
+    <comp ref="Q5">
+      <value>MMBT3904</value>
+      <footprint>WeatherStation:SOT23EBC</footprint>
+      <libsource lib="device" part="Q_NPN_EBC"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794871D</tstamp>
+    </comp>
+    <comp ref="Q7">
+      <value>MMBT3904</value>
+      <footprint>WeatherStation:SOT23EBC</footprint>
+      <libsource lib="device" part="Q_NPN_EBC"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57948723</tstamp>
+    </comp>
+    <comp ref="Q8">
+      <value>MMBT3906</value>
+      <footprint>WeatherStation:SOT23EBC</footprint>
+      <libsource lib="device" part="Q_PNP_EBC"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57948729</tstamp>
+    </comp>
+    <comp ref="Q9">
+      <value>SUD45P03-12-GE3</value>
+      <footprint>WeatherStation:TO-252-2Lead</footprint>
+      <libsource lib="device" part="Q_PMOS_GDS"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794872F</tstamp>
+    </comp>
+    <comp ref="R16">
+      <value>10K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57948735</tstamp>
+    </comp>
+    <comp ref="R6">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794873B</tstamp>
+    </comp>
+    <comp ref="R22">
+      <value>470</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794875F</tstamp>
+    </comp>
+    <comp ref="D1">
+      <value>MBR0520LT1G</value>
+      <footprint>WeatherStation:SOD-123</footprint>
+      <libsource lib="device" part="D_Schottky"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57948A62</tstamp>
+    </comp>
+    <comp ref="U3">
+      <value>TPS77033</value>
+      <footprint>WeatherStation:SOT23-5</footprint>
+      <libsource lib="KB1LQC" part="TPS77033"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794A170</tstamp>
+    </comp>
+    <comp ref="R24">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794A35E</tstamp>
+    </comp>
+    <comp ref="R25">
+      <value>68K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794A407</tstamp>
+    </comp>
+    <comp ref="U1">
+      <value>LMV324</value>
+      <footprint>WeatherStation:SOIC-14_N</footprint>
+      <libsource lib="linear" part="LM324"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57948CB0</tstamp>
+    </comp>
+    <comp ref="R3">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794941C</tstamp>
+    </comp>
+    <comp ref="R4">
+      <value>10K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57949512</tstamp>
+    </comp>
+    <comp ref="R20">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579498DB</tstamp>
+    </comp>
+    <comp ref="R21">
+      <value>10K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579498E1</tstamp>
+    </comp>
+    <comp ref="R18">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57949AE3</tstamp>
+    </comp>
+    <comp ref="P7">
+      <value>Battery</value>
+      <footprint>WeatherStation:PINHEAD1-2</footprint>
+      <libsource lib="conn" part="CONN_01X02"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794A4D6</tstamp>
+    </comp>
+    <comp ref="R23">
+      <value>1</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794A692</tstamp>
+    </comp>
+    <comp ref="Q6">
+      <value>MMBT3904</value>
+      <footprint>WeatherStation:SOT23EBC</footprint>
+      <libsource lib="device" part="Q_NPN_EBC"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794F0C3</tstamp>
+    </comp>
+    <comp ref="R7">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794F3E5</tstamp>
+    </comp>
+    <comp ref="R2">
+      <value>10K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5794F6E9</tstamp>
+    </comp>
+    <comp ref="D2">
+      <value>1N4148</value>
+      <footprint>WeatherStation:SOD-523</footprint>
+      <libsource lib="device" part="D"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579521C9</tstamp>
+    </comp>
+    <comp ref="C3">
+      <value>100uF</value>
+      <footprint>WeatherStation:SM1206POL</footprint>
+      <libsource lib="device" part="CP"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57953173</tstamp>
+    </comp>
+    <comp ref="C4">
+      <value>10uF</value>
+      <footprint>WeatherStation:SM1206POL</footprint>
+      <libsource lib="device" part="CP"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57953264</tstamp>
+    </comp>
+    <comp ref="C2">
+      <value>100uF</value>
+      <footprint>WeatherStation:SM1206POL</footprint>
+      <libsource lib="device" part="CP"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57954A85</tstamp>
+    </comp>
+    <comp ref="C1">
+      <value>0.1uF</value>
+      <footprint>WeatherStation:SM0603_Capa</footprint>
+      <libsource lib="device" part="C"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57954AF6</tstamp>
+    </comp>
+    <comp ref="R17">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57958921</tstamp>
+    </comp>
+    <comp ref="P1">
+      <value>CONN_01X25</value>
+      <footprint>WeatherStation:Pin_Header_Straight_1x25</footprint>
+      <libsource lib="conn" part="CONN_01X25"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5795879B</tstamp>
+    </comp>
+    <comp ref="P2">
+      <value>CONN_01X25</value>
+      <footprint>WeatherStation:Pin_Header_Straight_1x25</footprint>
+      <libsource lib="conn" part="CONN_01X25"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579588A6</tstamp>
+    </comp>
+    <comp ref="P3">
+      <value>Rain Gauge</value>
+      <footprint>WeatherStation:PINHEAD1-2</footprint>
+      <libsource lib="conn" part="CONN_01X02"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5795907D</tstamp>
+    </comp>
+    <comp ref="P5">
+      <value>Wind Speed</value>
+      <footprint>WeatherStation:PINHEAD1-2</footprint>
+      <libsource lib="conn" part="CONN_01X02"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57959159</tstamp>
+    </comp>
+    <comp ref="P4">
+      <value>Temperature/Humidity</value>
+      <footprint>WeatherStation:PINHEAD1-3</footprint>
+      <libsource lib="conn" part="CONN_01X03"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579591CF</tstamp>
+    </comp>
+    <comp ref="P6">
+      <value>Air Pressure</value>
+      <footprint>WeatherStation:PINHEAD1-4</footprint>
+      <libsource lib="conn" part="CONN_01X04"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57959288</tstamp>
+    </comp>
+    <comp ref="R15">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5795E069</tstamp>
+    </comp>
+    <comp ref="R19">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5795E4A4</tstamp>
+    </comp>
+    <comp ref="JP1">
+      <value>JUMPER3</value>
+      <footprint>WeatherStation:PINHEAD1-3</footprint>
+      <libsource lib="device" part="JUMPER3"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57973F71</tstamp>
+    </comp>
+    <comp ref="RV1">
+      <value>100K</value>
+      <footprint>Potentiometers:Potentiometer_Bourns_3339P_Angular_ScrewUp</footprint>
+      <libsource lib="device" part="POT"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579744A7</tstamp>
+    </comp>
+    <comp ref="J1">
+      <value>MicroSD</value>
+      <footprint>WeatherStation:Conn_uSDcard</footprint>
+      <libsource lib="DataStorage" part="MicroSD"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5798C59E</tstamp>
+    </comp>
+    <comp ref="U2">
+      <value>78M05</value>
+      <footprint>WeatherStation:TO-252-2Lead</footprint>
+      <libsource lib="Regulators" part="78M05"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5796D7C3</tstamp>
+    </comp>
+    <comp ref="R10">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579728DF</tstamp>
+    </comp>
+    <comp ref="R11">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57972AB3</tstamp>
+    </comp>
+    <comp ref="R12">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57972B68</tstamp>
+    </comp>
+    <comp ref="R13">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57972C20</tstamp>
+    </comp>
+    <comp ref="R14">
+      <value>100K</value>
+      <footprint>WeatherStation:SM0603_Resistor</footprint>
+      <libsource lib="device" part="R"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57972CDF</tstamp>
+    </comp>
+    <comp ref="P8">
+      <value>CONN_01X01</value>
+      <footprint>WeatherStation:SIL-1</footprint>
+      <libsource lib="conn" part="CONN_01X01"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5798030E</tstamp>
+    </comp>
+    <comp ref="P9">
+      <value>CONN_01X01</value>
+      <footprint>WeatherStation:SIL-1</footprint>
+      <libsource lib="conn" part="CONN_01X01"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>579803AD</tstamp>
+    </comp>
+    <comp ref="P10">
+      <value>CONN_01X01</value>
+      <footprint>WeatherStation:SIL-1</footprint>
+      <libsource lib="conn" part="CONN_01X01"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57980464</tstamp>
+    </comp>
+    <comp ref="P11">
+      <value>CONN_01X01</value>
+      <footprint>WeatherStation:SIL-1</footprint>
+      <libsource lib="conn" part="CONN_01X01"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57980521</tstamp>
+    </comp>
+    <comp ref="P12">
+      <value>CONN_01X01</value>
+      <footprint>WeatherStation:SIL-1</footprint>
+      <libsource lib="conn" part="CONN_01X01"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57986893</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Regulators" part="78M05">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">78M05</field>
+      </fields>
+      <pins>
+        <pin num="1" name="VI" type="input"/>
+        <pin num="2" name="GND" type="input"/>
+        <pin num="3" name="VO" type="power_out"/>
+      </pins>
+    </libpart>
+    <libpart lib="conn" part="BARREL_JACK">
+      <description>DC Barrel Jack</description>
+      <fields>
+        <field name="Reference">CON</field>
+        <field name="Value">BARREL_JACK</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+        <pin num="3" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="C">
+      <description>Unpolarized capacitor</description>
+      <footprints>
+        <fp>C?</fp>
+        <fp>C_????_*</fp>
+        <fp>C_????</fp>
+        <fp>SMD*_c</fp>
+        <fp>Capacitor*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="conn" part="CONN_01X01">
+      <description>Connector 01x01</description>
+      <footprints>
+        <fp>Pin_Header_Straight_1X01</fp>
+        <fp>Pin_Header_Angled_1X01</fp>
+        <fp>Socket_Strip_Straight_1X01</fp>
+        <fp>Socket_Strip_Angled_1X01</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">P</field>
+        <field name="Value">CONN_01X01</field>
+      </fields>
+      <pins>
+        <pin num="1" name="P1" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="conn" part="CONN_01X02">
+      <description>Connector 01x02</description>
+      <footprints>
+        <fp>Pin_Header_Straight_1X02</fp>
+        <fp>Pin_Header_Angled_1X02</fp>
+        <fp>Socket_Strip_Straight_1X02</fp>
+        <fp>Socket_Strip_Angled_1X02</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">P</field>
+        <field name="Value">CONN_01X02</field>
+      </fields>
+      <pins>
+        <pin num="1" name="P1" type="passive"/>
+        <pin num="2" name="P2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="conn" part="CONN_01X03">
+      <description>Connector 01x03</description>
+      <footprints>
+        <fp>Pin_Header_Straight_1X03</fp>
+        <fp>Pin_Header_Angled_1X03</fp>
+        <fp>Socket_Strip_Straight_1X03</fp>
+        <fp>Socket_Strip_Angled_1X03</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">P</field>
+        <field name="Value">CONN_01X03</field>
+      </fields>
+      <pins>
+        <pin num="1" name="P1" type="passive"/>
+        <pin num="2" name="P2" type="passive"/>
+        <pin num="3" name="P3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="conn" part="CONN_01X04">
+      <description>Connector 01x04</description>
+      <footprints>
+        <fp>Pin_Header_Straight_1X04</fp>
+        <fp>Pin_Header_Angled_1X04</fp>
+        <fp>Socket_Strip_Straight_1X04</fp>
+        <fp>Socket_Strip_Angled_1X04</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">P</field>
+        <field name="Value">CONN_01X04</field>
+      </fields>
+      <pins>
+        <pin num="1" name="P1" type="passive"/>
+        <pin num="2" name="P2" type="passive"/>
+        <pin num="3" name="P3" type="passive"/>
+        <pin num="4" name="P4" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="conn" part="CONN_01X25">
+      <description>Connector 01x25</description>
+      <footprints>
+        <fp>Pin_Header_Straight_1X25</fp>
+        <fp>Pin_Header_Angled_1X25</fp>
+        <fp>Socket_Strip_Straight_1X25</fp>
+        <fp>Socket_Strip_Angled_1X25</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">P</field>
+        <field name="Value">CONN_01X25</field>
+      </fields>
+      <pins>
+        <pin num="1" name="P1" type="passive"/>
+        <pin num="2" name="P2" type="passive"/>
+        <pin num="3" name="P3" type="passive"/>
+        <pin num="4" name="P4" type="passive"/>
+        <pin num="5" name="P5" type="passive"/>
+        <pin num="6" name="P6" type="passive"/>
+        <pin num="7" name="P7" type="passive"/>
+        <pin num="8" name="P8" type="passive"/>
+        <pin num="9" name="P9" type="passive"/>
+        <pin num="10" name="P10" type="passive"/>
+        <pin num="11" name="P11" type="passive"/>
+        <pin num="12" name="P12" type="passive"/>
+        <pin num="13" name="P13" type="passive"/>
+        <pin num="14" name="P14" type="passive"/>
+        <pin num="15" name="P15" type="passive"/>
+        <pin num="16" name="P16" type="passive"/>
+        <pin num="17" name="P17" type="passive"/>
+        <pin num="18" name="P18" type="passive"/>
+        <pin num="19" name="P19" type="passive"/>
+        <pin num="20" name="P20" type="passive"/>
+        <pin num="21" name="P21" type="passive"/>
+        <pin num="22" name="P22" type="passive"/>
+        <pin num="23" name="P23" type="passive"/>
+        <pin num="24" name="P24" type="passive"/>
+        <pin num="25" name="P25" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="CP">
+      <description>Polarised capacitor</description>
+      <footprints>
+        <fp>CP*</fp>
+        <fp>Elko*</fp>
+        <fp>TantalC*</fp>
+        <fp>C*elec</fp>
+        <fp>c_elec*</fp>
+        <fp>SMD*_Pol</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">CP</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="D">
+      <description>Diode</description>
+      <footprints>
+        <fp>Diode_*</fp>
+        <fp>D-Pak_TO252AA</fp>
+        <fp>*SingleDiode</fp>
+        <fp>*_Diode_*</fp>
+        <fp>*SingleDiode*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">D</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="D_Schottky">
+      <description>Diode schottky</description>
+      <footprints>
+        <fp>D-Pak_TO252AA</fp>
+        <fp>Diode_*</fp>
+        <fp>*SingleDiode</fp>
+        <fp>*SingleDiode*</fp>
+        <fp>*_Diode_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">D_Schottky</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="JUMPER3">
+      <fields>
+        <field name="Reference">JP</field>
+        <field name="Value">JUMPER3</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+        <pin num="3" name="3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="linear" part="LM2902N">
+      <aliases>
+        <alias>LM324</alias>
+        <alias>TLC274</alias>
+        <alias>TL074</alias>
+        <alias>LM324N</alias>
+        <alias>LM324AN</alias>
+        <alias>MCP6004</alias>
+      </aliases>
+      <description>Quad Op amp.</description>
+      <docs>op_amps/lm324.pdf</docs>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">LM2902N</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="output"/>
+        <pin num="2" name="-" type="input"/>
+        <pin num="3" name="+" type="input"/>
+        <pin num="4" name="V+" type="power_in"/>
+        <pin num="5" name="+" type="input"/>
+        <pin num="6" name="-" type="input"/>
+        <pin num="7" name="~" type="output"/>
+        <pin num="8" name="~" type="output"/>
+        <pin num="9" name="-" type="input"/>
+        <pin num="10" name="+" type="input"/>
+        <pin num="11" name="V-" type="power_in"/>
+        <pin num="12" name="+" type="input"/>
+        <pin num="13" name="-" type="input"/>
+        <pin num="14" name="~" type="output"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="POT">
+      <description>Potentionmetre</description>
+      <fields>
+        <field name="Reference">RV</field>
+        <field name="Value">POT</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+        <pin num="3" name="3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="Q_NPN_EBC">
+      <description>Transistor NPN (general)</description>
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">Q_NPN_EBC</field>
+      </fields>
+      <pins>
+        <pin num="1" name="E" type="passive"/>
+        <pin num="2" name="B" type="passive"/>
+        <pin num="3" name="C" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="Q_PMOS_GDS">
+      <description>Transistor P-MOSFET (general)</description>
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">Q_PMOS_GDS</field>
+      </fields>
+      <pins>
+        <pin num="1" name="G" type="input"/>
+        <pin num="2" name="D" type="passive"/>
+        <pin num="3" name="S" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="Q_PNP_EBC">
+      <description>Transistor PNP (general)</description>
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">Q_PNP_EBC</field>
+      </fields>
+      <pins>
+        <pin num="1" name="E" type="passive"/>
+        <pin num="2" name="B" type="input"/>
+        <pin num="3" name="C" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="R">
+      <description>Resistor</description>
+      <footprints>
+        <fp>R_*</fp>
+        <fp>Resistor_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="DataStorage" part="SD">
+      <aliases>
+        <alias>MicroSD</alias>
+      </aliases>
+      <footprints>
+        <fp>MICRO_SD*</fp>
+        <fp>SD*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">SD</field>
+      </fields>
+      <pins>
+        <pin num="1" name="NC" type="BiDi"/>
+        <pin num="2" name="CS" type="input"/>
+        <pin num="3" name="DI" type="input"/>
+        <pin num="4" name="VCC" type="power_in"/>
+        <pin num="5" name="SCK" type="input"/>
+        <pin num="6" name="GND" type="power_in"/>
+        <pin num="7" name="DO" type="output"/>
+        <pin num="8" name="RSV" type="input"/>
+        <pin num="SHLD" name="SHIELD" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="KB1LQC" part="TPS77033">
+      <footprints>
+        <fp>TO92*</fp>
+        <fp>TO220*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">TPS77033</field>
+      </fields>
+      <pins>
+        <pin num="1" name="IN" type="power_in"/>
+        <pin num="2" name="GND" type="power_in"/>
+        <pin num="3" name="~EN~" type="input"/>
+        <pin num="4" name="NC/FB" type="passive"/>
+        <pin num="5" name="OUT" type="power_out"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="device">
+      <uri>/usr/share/kicad/library/device.lib</uri>
+    </library>
+    <library logical="conn">
+      <uri>/usr/share/kicad/library/conn.lib</uri>
+    </library>
+    <library logical="linear">
+      <uri>/usr/share/kicad/library/linear.lib</uri>
+    </library>
+    <library logical="DataStorage">
+      <uri>/home/ksarkies/Projects/Weather-Station/Kicad-Weather-Station/symbols/DataStorage.lib</uri>
+    </library>
+    <library logical="KB1LQC">
+      <uri>/home/ksarkies/Projects/Weather-Station/Kicad-Weather-Station/symbols/KB1LQC.lib</uri>
+    </library>
+    <library logical="Regulators">
+      <uri>/home/ksarkies/Projects/Weather-Station/Kicad-Weather-Station/symbols/Regulators.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="Earth">
+      <node ref="R25" pin="2"/>
+      <node ref="U3" pin="3"/>
+      <node ref="U3" pin="2"/>
+      <node ref="Q6" pin="1"/>
+      <node ref="R23" pin="2"/>
+      <node ref="U1" pin="11"/>
+      <node ref="R18" pin="2"/>
+      <node ref="R21" pin="2"/>
+      <node ref="R4" pin="2"/>
+      <node ref="CON1" pin="3"/>
+      <node ref="CON1" pin="2"/>
+      <node ref="P10" pin="1"/>
+      <node ref="P12" pin="1"/>
+      <node ref="P11" pin="1"/>
+      <node ref="P9" pin="1"/>
+      <node ref="P8" pin="1"/>
+      <node ref="C1" pin="2"/>
+      <node ref="P6" pin="4"/>
+      <node ref="P4" pin="3"/>
+      <node ref="P5" pin="2"/>
+      <node ref="P3" pin="2"/>
+      <node ref="C2" pin="2"/>
+      <node ref="C4" pin="2"/>
+      <node ref="C3" pin="2"/>
+      <node ref="D2" pin="2"/>
+      <node ref="R2" pin="2"/>
+      <node ref="Q1" pin="1"/>
+      <node ref="R1" pin="2"/>
+      <node ref="Q3" pin="3"/>
+      <node ref="R22" pin="2"/>
+      <node ref="Q8" pin="3"/>
+      <node ref="Q5" pin="1"/>
+      <node ref="R9" pin="2"/>
+      <node ref="P2" pin="25"/>
+      <node ref="J1" pin="SHLD"/>
+      <node ref="J1" pin="SHLD"/>
+      <node ref="RV1" pin="3"/>
+      <node ref="J1" pin="SHLD"/>
+      <node ref="J1" pin="6"/>
+    </net>
+    <net code="2" name="+3.3V">
+      <node ref="P4" pin="1"/>
+      <node ref="P6" pin="1"/>
+      <node ref="R19" pin="2"/>
+      <node ref="C4" pin="1"/>
+      <node ref="U3" pin="5"/>
+      <node ref="R14" pin="1"/>
+      <node ref="R13" pin="1"/>
+      <node ref="R12" pin="1"/>
+      <node ref="R11" pin="1"/>
+      <node ref="R10" pin="1"/>
+      <node ref="RV1" pin="1"/>
+      <node ref="U1" pin="4"/>
+      <node ref="R15" pin="1"/>
+      <node ref="J1" pin="4"/>
+      <node ref="P1" pin="25"/>
+    </net>
+    <net code="3" name="Net-(J1-Pad1)">
+      <node ref="J1" pin="1"/>
+    </net>
+    <net code="4" name="PA7">
+      <node ref="P1" pin="8"/>
+      <node ref="U1" pin="8"/>
+      <node ref="R20" pin="1"/>
+    </net>
+    <net code="5" name="Net-(Q7-Pad2)">
+      <node ref="R17" pin="1"/>
+      <node ref="Q8" pin="2"/>
+      <node ref="Q7" pin="2"/>
+    </net>
+    <net code="6" name="Net-(Q5-Pad3)">
+      <node ref="Q6" pin="3"/>
+      <node ref="R17" pin="2"/>
+      <node ref="Q5" pin="3"/>
+      <node ref="R16" pin="2"/>
+    </net>
+    <net code="7" name="RSRVD">
+      <node ref="J1" pin="8"/>
+      <node ref="R14" pin="2"/>
+    </net>
+    <net code="8" name="PB14">
+      <node ref="J1" pin="7"/>
+      <node ref="P2" pin="8"/>
+      <node ref="R12" pin="2"/>
+    </net>
+    <net code="9" name="PB13">
+      <node ref="P2" pin="7"/>
+      <node ref="J1" pin="5"/>
+      <node ref="R11" pin="2"/>
+    </net>
+    <net code="10" name="PB12">
+      <node ref="J1" pin="2"/>
+      <node ref="P2" pin="6"/>
+      <node ref="R10" pin="2"/>
+    </net>
+    <net code="11" name="Net-(D1-Pad2)">
+      <node ref="D1" pin="2"/>
+      <node ref="U2" pin="3"/>
+    </net>
+    <net code="12" name="Net-(Q9-Pad2)">
+      <node ref="U2" pin="1"/>
+      <node ref="Q9" pin="2"/>
+    </net>
+    <net code="13" name="Net-(JP1-Pad1)">
+      <node ref="JP1" pin="1"/>
+      <node ref="RV1" pin="2"/>
+    </net>
+    <net code="14" name="Net-(P2-Pad19)">
+      <node ref="P2" pin="19"/>
+    </net>
+    <net code="15" name="Net-(P2-Pad20)">
+      <node ref="P2" pin="20"/>
+    </net>
+    <net code="16" name="Net-(P2-Pad21)">
+      <node ref="P2" pin="21"/>
+    </net>
+    <net code="17" name="Net-(P2-Pad22)">
+      <node ref="P2" pin="22"/>
+    </net>
+    <net code="18" name="Net-(P2-Pad23)">
+      <node ref="P2" pin="23"/>
+    </net>
+    <net code="19" name="Net-(P2-Pad24)">
+      <node ref="P2" pin="24"/>
+    </net>
+    <net code="20" name="Net-(JP1-Pad2)">
+      <node ref="U1" pin="5"/>
+      <node ref="JP1" pin="2"/>
+    </net>
+    <net code="21" name="Net-(P2-Pad18)">
+      <node ref="P2" pin="18"/>
+    </net>
+    <net code="22" name="Net-(P1-Pad10)">
+      <node ref="P1" pin="10"/>
+    </net>
+    <net code="23" name="Net-(P1-Pad4)">
+      <node ref="P1" pin="4"/>
+    </net>
+    <net code="24" name="Net-(U3-Pad4)">
+      <node ref="U3" pin="4"/>
+    </net>
+    <net code="25" name="Net-(P1-Pad24)">
+      <node ref="P1" pin="24"/>
+    </net>
+    <net code="26" name="Net-(P1-Pad20)">
+      <node ref="P1" pin="20"/>
+    </net>
+    <net code="27" name="Net-(P1-Pad19)">
+      <node ref="P1" pin="19"/>
+    </net>
+    <net code="28" name="Net-(P1-Pad18)">
+      <node ref="P1" pin="18"/>
+    </net>
+    <net code="29" name="Net-(P1-Pad17)">
+      <node ref="P1" pin="17"/>
+    </net>
+    <net code="30" name="Net-(P1-Pad16)">
+      <node ref="P1" pin="16"/>
+    </net>
+    <net code="31" name="Net-(P1-Pad15)">
+      <node ref="P1" pin="15"/>
+    </net>
+    <net code="32" name="Net-(P1-Pad14)">
+      <node ref="P1" pin="14"/>
+    </net>
+    <net code="33" name="Net-(P1-Pad13)">
+      <node ref="P1" pin="13"/>
+    </net>
+    <net code="34" name="Net-(P1-Pad12)">
+      <node ref="P1" pin="12"/>
+    </net>
+    <net code="35" name="Net-(P1-Pad11)">
+      <node ref="P1" pin="11"/>
+    </net>
+    <net code="36" name="Net-(P1-Pad9)">
+      <node ref="P1" pin="9"/>
+    </net>
+    <net code="37" name="Net-(P2-Pad2)">
+      <node ref="P2" pin="2"/>
+    </net>
+    <net code="38" name="Net-(P2-Pad3)">
+      <node ref="P2" pin="3"/>
+    </net>
+    <net code="39" name="Net-(P2-Pad4)">
+      <node ref="P2" pin="4"/>
+    </net>
+    <net code="40" name="Net-(P2-Pad5)">
+      <node ref="P2" pin="5"/>
+    </net>
+    <net code="41" name="Net-(P2-Pad10)">
+      <node ref="P2" pin="10"/>
+    </net>
+    <net code="42" name="Net-(P2-Pad11)">
+      <node ref="P2" pin="11"/>
+    </net>
+    <net code="43" name="Net-(P2-Pad12)">
+      <node ref="P2" pin="12"/>
+    </net>
+    <net code="44" name="Net-(P2-Pad13)">
+      <node ref="P2" pin="13"/>
+    </net>
+    <net code="45" name="Net-(P2-Pad14)">
+      <node ref="P2" pin="14"/>
+    </net>
+    <net code="46" name="Net-(P2-Pad15)">
+      <node ref="P2" pin="15"/>
+    </net>
+    <net code="47" name="Net-(P2-Pad16)">
+      <node ref="P2" pin="16"/>
+    </net>
+    <net code="48" name="Net-(P2-Pad17)">
+      <node ref="P2" pin="17"/>
+    </net>
+    <net code="49" name="PA6">
+      <node ref="R24" pin="2"/>
+      <node ref="R25" pin="1"/>
+      <node ref="P1" pin="7"/>
+    </net>
+    <net code="50" name="PA5">
+      <node ref="R18" pin="1"/>
+      <node ref="JP1" pin="3"/>
+      <node ref="P1" pin="6"/>
+    </net>
+    <net code="51" name="Net-(Q5-Pad2)">
+      <node ref="R6" pin="1"/>
+      <node ref="Q5" pin="2"/>
+    </net>
+    <net code="52" name="Net-(D2-Pad1)">
+      <node ref="D2" pin="1"/>
+      <node ref="R23" pin="1"/>
+      <node ref="P7" pin="2"/>
+      <node ref="U1" pin="10"/>
+    </net>
+    <net code="53" name="Net-(R20-Pad2)">
+      <node ref="U1" pin="9"/>
+      <node ref="R20" pin="2"/>
+      <node ref="R21" pin="1"/>
+    </net>
+    <net code="54" name="Net-(R22-Pad1)">
+      <node ref="U1" pin="6"/>
+      <node ref="U1" pin="7"/>
+      <node ref="R22" pin="1"/>
+      <node ref="U2" pin="2"/>
+    </net>
+    <net code="55" name="Net-(R3-Pad2)">
+      <node ref="R3" pin="2"/>
+      <node ref="R4" pin="1"/>
+      <node ref="U1" pin="2"/>
+    </net>
+    <net code="56" name="Net-(Q4-Pad2)">
+      <node ref="Q4" pin="2"/>
+      <node ref="R9" pin="1"/>
+      <node ref="U1" pin="3"/>
+    </net>
+    <net code="57" name="PA4">
+      <node ref="R3" pin="1"/>
+      <node ref="P1" pin="5"/>
+      <node ref="U1" pin="1"/>
+    </net>
+    <net code="58" name="Net-(Q6-Pad2)">
+      <node ref="Q6" pin="2"/>
+      <node ref="R7" pin="1"/>
+    </net>
+    <net code="59" name="Net-(Q2-Pad1)">
+      <node ref="Q4" pin="1"/>
+      <node ref="Q3" pin="1"/>
+      <node ref="Q2" pin="1"/>
+    </net>
+    <net code="60" name="Net-(Q1-Pad3)">
+      <node ref="Q2" pin="2"/>
+      <node ref="R8" pin="2"/>
+      <node ref="Q1" pin="3"/>
+      <node ref="Q3" pin="2"/>
+    </net>
+    <net code="61" name="Net-(Q7-Pad1)">
+      <node ref="Q9" pin="1"/>
+      <node ref="Q7" pin="1"/>
+      <node ref="Q8" pin="1"/>
+    </net>
+    <net code="62" name="Net-(C3-Pad1)">
+      <node ref="D1" pin="1"/>
+      <node ref="C3" pin="1"/>
+      <node ref="R24" pin="1"/>
+      <node ref="U3" pin="1"/>
+      <node ref="P7" pin="1"/>
+    </net>
+    <net code="63" name="PB4">
+      <node ref="R5" pin="2"/>
+      <node ref="R7" pin="2"/>
+      <node ref="P1" pin="21"/>
+      <node ref="R1" pin="1"/>
+    </net>
+    <net code="64" name="Net-(Q1-Pad2)">
+      <node ref="Q1" pin="2"/>
+      <node ref="R5" pin="1"/>
+    </net>
+    <net code="65" name="PB15">
+      <node ref="J1" pin="3"/>
+      <node ref="R13" pin="2"/>
+      <node ref="P2" pin="9"/>
+    </net>
+    <net code="66" name="PA2">
+      <node ref="P1" pin="3"/>
+      <node ref="P5" pin="1"/>
+      <node ref="R19" pin="1"/>
+    </net>
+    <net code="67" name="PA0">
+      <node ref="R15" pin="2"/>
+      <node ref="P1" pin="1"/>
+      <node ref="P3" pin="1"/>
+    </net>
+    <net code="68" name="PB7">
+      <node ref="P2" pin="1"/>
+      <node ref="P6" pin="3"/>
+    </net>
+    <net code="69" name="PA1">
+      <node ref="P4" pin="2"/>
+      <node ref="P1" pin="2"/>
+    </net>
+    <net code="70" name="Net-(C1-Pad1)">
+      <node ref="Q9" pin="3"/>
+      <node ref="Q7" pin="3"/>
+      <node ref="CON1" pin="1"/>
+      <node ref="C1" pin="1"/>
+      <node ref="Q4" pin="3"/>
+      <node ref="R8" pin="1"/>
+      <node ref="C2" pin="1"/>
+      <node ref="Q2" pin="3"/>
+      <node ref="R16" pin="1"/>
+    </net>
+    <net code="71" name="PB5">
+      <node ref="R6" pin="2"/>
+      <node ref="P1" pin="22"/>
+      <node ref="R2" pin="1"/>
+    </net>
+    <net code="72" name="PB6">
+      <node ref="P6" pin="2"/>
+      <node ref="P1" pin="23"/>
+    </net>
+  </nets>
+</export>
