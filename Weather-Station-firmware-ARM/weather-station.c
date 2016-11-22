@@ -133,23 +133,33 @@ int main(void)
 			asm("nop");
 		}
 
-    	rtc_set_alarm_time(measurement_time);
-/* Turn off peripherals during stop mode (only ADC and DAC need to do this). */
+/* Possible power down modes are SLEEP or STOP modes only. These can be woken
+by EXTI interrupts and so can register external events as well as RTC alarm for
+periodical servicing of peripherals. If the USART is to be active during low
+power mode then only SLEEP mode can be used. */
+
+/* Turn off peripherals during sleep (only ADC and DAC need to do this in STOP
+mode if regulator low power is used). */
         peripheral_disable();
-/* Set sleep mode and stop */
-		pwr_voltage_regulator_low_power_in_stop();
-/* Don't set complete power down (otherwise it goes to standby) */
-		pwr_set_stop_mode();
 /* Just clear the whole bloody lot of exti pending requests */
 		exti_reset_request(0xFFFFF);
-/* Use light sleep if USART interrupts are to be triggered */
+/* Use DEEPSLEEP mode if USART interrupts are not needed during sleep periods.
+USART is powered off when the 1.8V regulator is powered down. */
 #ifdef DEEPSLEEP
+/* Don't set complete power down (otherwise it goes to standby and memory
+contents are lost) */
+		pwr_set_stop_mode();
 /* Set deep sleep mode bit in SCB to go to stop mode */
 		SCB_SCR |= SCB_SCR_SLEEPDEEP;
+/* Set the 1.8V regulator to low power to preserve registers and SRAM but
+power off core and digital peripherals. */
+		pwr_voltage_regulator_low_power_in_stop();
 #endif
-		asm volatile("wfi");
-/* Repeat setup as clocks seem to have been reset. */
 
+    	rtc_set_alarm_time(measurement_time);
+		asm volatile("wfi");
+
+/* Repeat setup as clocks seem to have been reset. */
 /* Restore hardware clocks and any config that may have been lost. */
         peripheral_enable();
 
