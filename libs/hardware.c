@@ -592,7 +592,13 @@ void adc_setup(void)
     rcc_periph_clock_enable(RCC_ADC1);
 /* Setup the ADC */
     adc_power_on(ADC1);
-    adc_calibration(ADC1);
+    /* Wait for ADC starting up. */
+    uint32_t i;
+    for (i = 0; i < 800000; i++)    /* Wait a bit. */
+        __asm__("nop");
+    adc_reset_calibration(ADC1);
+    adc_calibrate_async(ADC1);
+    while (adc_is_calibrating(ADC1));
 }
 
 /*--------------------------------------------------------------------------*/
