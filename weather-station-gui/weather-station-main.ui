@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Solar Power Management</string>
+   <string>Weather Station</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color:white;</string>
@@ -97,7 +97,7 @@
      <x>103</x>
      <y>547</y>
      <width>471</width>
-     <height>29</height>
+     <height>32</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">

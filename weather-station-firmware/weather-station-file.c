@@ -1,4 +1,4 @@
-/* STM32F1 Weather Station for Solar Power
+/* STM32F1 Weather Station for Solar Power. File Management.
 
 Defines the file management for storage of historical data.
 
@@ -15,7 +15,7 @@ Initial 6 August 2016
 */
 
 /*
- * This file is part of the battery-management-system project.
+ * This file is part of the Battery Management System project.
  *
  * Copyright 2013 K. Sarkies <ksarkies@internode.on.net>
  *
@@ -50,7 +50,7 @@ static void parseFileCommand(char *line);
 static uint8_t findFileHandle(void);
 static void deleteFileHandle(uint8_t fileHandle);
 
-/* Local Variables */
+/* Global Variables */
 /* ChaN FAT */
 static FATFS Fatfs[_VOLUMES];
 static FATFS *fs;		            /* File system object for logical drive 0 */
@@ -58,8 +58,6 @@ static FIL file[MAX_OPEN_FILES];    /* file descriptions, 2 files maximum. */
 static FILINFO fileInfo[MAX_OPEN_FILES];
 static bool fileUsable;
 static uint8_t filemap=0;           /* map of open file handles */
-static uint8_t writeFileHandle;
-static uint8_t readFileHandle;
 
 /*--------------------------------------------------------------------------*/
 /* @brief File Initialization
@@ -74,230 +72,195 @@ static void initFile(void)
     fileUsable = (fileStatus == FR_OK);
 
 /* Initialise some global variables */
-    writeFileHandle = 0xFF;
-    readFileHandle = 0xFF;
     uint8_t i=0;
     for (i=0; i<MAX_OPEN_FILES; i++) fileInfo[i].fname[0] = 0;
     filemap = 0;
 }
 
 /*--------------------------------------------------------------------------*/
-/** @brief Parse a command line and act on it.
+/** @brief Open a File for writing and reading.
 
-Each command is a single character followed by the total length of the command
-plus parameters.
-
-The commands are action commands only:
-W - open a file for writing and reading. Returns a file handle.
-R - open a file for reading. Returns a file handle.
-C - close a file.
-S - store a block of data.
-G - retrieve a block of data.
-F - Free space on drive
-
-All commands return a status value at the end of any other data sent.
-
-@param[in] char *line: the command line in ASCII
+@param[in] char* 8 character filename, plus dot plus 3 character extension.
+@param[out] file handle. On error file handle is 0xFF.
+@returns FRESULT* file status error code.
 */
 
-static void parseFileCommand(char *line)
+FRESULT open_write_file(char* filename, uint8_t* fileHandle)
 {
     FRESULT fileStatus;
-
-    switch (line[0])
+    uint8_t fileHandle = 0xFF;
+/* Already open */
+    if (readFileHandle < 0xFF)
     {
-/* Open a file for read/write */
-/* Parameter is a filename, 8 character plus dot plus 3 character extension */
-/* Returns a file handle. On error file handle is 0xFF. */
-        case 'W':
-        {
-            uint8_t fileHandle = 0xFF;
-/* Already open */
-            if (writeFileHandle < 0xFF)
-                fileStatus = FR_DENIED;
-            else
-            {
-                fileHandle = findFileHandle();
+        fileStatus = FR_DENIED;
+        return fileStatus;
+    }
+    fileHandle = findFileHandle();
 /* Unable to be allocated */
-                if (fileHandle >= MAX_OPEN_FILES)
-                    fileStatus = FR_TOO_MANY_OPEN_FILES;
-                else
-                {
+    if (fileHandle >= MAX_OPEN_FILES)
+    {
+        fileStatus = FR_TOO_MANY_OPEN_FILES;
+        return fileStatus;
+    }
 /* Try to open a file write/read, creating it if necessary */
-                    fileStatus = f_open(&file[fileHandle], line+2, \
-                                        FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
-/* Skip to the end of the file to append. */
-                    if (fileStatus == FR_OK)
-                        fileStatus = f_lseek(&file[fileHandle], f_size(file));
-                    else
-                    {
-                        deleteFileHandle(fileHandle);
-                        fileHandle = 0xFF;
-                    }
-                    writeFileHandle = fileHandle;
-                    if (fileStatus == FR_OK)
-                        fileStatus = f_stat(line+2, fileInfo+writeFileHandle);
-                }
-            }
-          	xQueueSendToBack(fileReceiveQueue,&fileHandle,FILE_SEND_TIMEOUT);
-            break;
-        }
-/* Open a file read only. No check if the file is already opened. */
-/* Parameter is a filename, 8 character plus dot plus 3 character extension */
-/* Returns a file handle */
-        case 'R':
-        {
-            uint8_t fileHandle = 0xFF;
+    fileStatus = f_open(&file[fileHandle], line+2, \
+                        FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
+    if (fileStatus != FR_OK)
+    {
+        deleteFileHandle(fileHandle);
+        fileHandle = 0xFF;
+        return fileStatus;
+    }
+/* Skip to the end of the file to start appending data. */
+    fileStatus = f_lseek(&file[fileHandle], f_size(file));
+    if (fileStatus == FR_OK)
+        fileStatus = f_stat(filename, fileInfo+readFileHandle);
+    return fileStatus;
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Open a File for reading only.
+
+@param[in] char* 8 character filename, plus dot plus 3 character extension.
+@param[out] file handle. On error file handle is 0xFF.
+@returns FRESULT* file status error code.
+*/
+
+FRESULT open_read_file(char* filename, uint8_t* fileHandle)
+{
+    FRESULT fileStatus;
+    fileHandle = 0xFF;
 /* Already open */
-            if (readFileHandle < 0xFF)
-                fileStatus = FR_DENIED;
-            else
-            {
-                fileHandle = findFileHandle();
+    if (readFileHandle < 0xFF)
+    {
+        fileStatus = FR_DENIED;
+        return fileStatus;
+    }
+    fileHandle = findFileHandle();
 /* Unable to be allocated */
-                if (fileHandle >= MAX_OPEN_FILES)
-                    fileStatus = FR_TOO_MANY_OPEN_FILES;
-                else
-                {
+    if (fileHandle >= MAX_OPEN_FILES)
+    {
+        fileStatus = FR_TOO_MANY_OPEN_FILES;
+        return fileStatus;
+    }
 /* Try to open a file read only */
-                    fileStatus = f_open(&file[fileHandle], line+2, \
-                                        FA_OPEN_EXISTING | FA_READ);
-                    if (fileStatus != FR_OK)
-                    {
-                        deleteFileHandle(fileHandle);
-                        fileHandle = 0xFF;
-                    }
-                    readFileHandle = fileHandle;
-                    if (fileStatus == FR_OK)
-                        fileStatus = f_stat(line+2, fileInfo+readFileHandle);
-                }
-            }
-          	xQueueSendToBack(fileReceiveQueue,&fileHandle,FILE_SEND_TIMEOUT);
-            break;
-        }
-/* Close a file */
-/* Parameter is a file handle that was given when opened */
-        case 'C':
-        {
-            if (line[1] != 3)
-            {
-                fileStatus = FR_INVALID_PARAMETER;
-                break;
-            }
-            uint8_t fileHandle = line[2];
-            if (fileHandle >= MAX_OPEN_FILES)
-            {
-                fileStatus = FR_INVALID_OBJECT;
-                break;
-            }
-            if (writeFileHandle == fileHandle) writeFileHandle = 0xFF;
-            else if (readFileHandle == fileHandle) readFileHandle = 0xFF;
-            else
-            {
-                fileStatus = FR_INVALID_OBJECT;
-                break;
-            }
-            fileInfo[fileHandle].fname[0] = 0;
-            deleteFileHandle(fileHandle);
-            fileStatus = f_close(&file[fileHandle]);
-            fileHandle = 0xFF;
-            break;
-        }
-/* Store data to the file starting at the end of the file. */
-/* Parameters are the filehandle, the length of the data block and the data
-block of maximum length 80 bytes. Nothing is written if the line is too long.
-The number of bytes to write is given by the length less 4. Returns the number
-written. The number written will differ from the number requested if the disk
-is full. */
-        case 'P':
-        {
-            if (line[1] < 4) break;
-            uint8_t fileHandle = line[2];
-            UINT length = line[1]-3;
-            UINT numWritten = 0;
-            if (length < 82)
-            {
-                fileStatus = f_write(&file[fileHandle],line+3,length,&numWritten);
-                if (numWritten != length)
-                {
-                    fileStatus = FR_DENIED;
-                }
-                if (fileStatus == FR_OK) f_sync(&file[fileHandle]);
-            }
-            else fileStatus = FR_INVALID_PARAMETER;
-/* Send a denied status if the disk fills. The caller probably won't use this. */
-            break;
-        }
-/* Get data from a file from the last position that data was read after opening. */
-/* Parameters are filehandle followed by the number of bytes to get.
+    fileStatus = f_open(&file[fileHandle], filename, FA_OPEN_EXISTING | FA_READ);
+    if (fileStatus != FR_OK)
+    {
+        deleteFileHandle(fileHandle);
+        fileHandle = 0xFF;
+        return fileStatus;
+    }
+    fileStatus = f_stat(filename, fileInfo+readFileHandle);
+    return fileStatus;
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Close a file.
+
+@param[in] uint8_t* fileHandle: file handle.
+@returns[in] FRESULT* file status error code.
+*/
+
+FRESULT close_file(uint8_t* fileHandle)
+{
+    FRESULT fileStatus;
+    if (fileHandle >= MAX_OPEN_FILES)
+    {
+        fileStatus = FR_INVALID_OBJECT;
+        return fileStatus;
+    }
+    if (writeFileHandle == fileHandle) writeFileHandle = 0xFF;
+    else if (readFileHandle == fileHandle) readFileHandle = 0xFF;
+    else
+    {
+        fileStatus = FR_INVALID_OBJECT;
+        return fileStatus;
+    }
+    fileInfo[fileHandle].fname[0] = 0;
+    deleteFileHandle(fileHandle);
+    fileStatus = f_close(&file[fileHandle]);
+    fileHandle = 0xFF;
+    return fileStatus;
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Store data to the file.
+
+Store data to the file starting at the end of the file. The number written will
+differ from that requested if the storage is full.
+
+@param[in] uint8_t* fileHandle: file handle.
+@param[in] data block.
+@param[in] UINT length: the length of the data block to write.
+@param[out] UINT* numWritten.
+@returns[in] FRESULT* file status error code.
+*/
+
+FRESULT save_to_file(uint8_t* fileHandle, uint8_t* data, UINT length, UINT* numWritten)
+{
+    fileStatus = f_write(&file[fileHandle],data,length,&numWritten);
+    if (fileStatus == FR_OK) f_sync(&file[fileHandle]);
+    return fileStatus;
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Read data from the file.
+
+Get data from a file from the last position that data was read after opening.
 Returns the number read followed by binary byte-wise data. The number read will
-differ from the number requested if EOF reached. */
-        case 'G':
-        {
-            uint8_t buffer[80];
-            uint8_t fileHandle = line[2];
-            uint8_t i = 0;
-            UINT length = line[3];
-            UINT numRead = 0;
-            if (length < 82)
-                fileStatus = f_read(&file[fileHandle],buffer,length,&numRead);
-            else fileStatus = FR_INVALID_PARAMETER;
-            if (uxQueueSpacesAvailable(fileReceiveQueue) >= numRead+1)
-            {
-                xQueueSendToBack(fileReceiveQueue,&numRead,FILE_SEND_TIMEOUT);
-                for (i=0; i<numRead; i++)
-                    xQueueSendToBack(fileReceiveQueue,buffer+i,FILE_SEND_TIMEOUT);
-            }
-            break;
-        }
-/* Directory listing. */
-/* If the name is given, the directory specified is opened and the first entry
-returned. Subsequent calls with zero length name will return subsequent entries.
-Returns a null terminated file name. At the end, or on error, a zero length
-string is sent.
-Preceding the name a type character:
- f = file, d = directory, n = error e = end
-will be sent. */
-        case 'D':
-        {
-            uint8_t i = 0;
-            uint8_t numRead = 0;
-            static DIR directory;
-            FILINFO fileInfo;
-            fileStatus = FR_OK;
-            if (line[2] != 0) fileStatus = f_opendir(&directory, line+2);
-            if (fileStatus == FR_OK)
-            {
-                fileStatus = f_readdir(&directory, &fileInfo);
-                numRead = stringLength(fileInfo.fname);
-            }
-            char type = 'f';
-            if (fileInfo.fattrib == AM_DIR) type = 'd';
-            if (fileInfo.fname[0] == 0) type = 'e';
-            if (fileStatus != FR_OK)
-            {
-                numRead = 0;
-                fileInfo.fname[0] = 0;
-                type = 'n';
-            }
-/* If space on the queue, send the type (char), four bytes of file size (MSB
-first) and null terminated filename */
-            if (uxQueueSpacesAvailable(fileReceiveQueue) >= numRead+2)
-            {
-                xQueueSendToBack(fileReceiveQueue,&type,FILE_SEND_TIMEOUT);
-                uint8_t fileSizeByte = (fileInfo.fsize >> 24) & 0xFF;
-                xQueueSendToBack(fileReceiveQueue,&fileSizeByte,FILE_SEND_TIMEOUT);
-                fileSizeByte = (fileInfo.fsize >> 16) & 0xFF;
-                xQueueSendToBack(fileReceiveQueue,&fileSizeByte,FILE_SEND_TIMEOUT);
-                fileSizeByte = (fileInfo.fsize >> 8) & 0xFF;
-                xQueueSendToBack(fileReceiveQueue,&fileSizeByte,FILE_SEND_TIMEOUT);
-                fileSizeByte = fileInfo.fsize & 0xFF;
-                xQueueSendToBack(fileReceiveQueue,&fileSizeByte,FILE_SEND_TIMEOUT);
-                for (i=0; i<numRead+1; i++)
-                    xQueueSendToBack(fileReceiveQueue,fileInfo.fname+i,FILE_SEND_TIMEOUT);
-            }
-            break;
-        }
+differ from the number requested if EOF reached.
+
+@param[in] uint8_t* fileHandle: file handle.
+@param[in] data block.
+@param[in] UINT length: the length of the data block to read.
+@param[out] UINT* numWritten.
+@returns[in] FRESULT* file status error code.
+*/
+
+FRESULT read_from_file(uint8_t* fileHandle, uint8_t* data, UINT length, UINT* numRead)
+{
+    fileStatus = f_read(&file[fileHandle],data,length,&numRead);
+    return fileStatus;
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Directory listing.
+
+If a directory name is given, the directory specified is opened and the first
+entry is returned. Subsequent calls with zero length directory name will return
+subsequent entries. Returns a null terminated file name. At the end, or on
+error, a zero length string is sent.
+
+@param[in] uint8_t* dirName: null terminated directory name.
+@param[out] uint8_t* fileName: null terminated file name.
+@param[out] UINT* type: a type character: f = file, d = directory, e = end.
+@param[out] UINT* fileSize.
+@returns FRESULT* file status error code.
+*/
+
+FRESULT read_directory(uint8_t* dirName, uint8_t* fileName, UINT* type, UINT* fileSize)
+{
+    static DIR directory;
+    FILINFO fileInfo;
+    fileStatus = FR_OK;
+    if (dirName[0] != 0) fileStatus = f_opendir(&directory, line+2);
+    if (fileStatus == FR_OK)
+    {
+        fileStatus = f_readdir(&directory, &fileInfo);
+    }
+    char type = 'f';
+    if (fileInfo.fattrib == AM_DIR) type = 'd';
+    if (fileInfo.fname[0] == 0) type = 'e';
+    if (fileStatus != FR_OK)
+    {
+        fileInfo.fname[0] = 0;
+    }
+    fileSize = fileInfo.fsize;
+    fileName = fileInfo.fname;
+}
+
+
 /* Read the free space on the drive. */
 /* No parameters. Returns free clusters as 4 bytes (32 bit word), lowest first */
         case 'F':
