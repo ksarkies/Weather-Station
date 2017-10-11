@@ -14,7 +14,8 @@ Buffer tail points to the place behind the next item to be taken.
 
 #include "buffer.h"
 
-/*--------------------------------------------------------------------------*/
+//-----------------------------------------------------------------------------
+
 /* Initialize the buffer to empty, defining the size */
 void buffer_init(uint8_t buffer[], uint8_t size)
 {
@@ -23,7 +24,8 @@ void buffer_init(uint8_t buffer[], uint8_t size)
 	buffer[2] = 0;		/* Tail */
 }
 
-/*--------------------------------------------------------------------------*/
+//-----------------------------------------------------------------------------
+
 /* Get a byte from the buffer. Returns a byte in the lower 8 bits,
 or 0x100 if the buffer has no data. */
 uint16_t buffer_get(uint8_t buffer[])
@@ -35,7 +37,8 @@ uint16_t buffer_get(uint8_t buffer[])
     return (uint16_t) buffer[tmptail+3];
 }
 
-/*--------------------------------------------------------------------------*/
+//-----------------------------------------------------------------------------
+
 /* Put a byte to the buffer. Returns 0x100 if the buffer has no space. */
 uint16_t buffer_put(uint8_t buffer[], uint8_t data)
 {
@@ -47,7 +50,8 @@ uint16_t buffer_put(uint8_t buffer[], uint8_t data)
 	return 0;
 }
 
-/*--------------------------------------------------------------------------*/
+//-----------------------------------------------------------------------------
+
 /* Return true if the buffer has space available */
 bool buffer_output_free(uint8_t buffer[])
 {
@@ -56,12 +60,12 @@ bool buffer_output_free(uint8_t buffer[])
     return (tmphead != buffer[2]);
 }
 
-/*--------------------------------------------------------------------------*/
+//-----------------------------------------------------------------------------
+
 /* Return true if the buffer has a byte available */
 bool buffer_input_available(uint8_t buffer[])
 {
     return (buffer[1] != buffer[2]);
 }
 
-/*--------------------------------------------------------------------------*/
 

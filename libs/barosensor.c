@@ -32,8 +32,8 @@
 #include <stddef.h>
 
 #include <libopencm3/stm32/i2c.h>
-#include "i2c.h"
-#include "BaroSensor.h"
+#include "i2clib.h"
+#include "barosensor.h"
 #include "hardware.h"
 
 /* i2c address of barometric sensor module */

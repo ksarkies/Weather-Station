@@ -20,8 +20,8 @@ The hardware library is libopencm3.
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
 #include "buffer.h"
-#include "DHT.h"
-#include "i2c.h"
+#include "dht.h"
+#include "i2clib.h"
 #include "hardware.h"       /* TO BE REMOVED */
 
 #define  _BV(bit) (1 << (bit))

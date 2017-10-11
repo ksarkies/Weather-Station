@@ -21,6 +21,10 @@ K. Sarkies, 10 May 2016
 /* 72MHz clock rate divided by 8 and 1000 to set ms count period for systick */
 #define MS_COUNT    9000
 
+/* Flash. Largest page size compatible with most families used.
+(note only STM32F1xx,  STM32F05x have compatible memory organization). */
+#define FLASH_PAGE_SIZE 2048
+
 enum pinmodetype {INPUT, OUTPUT, INPUT_PULLUP};
 
 /* STM32F103 definitions. Define pin as pin number in first four bits,
@@ -39,6 +43,8 @@ void delay(uint32_t delay_sec);
 void delay_microseconds(uint16_t delay_us);
 void cli(void);
 void sei(void);
+void flashReadData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
+uint32_t flashWriteData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
 uint32_t check_receive_buffer(void);
 void usart_print_fixed_point(uint32_t value);
 void usart_print_int(int64_t value);

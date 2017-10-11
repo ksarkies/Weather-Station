@@ -66,10 +66,14 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/nvic.h>
 #include "../libs/buffer.h"
-#include "../libs/DHT.h"
-#include "../libs/BaroSensor.h"
-#include "../libs/i2c.h"
+#include "../libs/comms.h"
+#include "../libs/file.h"
+#include "../libs/timelib.h"
+#include "../libs/dht.h"
+#include "../libs/barosensor.h"
+#include "../libs/i2clib.h"
 #include "../libs/hardware.h"
+#include "weather-station-objdic.h"
 
 /* 10 second sleep/stop period */
 #define MEASUREMENT_PERIOD        10
@@ -89,14 +93,6 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #define FLOAT_LIMIT        68*256/10
 
 /*--------------------------------------------------------------------------*/
-/* Global Variables */
-
-static uint32_t rainfall;               /* Counter of interrupts from sensor */
-static uint32_t wind_speed;             /* Counter of interrupts from sensor */
-static uint8_t charger_is_active;       /* Existing state of charger */
-static uint32_t measurement_period;
-
-/*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
 static void enable_radiance_measurement(void);
@@ -108,10 +104,35 @@ static void hardware_setup(void);
 static void parse_command(uint8_t* line);
 
 /*--------------------------------------------------------------------------*/
+/* Global Variables */
+
+static uint32_t rainfall;               /* Counter of interrupts from sensor */
+static uint32_t wind_speed;             /* Counter of interrupts from sensor */
+static uint8_t charger_is_active;       /* Existing state of charger */
+static uint32_t measurement_period;
+static uint8_t writeFileHandle;
+static uint8_t readFileHandle;
+static char writeFileName[12];
+static char readFileName[12];
+
+/* These configuration variables are part of the Object Dictionary. */
+/* This is defined in data-acquisition-objdic and is updated in response to
+received messages. */
+extern union ConfigGroup configData;
+
+/*--------------------------------------------------------------------------*/
 
 int main(void)
 {
 	hardware_setup();
+    init_comms_buffers();
+
+    init_file_system();
+    writeFileHandle = 0xFF;
+    readFileHandle = 0xFF;
+    writeFileName[0] = 0;
+    readFileName[0] = 0;
+
     charger_is_active = charger_active();
     uint8_t channel[1];                 /* Channel for A/D conversion */
     uint16_t charge_limit = 0;          /* voltage limit for charging battery */
@@ -240,12 +261,15 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 				}
 	            usart_print_string("\n\r");
 			}
-//            usart_print_string("dT,");
-//            usart_print_fixed_point(temperature);
-//            usart_print_string("\n\r");
-            usart_print_string("dH,");
-            usart_print_fixed_point(humidity);
-            usart_print_string("\n\r");
+            else
+            {
+//                usart_print_string("dT,");
+//                usart_print_fixed_point(temperature);
+//                usart_print_string("\n\r");
+                usart_print_string("dH,");
+                usart_print_fixed_point(humidity);
+                usart_print_string("\n\r");
+            }
 
 /* Read and send temperature and barometric pressure over i2c. */
             int32_t temp;
@@ -258,12 +282,15 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 		        usart_print_int(0);
 	            usart_print_string("\n\r");
 			}
-            usart_print_string("dT,");
-            usart_print_fixed_point(temp);
-            usart_print_string("\n\r");
-            usart_print_string("dP,");
-            usart_print_fixed_point(pressure);
-            usart_print_string("\n\r");
+            else
+            {
+                usart_print_string("dT,");
+                usart_print_fixed_point(temp);
+                usart_print_string("\n\r");
+                usart_print_string("dP,");
+                usart_print_fixed_point(pressure);
+                usart_print_string("\n\r");
+            }
 
 /* Read and send solar panel current. Use simple polling of the ADC. */
             enable_radiance_measurement();
@@ -302,7 +329,9 @@ Note order of computations to avoid 32 bit overflow. */
             wind_speed = 0;
             sei();
         }
-        else {
+        else
+/* Check for incoming messages */
+        {
             uint16_t value = check_receive_buffer();
             char receive_buffer_empty = (value >> 8);
             if (! receive_buffer_empty)
@@ -330,10 +359,267 @@ Note order of computations to avoid 32 bit overflow. */
 
 void parse_command(uint8_t* line)
 {
-    usart_print_string("D");
-    usart_print_string(",");
-    usart_print_string(line);
-    usart_print_string("\n\r");
+/* ======================== Action commands ========================  */
+/**
+Action Commands */
+    if (line[0] == 'a')
+    {
+        switch (line[1])
+        {
+/* W Write the current configuration block to FLASH */
+        case 'W':
+            {
+                writeConfigBlock();
+                break;
+            }
+/* Request identification string with version sent back.  */
+        case 'E':
+            {
+                char ident[35] = "Weather Station,";
+                stringAppend(ident,FIRMWARE_VERSION);
+                sendString("dE",ident);
+                break;
+            }
+        }
+    }
+/* ======================== Data request commands ================  */
+/**
+Data Request Commands */
+    else if (line[0] == 'd')
+    {
+        switch (line[1])
+        {
+/**
+Return the internal time.
+ */
+        case 'H':
+            {
+                char timeString[20];
+                putTimeToString(timeString);
+                sendString("pH",timeString);
+            }
+        }
+    }
+/* ======================== Parameter commands ================  */
+/**
+Parameter Setting Commands */
+    else if (line[0] == 'p')
+    {
+        switch (line[1])
+        {
+/* c-, c+ Turn communications sending on or off */
+        case 'c':
+            {
+                if (line[2] == '-') configData.config.enableSend = false;
+                else if (line[2] == '+') configData.config.enableSend = true;
+                break;
+            }
+/* d-, d+ Turn on debug messages */
+        case 'd':
+            {
+                if (line[2] == '+') configData.config.debugMessageSend = true;
+                if (line[2] == '-') configData.config.debugMessageSend = false;
+                break;
+            }
+/* Hxxxx Set time from an ISO 8601 formatted string. */
+        case 'H':
+            {
+                setTimeFromString((char*)line+2);
+                break;
+            }
+/* M-, M+ Turn on/off data messaging (mainly for debug) */
+        case 'M':
+            {
+                if (line[2] == '-') configData.config.measurementSend = false;
+                else if (line[2] == '+') configData.config.measurementSend = true;
+                break;
+            }
+/* r-, r+ Turn recording on or off */
+        case 'r':
+            {
+                if (line[2] == '-') configData.config.recording = false;
+                else if ((line[2] == '+') && (writeFileHandle < 0x0FF))
+                    configData.config.recording = true;
+                break;
+            }
+        }
+    }
+
+/* ======================== File commands ================ */
+/*
+F           - get free clusters
+Wfilename   - Open file for read/write. Filename is 8.3 string style. Returns handle.
+Rfilename   - Open file read only. Filename is 8.3 string style. Returns handle.
+Xfilename   - Delete the file. Filename is 8.3 string style.
+Cxx         - Close file. x is the file handle.
+Gxx         - Read a record from read or write file.
+Ddirname    - Get a directory listing. Directory name is 8.3 string style.
+d[dirname]  - Get the first (if dirname present) or next entry in directory.
+s           - Get status of open files and configData.config.recording flag
+M           - Mount the SD card.
+All commands return an error status byte at the end.
+Only one file for writing and a second for reading is possible.
+Data is not written to the file externally. */
+
+/* File Commands */
+    else if (line[0] == 'f')
+    {
+        switch (line[1])
+        {
+/* F Return number of free clusters followed by the cluster size in sectors. */
+            case 'F':
+            {
+                uint32_t freeClusters = 0;
+                uint32_t sectorsPerCluster = 0;
+                uint8_t fileStatus = get_free_clusters(&freeClusters, &sectorsPerCluster);
+                dataMessageSend("fF",freeClusters,sectorsPerCluster);
+                sendResponse("fE",(uint8_t)fileStatus);
+                break;
+            }
+/* d[d] Directory listing, d is the d=directory name. Get the first (if d
+present) or next entry in the directory. If the name has a zero in the first
+position, return the next entry in the directory listing. Returns the type,
+size and name preceded by a comma. If there are no further entries found in the
+directory, then size and name are not sent back. The type character can be:
+ f = file, d = directory, n = error e = end */
+            case 'd':
+            {
+                if (! file_system_usable()) break;
+                char fileName[20];
+                char type;
+                uint32_t size;
+                uint8_t fileStatus =
+                    read_directory_entry((char*)line+2, &type, &size, fileName);
+                char dirInfo[20];
+                dirInfo[0] = type;
+                dirInfo[1] = 0;
+                if (type != 'e')
+                {
+                    char fileSize[5];
+                    hexToAscii((size >> 16) & 0xFFFF,fileSize);
+                    stringAppend(dirInfo,fileSize);
+                    hexToAscii(size & 0xFFFF,fileSize);
+                    stringAppend(dirInfo,fileSize);
+                    stringAppend(dirInfo,fileName);
+                }
+                sendString("fd",dirInfo);
+                sendResponse("fE",(uint8_t)fileStatus);
+                break;
+            }
+/* Wf Open a file f=filename for writing less than 12 characters.
+Parameter is a filename, 8 character plus dot plus 3 character extension.
+Returns a file handle. On error, file handle is 0xFF. */
+            case 'W':
+            {
+                if (! file_system_usable()) break;
+                if (stringLength((char*)line+2) < 12)
+                {
+                    uint8_t fileStatus =
+                        open_write_file((char*)line+2, &writeFileHandle);
+                    if (fileStatus == 0)
+                    {
+                        stringCopy(writeFileName,(char*)line+2);
+                        sendResponse("fW",writeFileHandle);
+                    }
+                    sendResponse("fE",(uint8_t)fileStatus);
+                }
+                break;
+            }
+/* Rf Open a file f=filename for reading less than 12 characters.
+Parameter is a filename, 8 character plus dot plus 3 character extension.
+Returns a file handle. On error, file handle is 0xFF. */
+            case 'R':
+            {
+                if (! file_system_usable()) break;
+                if (stringLength((char*)line+2) < 12)
+                {
+                    uint8_t fileStatus = 
+                        open_read_file((char*)line+2, &readFileHandle);
+                    if (fileStatus == 0)
+                    {
+                        stringCopy(readFileName,(char*)line+2);
+                        sendResponse("fR",readFileHandle);
+                    }
+                    sendResponse("fE",(uint8_t)fileStatus);
+                }
+                break;
+            }
+/* Gf Read a record from the file specified by f=file handle. Return as a comma
+separated list. */
+            case 'G':
+            {
+                if (! file_system_usable()) break;
+                uint8_t fileHandle = asciiToInt((char*)line+2);
+                if (valid_file_handle(fileHandle))
+                {
+                    char string[80];
+                    uint8_t fileStatus = 
+                        read_line_from_file(fileHandle,string);
+                    sendString("fG",string);
+                    sendResponse("fE",(uint8_t)fileStatus);
+                }
+                break;
+            }
+/* s Send a status message containing: software switches and names of open
+files, with open write filehandle and filename first followed by read filehandle
+and filename, or blank if any file is not open. */
+            case 's':
+            {
+                commsPrintString("fs,");
+                commsPrintInt((int)getControls());
+                commsPrintString(",");
+                uint8_t writeStatus;
+                commsPrintInt(writeFileHandle);
+                commsPrintString(",");
+                if (writeFileHandle < 0xFF)
+                {
+                    commsPrintString(writeFileName);
+                    commsPrintString(",");
+                }
+                commsPrintInt(readFileHandle);
+                if (readFileHandle < 0xFF)
+                {
+                    commsPrintString(",");
+                    commsPrintString(readFileName);
+                }
+                commsPrintString("\r\n");
+                break;
+            }
+/* Cf Close File specified by f=file handle. */
+            case 'C':
+            {
+                if (! file_system_usable()) break;
+                uint8_t fileHandle = asciiToInt((char*)line+2);
+                uint8_t fileStatus = close_file(&fileHandle);
+                if (fileStatus == 0) writeFileHandle = 0xFF;
+                sendResponse("fE",(uint8_t)fileStatus);
+                break;
+            }
+/* X Delete File. */
+            case 'X':
+            {
+                if (! file_system_usable()) break;
+                uint8_t fileStatus = delete_file((char*)line+2);
+                sendResponse("fE",(uint8_t)fileStatus);
+                break;
+            }
+/* M Reinitialize the memory card. */
+            case 'M':
+            {
+                uint8_t fileStatus = init_file_system();
+                sendResponse("fE",(uint8_t)fileStatus);
+                break;
+            }
+/* Z Create a standard file system on the memory volume */
+            case 'Z':
+            {
+                sendString("D","Creating Filesystem");
+                uint8_t fileStatus = make_filesystem();
+                sendResponse("fE",(uint8_t)fileStatus);
+                break;
+            }
+        }
+    }
 }
 
 /*--------------------------------------------------------------------------*/

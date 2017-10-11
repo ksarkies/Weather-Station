@@ -57,7 +57,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "DHT.h"
+#include "dht.h"
 #include "hardware.h"
 
 /*--------------------------------------------------------------------------*/

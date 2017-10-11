@@ -30,5 +30,10 @@ solar radiance. This is a measure specific to the panel type and is intended
 only for providing records of incident radiance for use in design of solar
 power generators having similar panel types.
 
-(c) K. Sarkies 16/07/2016
+**The battery must be present when the panel is connected**, as high voltages
+from the panel can damage the components, and also because the panel is
+disconnected from the power circuits during solar irradiance measurements,
+which will result in the circuit losing all power.
+
+(c) K. Sarkies 16/08/2017
 

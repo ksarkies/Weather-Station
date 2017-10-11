@@ -34,19 +34,23 @@ K. Sarkies, 10 May 2016
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/dac.h>
 #include <libopencm3/stm32/i2c.h>
+#include <libopencm3/stm32/flash.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
 #include "buffer.h"
-#include "DHT.h"
-#include "i2c.h"
+#include "dht.h"
+#include "i2clib.h"
 #include "hardware.h"
 
 #define  _BV(bit) (1 << (bit))
 
 /*--------------------------------------------------------------------------*/
 /* Globals */
+
+extern uint32_t __configBlockStart;
+extern uint32_t __configBlockEnd;
 
 volatile uint32_t time2Tick_counter;
 volatile uint32_t systick_time;
@@ -279,6 +283,82 @@ whether to quit this loop. */
         while (! systick_get_countflag())
             asm volatile("wfi");    // sleep until systick fires.
     }
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Read a data block from Flash memory
+
+Adapted from code by Damian Miller.
+
+@param[in] flashBlock: uint32_t* address of Flash page start
+@param[in] dataBlock: uint32_t* pointer to data block to write
+@param[in] size: uint16_t length of data block
+*/
+
+void flashReadData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size)
+{
+    uint16_t n;
+    uint32_t *flashAddress= flashBlock;
+
+    for(n=0; n<size; n += 4)
+    {
+        *(uint32_t*)dataBlock = *(flashAddress++);
+        dataBlock += 4;
+    }
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Program a data block to Flash memory
+
+Adapted from code by Damian Miller.
+
+@param[in] flashBlock: uint32_t* address of Flash page start
+@param[in] dataBlock: uint32_t* pointer to data block to write
+@param[in] size: uint16_t length of data block
+@returns uint32_t result code: 0 success, bit 0 address out of range,
+bit 2: programming error, bit 4: write protect error, bit 7 compare fail.
+*/
+
+uint32_t flashWriteData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size)
+{
+    uint16_t n;
+
+    uint32_t pageStart = (uint32_t)flashBlock;
+    uint32_t flashAddress = pageStart;
+    uint32_t pageAddress = pageStart;
+    uint32_t flashStatus = 0;
+
+    /*check if pageStart is in proper range*/
+    if((pageStart < __configBlockStart) || (pageStart >= __configBlockEnd))
+        return 1;
+
+    /*calculate current page address*/
+    if(pageStart % FLASH_PAGE_SIZE)
+        pageAddress -= (pageStart % FLASH_PAGE_SIZE);
+
+    flash_unlock();
+
+    /*Erasing page*/
+    flash_erase_page(pageAddress);
+    flashStatus = flash_get_status_flags();
+    if(flashStatus != FLASH_SR_EOP)
+        return flashStatus;
+
+    /*programming flash memory*/
+    for(n=0; n<size; n += 4)
+    {
+        /*programming word data*/
+        flash_program_word(flashAddress+n, *((uint32_t*)(dataBlock + n)));
+        flashStatus = flash_get_status_flags();
+        if(flashStatus != FLASH_SR_EOP)
+            return flashStatus;
+
+        /*verify if correct data is programmed*/
+        if(*((uint32_t*)(flashAddress+n)) != *((uint32_t*)(dataBlock + n)))
+            return 0x80;
+    }
+
+    return 0;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -688,7 +768,6 @@ void exti_setup(void)
 
 /*--------------------------------------------------------------------------*/
 /* Interrupt Service Routines */
-/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 /* EXT17/RTC Alarm ISR
 

@@ -1,5 +1,7 @@
-Weather Station Interface Board
--------------------------------
+Weather Station Interface Board: gEDA Version
+---------------------------------------------
+
+This PCB version will not be updated. The Kicad version will be used instead.
 
 This board provides the interface between the processor and the solar panel.
 The panel is used to measure solar irradiation by measuring the (almost) short
