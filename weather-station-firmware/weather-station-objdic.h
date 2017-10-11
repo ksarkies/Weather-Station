@@ -63,10 +63,10 @@ union ConfigGroup
 /* Prototypes */
 /*--------------------------------------------------------------------------*/
 
-void setGlobalDefaults(void);
-uint32_t writeConfigBlock(void);
-bool isRecording(void);
-uint16_t getControls(void);
+void set_global_defaults(void);
+uint32_t write_config_block(void);
+bool is_recording(void);
+uint16_t get_controls(void);
 
 #endif
 

@@ -47,9 +47,9 @@ uint8_t write_to_file(uint8_t fileHandle, uint8_t* blockLength, uint8_t* data);
 uint8_t close_file(uint8_t* fileHandle);
 bool valid_file_handle(uint8_t fileHandle);
 void get_file_name(uint8_t fileHandle, char* fileName);
-uint8_t recordSingle(char* ident, int32_t param1, uint8_t writeFileHandle);
-uint8_t recordDual(char* ident, int32_t param1, int32_t param2, uint8_t writeFileHandle);
-uint8_t recordString(char* ident, char* string, uint8_t writeFileHandle);
+uint8_t record_single(char* ident, int32_t param1, uint8_t writeFileHandle);
+uint8_t record_dual(char* ident, int32_t param1, int32_t param2, uint8_t writeFileHandle);
+uint8_t record_string(char* ident, char* string, uint8_t writeFileHandle);
 
 #endif
 

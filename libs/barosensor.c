@@ -30,8 +30,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
-#include <libopencm3/stm32/i2c.h>
 #include "i2clib.h"
 #include "barosensor.h"
 #include "hardware.h"
@@ -61,7 +61,7 @@ static const uint8_t SamplingDelayMs[6] = {2,4,6,10,18,34};
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
-static uint32_t takeBaroReading(uint8_t trigger_cmd,
+static uint32_t take_baro_reading(uint8_t trigger_cmd,
                                 BaroOversampleLevel oversample_level);
 
 /*--------------------------------------------------------------------------*/
@@ -70,32 +70,32 @@ static uint32_t takeBaroReading(uint8_t trigger_cmd,
 Resets the module then pulls in calibration constants from the module ROM.
 */
 
-void initBaroSensor(void)
+void init_baro_sensor(void)
 {
 	uint32_t reg32 __attribute__((unused));
     uint8_t command[1];
-    i2c1_setup();
+    i2c_setup(I2C);
 /* Reset Module */
     command[0] = CMD_RESET;
-    i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    i2c_send_stop(I2C1);
+    i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
+    i2c_terminate(I2C);
 
-    if (i2c_check_error(I2C1)) return;
+    if (i2c_check_error(I2C)) return;
 
     int i = 0;
 /* Pull in the calibration constants */
     for (i = 0; i < 7; i++) {
         command[0] = CMD_PROM_READ(i);
-        i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-        if (i2c_check_error(I2C1)) return;
-        cal[i] = i2c_master_read_two_bytes(I2C1, BARO_ADDR);
+        i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
+        if (i2c_check_error(I2C)) return;
+        cal[i] = i2c_master_read_two_bytes(I2C, BARO_ADDR);
     }
 
     initialised = true;
 }
 
 /*--------------------------------------------------------------------------*/
-bool isBaroOK()
+bool is_baro_ok()
 {
     return initialised && (err == 0);
 }
@@ -109,16 +109,16 @@ bool isBaroOK()
 @param[in] BaroOversampleLevel: oversampling delay level.
 */
 
-bool getBaroTempAndPressure(int32_t *temperature, int32_t *pressure,
+bool get_baro_temp_and_pressure(int32_t *temperature, int32_t *pressure,
                             TempUnit tempScale, BaroOversampleLevel level)
 {
 /* Call to initialise. Global calibration values don't seem to be held over
 between calls, despite being declared static */
-    initBaroSensor();
-    if(! isBaroOK()) return false;
+    init_baro_sensor();
+    if(! is_baro_ok()) return false;
 
 /* Temperature computation */
-    int32_t d2 = takeBaroReading(CMD_START_D2(level), level);
+    int32_t d2 = take_baro_reading(CMD_START_D2(level), level);
     if(d2 == 0) return false;
 
     int64_t dt = d2 - (cal[5]<<8);
@@ -143,7 +143,7 @@ between calls, despite being declared static */
 
 /* Pressure computation */
     if(pressure != NULL) {
-        int32_t d1 = takeBaroReading(CMD_START_D1(level), level);
+        int32_t d1 = take_baro_reading(CMD_START_D1(level), level);
         if(d1 == 0) return false;
 
         int64_t off = ((int64_t)cal[2]<<17) + (((int64_t)cal[4] * dt)>>6);
@@ -181,23 +181,23 @@ between calls, despite being declared static */
 @return uint32_t value read back.
 */
 
-uint32_t takeBaroReading(uint8_t trigger_cmd,
+uint32_t take_baro_reading(uint8_t trigger_cmd,
                          BaroOversampleLevel oversample_level)
 {
     uint8_t command[1];
     command[0] = trigger_cmd;
-    i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    i2c_send_stop(I2C1);
+    i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
+    i2c_terminate(I2C);
 
-    if(i2c_check_error(I2C1)) return 0;
+    if(i2c_check_error(I2C)) return 0;
     uint8_t sampling_delay = SamplingDelayMs[(uint32_t)oversample_level];
     delay(sampling_delay);
 
     command[0] = CMD_READ_ADC;
-    i2c_master_transmit_data(I2C1, BARO_ADDR, 1, command);
-    if(i2c_check_error(I2C1)) return 0;
+    i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
+    if(i2c_check_error(I2C)) return 0;
     uint8_t data[3];
-    i2c_master_read_multiple_bytes(I2C1, BARO_ADDR, 3, data);
+    i2c_master_read_multiple_bytes(I2C, BARO_ADDR, 3, data);
     uint32_t result = (uint32_t)data[0] << 16;
     result |= (uint32_t)data[1] << 8;
     result |= data[2];

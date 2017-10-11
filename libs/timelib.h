@@ -25,8 +25,8 @@ Initial 25 November 2013 from Battery Management System
 #ifndef TIME_H_
 #define TIME_H_
 
-void setTimeFromString(char* timeString);
-void putTimeToString(char* timeString);
+void set_time_from_string(char* timeString);
+void put_time_to_string(char* timeString);
 
 #endif
 

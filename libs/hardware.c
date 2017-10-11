@@ -62,7 +62,7 @@ static uint8_t receive_buffer[BUFFER_SIZE+3];
 /* Local Prototypes */
 
 /*--------------------------------------------------------------------------*/
-/* @brief   Calls to emulate Arduino hardware calls             */
+/* @brief   Functions to emulate Arduino hardware calls                     */
 /*--------------------------------------------------------------------------*/
 /*      Derive port number from pin
 
@@ -150,6 +150,29 @@ uint8_t digital_read(uint8_t pin)
 }
 
 /*--------------------------------------------------------------------------*/
+/* Convenience Functions                                                    */
+/*--------------------------------------------------------------------------*/
+/* @brief Hardware Setup.
+
+*/
+
+void hardware_init(void)
+{
+/* Set the clock to 72MHz from the 8MHz external crystal */
+	clock_setup();
+    systick_setup(1000);         /* Set systick to interrupt after 1 second. */
+    gpio_setup();
+    usart1_setup();
+    timer2_setup(0xFFFF);
+    adc_setup();
+    dac_setup();
+    i2c_setup(I2C);
+	rtc_setup();
+    exti_setup();
+    sei();
+}
+
+/*--------------------------------------------------------------------------*/
 /** @Brief Disable Global interrupts
 */
 
@@ -173,6 +196,8 @@ void sei(void)
 The milliseconds timer is incremented by a fixed amount. This is useful if the
 systick timer stops running for a period, such as during sleep.
 
+GLOBALS: last_reload_value
+
 @param[in] uint32_t. Time offset in milliseconds.
 */
 
@@ -186,6 +211,8 @@ void millis_offset(uint32_t offset)
 
 The systick time is updated only at the end of a systick timer countdown to 0.
 Compute the actual time by adding in the time elapsed since the last event.
+
+GLOBALS: last_reload_value, systick_time
 
 @returns uint32_t. Time in milliseconds since rollover or start of counting.
 */
@@ -216,7 +243,7 @@ void delay(uint32_t delay_ms)
     {
         uint32_t last_time = millis();
 // As 1ms is an eternity, just spin until the timer changes.
-        while (last_time == millis());
+        while (last_time == millis()) {}
     }
 }
 
@@ -246,6 +273,36 @@ void delay_microseconds(uint16_t delay_us)
     if (final_time < initial_time)
         while (timer_get_counter(TIM2) > initial_time);
     while (timer_get_counter(TIM2) < final_time);
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Read the Time
+
+@returns uint32_t seconds counter value.
+*/
+
+uint32_t get_seconds_count()
+{
+#if (RTC_SOURCE == RTC)
+    return rtc_get_counter_val();
+#else
+    return secondsCount;
+#endif
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Set the Time
+
+@param[in] time: uint32_t seconds counter value to set.
+*/
+
+void set_seconds_count(uint32_t time)
+{
+#if (RTC_SOURCE == RTC)
+    rtc_set_counter_val(time);
+#else
+    secondsCount = time;
+#endif
 }
 
 /*--------------------------------------------------------------------------*/
@@ -295,7 +352,7 @@ Adapted from code by Damian Miller.
 @param[in] size: uint16_t length of data block
 */
 
-void flashReadData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size)
+void flash_read_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size)
 {
     uint16_t n;
     uint32_t *flashAddress= flashBlock;
@@ -319,7 +376,7 @@ Adapted from code by Damian Miller.
 bit 2: programming error, bit 4: write protect error, bit 7 compare fail.
 */
 
-uint32_t flashWriteData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size)
+uint32_t flash_write_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size)
 {
     uint16_t n;
 
@@ -482,6 +539,76 @@ void usart_print_string(char *ch)
 }
 
 /*--------------------------------------------------------------------------*/
+/** @brief Enable/Disable USART Interrupt
+
+@param[in] enable: uint8_t true to enable the interrupt, false to disable.
+*/
+
+void comms_enable_tx_interrupt(uint8_t enable)
+{
+    if (enable) usart_enable_tx_interrupt(USART1);
+    else usart_disable_tx_interrupt(USART1);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Peripheral Disables.
+
+This turns off power to all peripherals to reduce power drain during sleep.
+RTC and EXTI need to remain on.
+*/
+
+void peripheral_disable(void)
+{
+#ifdef DEEPSLEEP
+    rcc_periph_clock_disable(RCC_AFIO);
+    rcc_periph_clock_disable(RCC_GPIOA);
+    rcc_periph_clock_disable(RCC_USART1);
+#endif
+    rcc_periph_clock_disable(RCC_GPIOB);
+    rcc_periph_clock_disable(RCC_GPIOC);
+    rcc_periph_clock_disable(RCC_ADC1);
+	rcc_periph_clock_disable(RCC_DAC);
+	rcc_periph_clock_disable(RCC_I2C1);
+	rcc_periph_clock_disable(RCC_TIM2);
+    adc_power_off(ADC1);
+    dac_disable(CHANNEL_D);
+}
+
+/*--------------------------------------------------------------------------*/
+/* @brief Peripheral Enables.
+
+This turns on power to all peripherals needed.
+*/
+
+void peripheral_enable(void)
+{
+	rcc_clock_setup_in_hse_8mhz_out_72mhz();
+    rcc_periph_clock_enable(RCC_AFIO);
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
+    rcc_periph_clock_enable(RCC_ADC1);
+	rcc_periph_clock_enable(RCC_DAC);
+	rcc_periph_clock_enable(RCC_I2C1);
+    rcc_periph_clock_enable(RCC_USART1);
+	rcc_periph_clock_enable(RCC_TIM2);
+    adc_power_on(ADC1);
+    dac_enable(CHANNEL_2);
+}
+
+/*--------------------------------------------------------------------------*/
+/* Setup procedures                                                         */
+/*--------------------------------------------------------------------------*/
+/** @brief Clock Enable
+
+The processor system clock is established. */
+
+void clock_setup(void)
+{
+	rcc_clock_setup_in_hse_8mhz_out_72mhz();
+}
+
+/*--------------------------------------------------------------------------*/
 /** @brief Initialise Systick
 
 Setup Systick Timer for interrupts, enable clock and Systick-Interrupt.
@@ -578,52 +705,6 @@ void timer2_setup(uint32_t period)
 }
 
 /*--------------------------------------------------------------------------*/
-/* @brief Peripheral Disables.
-
-This turns off power to all peripherals to reduce power drain during sleep.
-RTC and EXTI need to remain on.
-*/
-
-void peripheral_disable(void)
-{
-#ifdef DEEPSLEEP
-    rcc_periph_clock_disable(RCC_AFIO);
-    rcc_periph_clock_disable(RCC_GPIOA);
-    rcc_periph_clock_disable(RCC_USART1);
-#endif
-    rcc_periph_clock_disable(RCC_GPIOB);
-    rcc_periph_clock_disable(RCC_GPIOC);
-    rcc_periph_clock_disable(RCC_ADC1);
-	rcc_periph_clock_disable(RCC_DAC);
-	rcc_periph_clock_disable(RCC_I2C1);
-	rcc_periph_clock_disable(RCC_TIM2);
-    adc_power_off(ADC1);
-    dac_disable(CHANNEL_D);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Peripheral Enables.
-
-This turns on power to all peripherals needed.
-*/
-
-void peripheral_enable(void)
-{
-	rcc_clock_setup_in_hse_8mhz_out_72mhz();
-    rcc_periph_clock_enable(RCC_AFIO);
-    rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_GPIOB);
-    rcc_periph_clock_enable(RCC_GPIOC);
-    rcc_periph_clock_enable(RCC_ADC1);
-	rcc_periph_clock_enable(RCC_DAC);
-	rcc_periph_clock_enable(RCC_I2C1);
-    rcc_periph_clock_enable(RCC_USART1);
-	rcc_periph_clock_enable(RCC_TIM2);
-    adc_power_on(ADC1);
-    dac_enable(CHANNEL_2);
-}
-
-/*--------------------------------------------------------------------------*/
 /* @brief GPIO Setup.
 
 This sets the clocks for the GPIO and AFIO ports, and sets the LEDs on
@@ -705,18 +786,23 @@ woken up by the time the first interrupt occurs */
 /* @brief Setup I2C1
 
 The clocks and GPIO settings are established.
+
+@param[in] uint8_t i2c: I2C channel to initialise (1). No action if unrecognised.
 */
 
-void i2c1_setup(void)
+void i2c_setup(uint8_t i2c)
 {
+    rcc_periph_clock_enable(RCC_AFIO);
+    if (i2c == 1)
+    {
 /* Enable clocks for I2C1 and AFIO. */
-	rcc_periph_clock_enable(RCC_I2C1);
-	rcc_periph_clock_enable(RCC_AFIO);
+	    rcc_periph_clock_enable(RCC_I2C1);
 /* Set alternate functions for the SCL and SDA pins of I2C1. */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
-		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-		      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
-    i2c_initialise(I2C1);
+	    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
+		          GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
+		          GPIO_I2C1_SCL | GPIO_I2C1_SDA);
+        i2c_initialise(I2C1);
+    }
 }
 
 /*--------------------------------------------------------------------------*/

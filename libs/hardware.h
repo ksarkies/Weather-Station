@@ -25,6 +25,8 @@ K. Sarkies, 10 May 2016
 (note only STM32F1xx,  STM32F05x have compatible memory organization). */
 #define FLASH_PAGE_SIZE 2048
 
+#define I2C 1
+
 enum pinmodetype {INPUT, OUTPUT, INPUT_PULLUP};
 
 /* STM32F103 definitions. Define pin as pin number in first four bits,
@@ -32,30 +34,39 @@ with the port number in the next 4 bits (GPIOA = 0 etc). */
 #define DHT_PORT    GPIOA
 #define DHT_PIN     1
 
-uint32_t elapsed();
+/* Arduino emulated calls */
+uint32_t gpio_port(uint8_t pin);
 void pin_mode(uint8_t pin, enum pinmodetype mode);
 void digital_write(uint8_t pin, uint8_t setting);
 uint8_t digital_read(uint8_t pin);
-void millis_offset(uint32_t offset);
-uint32_t millis();
-void delay_sleep(uint32_t delay_ms);
-void delay(uint32_t delay_sec);
-void delay_microseconds(uint16_t delay_us);
+
+/* Convenience functions */
+void hardware_init(void);
 void cli(void);
 void sei(void);
-void flashReadData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
-uint32_t flashWriteData(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
+void millis_offset(uint32_t offset);
+uint32_t millis();
+void delay(uint32_t delay_sec);
+void delay_microseconds(uint16_t delay_us);
+uint32_t get_seconds_count();
+void set_seconds_count(uint32_t time);
+void delay_sleep(uint32_t delay_ms);
+void flash_read_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
+uint32_t flash_write_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
 uint32_t check_receive_buffer(void);
 void usart_print_fixed_point(uint32_t value);
 void usart_print_int(int64_t value);
 void usart_print_hex(uint16_t value);
 void usart_print_string(char *ch);
+void comms_enable_tx_interrupt(uint8_t enable);
+void peripheral_enable(void);
+void peripheral_disable(void);
+/* Setup procedures */
+void clock_setup(void);
 void systick_setup(uint16_t period);
 void usart1_setup(void);
 void timer2_setup(uint32_t period);
-void peripheral_enable(void);
-void peripheral_disable(void);
-void i2c1_setup(void);
+void i2c_setup(uint8_t i2c);
 void adc_setup(void);
 void gpio_setup(void);
 void dac_setup(void);

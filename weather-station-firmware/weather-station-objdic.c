@@ -50,9 +50,9 @@ determine if the block is a valid configuration block. This allows the program
 to determine whether to use the block stored in FLASH or to use defaults.
 */
 
-void setGlobalDefaults(void)
+void set_global_defaults(void)
 {
-    flashReadData((uint32_t*)configDataBlock.data,
+    flash_read_data((uint32_t*)configDataBlock.data,
                    configData.data,sizeof(configData.config));
     if (configData.config.validBlock == VALID_BLOCK) return;
 /* Set default communications control variables */
@@ -79,10 +79,10 @@ that indicates whether the block is a valid programmed configuration block.
 @returns uint32_t result code. 0 success, 1 fail.
 */
 
-uint32_t writeConfigBlock(void)
+uint32_t write_config_block(void)
 {
     configData.config.validBlock = VALID_BLOCK;
-    return flashWriteData((uint32_t*)configDataBlock.data,
+    return flash_write_data((uint32_t*)configDataBlock.data,
                           configData.data, sizeof(configData.config));
 }
 
@@ -94,7 +94,7 @@ True if recording has been requested, false otherwise.
 @returns bool recording setting.
 */
 
-bool isRecording(void)
+bool is_recording(void)
 {
     return configData.config.recording;
 }
@@ -111,7 +111,7 @@ bits 5-15
 
 @returns uint16_t status of controls
 */
-uint16_t getControls(void)
+uint16_t get_controls(void)
 {
     uint16_t controls = 0;
     if (configData.config.recording) controls |= 1<<1;

@@ -27,7 +27,6 @@ K. Sarkies, 10 December 2016
 #include "buffer.h"
 #include "comms.h"
 #include "hardware.h"
-#include "../weather-station-firmware/weather-station-objdic.h"
 
 #define  _BV(bit) (1 << (bit))
 
@@ -532,10 +531,10 @@ The data is recorded to an opened write file.
 @returns uint8_t file status.
 */
 
-uint8_t recordSingle(char* ident, int32_t param1, uint8_t writeFileHandle)
+uint8_t record_single(char* ident, int32_t param1, uint8_t writeFileHandle)
 {
     uint8_t fileStatus = FR_DENIED;
-    if (isRecording() && (writeFileHandle < 0x7F))
+    if (writeFileHandle < 0x7F)
     {
         char record[80];
         stringClear(record);
@@ -563,10 +562,10 @@ The data is recorded to an opened write file.
 @returns uint8_t file status.
 */
 
-uint8_t recordDual(char* ident, int32_t param1, int32_t param2, uint8_t writeFileHandle)
+uint8_t record_dual(char* ident, int32_t param1, int32_t param2, uint8_t writeFileHandle)
 {
     uint8_t fileStatus = FR_DENIED;
-    if (isRecording() && (writeFileHandle < 0x7F))
+    if (writeFileHandle < 0x7F)
     {
         char record[80];
         stringClear(record);
@@ -596,10 +595,10 @@ The string is recorded to the opened write file.
 @returns uint8_t file status.
 */
 
-uint8_t recordString(char* ident, char* string, uint8_t writeFileHandle)
+uint8_t record_string(char* ident, char* string, uint8_t writeFileHandle)
 {
     uint8_t fileStatus = FR_DENIED;
-    if (isRecording() && (writeFileHandle < 0x7F))
+    if (writeFileHandle < 0x7F)
     {
         char record[80];
         stringClear(record);

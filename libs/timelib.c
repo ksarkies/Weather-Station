@@ -44,9 +44,9 @@ Convert the global time to an ISO 8601 string.
 @param[out] timeString char*. Returns pointer to string with formatted date.
 */
 
-void putTimeToString(char* timeString)
+void put_time_to_string(char* timeString)
 {
-    time_t currentTime = (time_t)getSecondsCount();
+    time_t currentTime = (time_t)get_seconds_count();
     struct tm *rtc = localtime(&currentTime);
 //    strftime(timeString, sizeof timeString, "%FT%TZ", rtc);
     char buffer[10];
@@ -79,7 +79,7 @@ void putTimeToString(char* timeString)
 @param[in] timeString: pointer to string with formatted date.
 */
 
-void setTimeFromString(char* timeString)
+void set_time_from_string(char* timeString)
 {
     struct tm newTime;
     char buffer[5];
@@ -100,7 +100,7 @@ void setTimeFromString(char* timeString)
     for (i=0; i<2; i++) buffer[i] = timeString[i+17];
     newTime.tm_sec = asciiToInt(buffer);
 
-    setSecondsCount((uint32_t)mktime(&newTime));
+    set_seconds_count((uint32_t)mktime(&newTime));
 }
 
 /**@}*/

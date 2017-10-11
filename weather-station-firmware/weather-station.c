@@ -52,6 +52,7 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/gpio.h>
@@ -100,7 +101,6 @@ static void disable_radiance_measurement(void);
 static void enable_charging(void);
 static void disable_charging(void);
 static uint8_t charger_active(void);
-static void hardware_setup(void);
 static void parse_command(uint8_t* line);
 
 /*--------------------------------------------------------------------------*/
@@ -124,7 +124,7 @@ extern union ConfigGroup configData;
 
 int main(void)
 {
-	hardware_setup();
+	hardware_init();
     init_comms_buffers();
 
     init_file_system();
@@ -148,7 +148,7 @@ int main(void)
     for (;;) {
 /* Snooze for a while in low power stop mode. */
 /* Wait a bit for USART and any other outstanding operations to finish. */
-        while (! usart_get_flag(USART1, USART_SR_TC));
+        while (! usart_get_flag(USART1, USART_SR_TC)) {}
 		uint32_t cnt;
 		for (cnt=0; cnt < 40000; cnt++) {
 			asm("nop");
@@ -274,7 +274,7 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 /* Read and send temperature and barometric pressure over i2c. */
             int32_t temp;
             int32_t pressure;
-            error = ! getBaroTempAndPressure(&temp,&pressure,CELSIUS,OSR_4096);
+            error = ! get_baro_temp_and_pressure(&temp,&pressure,CELSIUS,OSR_4096);
 			if (error)
 			{
 	            usart_print_string("D");
@@ -369,7 +369,7 @@ Action Commands */
 /* W Write the current configuration block to FLASH */
         case 'W':
             {
-                writeConfigBlock();
+                write_config_block();
                 break;
             }
 /* Request identification string with version sent back.  */
@@ -395,7 +395,7 @@ Return the internal time.
         case 'H':
             {
                 char timeString[20];
-                putTimeToString(timeString);
+                put_time_to_string(timeString);
                 sendString("pH",timeString);
             }
         }
@@ -424,7 +424,7 @@ Parameter Setting Commands */
 /* Hxxxx Set time from an ISO 8601 formatted string. */
         case 'H':
             {
-                setTimeFromString((char*)line+2);
+                set_time_from_string((char*)line+2);
                 break;
             }
 /* M-, M+ Turn on/off data messaging (mainly for debug) */
@@ -566,7 +566,7 @@ and filename, or blank if any file is not open. */
             case 's':
             {
                 commsPrintString("fs,");
-                commsPrintInt((int)getControls());
+                commsPrintInt((int)get_controls());
                 commsPrintString(",");
                 uint8_t writeStatus;
                 commsPrintInt(writeFileHandle);
@@ -620,28 +620,6 @@ and filename, or blank if any file is not open. */
             }
         }
     }
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Hardware Setup.
-
-*/
-
-void hardware_setup(void)
-{
-/* Set the clock to 72MHz from the 8MHz external crystal */
-	rcc_clock_setup_in_hse_8mhz_out_72mhz();
-
-    systick_setup(1000);         /* Set systick to interrupt after 1 second. */
-    gpio_setup();
-    usart1_setup();
-    timer2_setup(0xFFFF);
-    adc_setup();
-    dac_setup();
-    i2c1_setup();
-	rtc_setup();
-    exti_setup();
-    sei();
 }
 
 /*--------------------------------------------------------------------------*/

@@ -29,6 +29,7 @@ K. Sarkies, 9 December 2016
 
 #include <stdint.h>
 #include <stdbool.h>
+
 #include "buffer.h"
 #include "hardware.h"
 #include "comms.h"
@@ -250,9 +251,9 @@ Blocks if there is no space left on the queue.
 
 void commsPrintChar(char* ch)
 {
-    commsEnableTxInterrupt(false);
+    comms_enable_tx_interrupt(false);
     while (buffer_put(send_buffer, *ch) == 0x100);
-    commsEnableTxInterrupt(true);
+    comms_enable_tx_interrupt(true);
 }
 
 /*--------------------------------------------------------------------------*/
