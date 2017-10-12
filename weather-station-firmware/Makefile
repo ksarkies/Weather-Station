@@ -49,7 +49,7 @@ LDFLAGS	    += -specs=nosys.specs
 # The libopencm3 library is assumed to exist in libopencm3/lib, otherwise add files here
 CFILES		= $(PROJECT).c $(PROJECT)-objdic.c
 CFILES      += hardware.c dht.c i2clib.c barosensor.c
-CFILES      += buffer.c comms.c file.c timelib.c
+CFILES      += buffer.c comms.c stringlib.c file.c timelib.c
 CFILES      += ff.c sd_spi_loc3_stm32.c fattime.c
 
 OBJS		= $(CFILES:.c=.o)

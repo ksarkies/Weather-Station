@@ -11,14 +11,7 @@ The hardware library is libopencm3.
 
 #include <stdint.h>
 
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/i2c.h>
-#include <libopencm3/cm3/systick.h>
-#include <libopencm3/cm3/cortex.h>
-#include <libopencm3/cm3/nvic.h>
 #include "buffer.h"
 #include "dht.h"
 #include "i2clib.h"
@@ -27,6 +20,9 @@ The hardware library is libopencm3.
 #define  _BV(bit) (1 << (bit))
 #define BUFFER_SIZE 128
 #define OWN_ADDRESS 0x32
+#define I2C_CHANNELS 2
+
+static uint32_t i2c_array[I2C_CHANNELS] = {I2C1, I2C2};
 
 /*--------------------------------------------------------------------------*/
 // Globals
@@ -40,14 +36,14 @@ The hardware library is libopencm3.
 Clock frequencies and characteristics are set, along with own address.
 The I2C peripheral is enabled.
 
-@param[in] uint8_t i2c: i2c channel to use (1 or 2).
+@param[in] uint8_t i2c: i2c channel to use {0 or 1).
 */
 
 void i2c_initialise(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return;
+
 /* Disable the I2C before changing any configuration. */
 	i2c_peripheral_disable(i2c);
 /* APB1 is running at 36MHz. */
@@ -75,7 +71,7 @@ other masters. */
 Gets ready for transmission by setting the destination address and indicating
 a read or write access. Initiation of a start on the bus forces master mode.
 
-@param[in] uint8_t i2c: i2c channel to use (1 or 2).
+@param[in] uint8_t i2c: i2c channel to use {0 or 1).
 @param[in] uint8_t address: I2C address of the device.
 @param[in] uint8_t rw: I2C_WRITE or I2C_READ.
 */
@@ -84,9 +80,8 @@ void i2c_initiate_transmission_7_bit(uint8_t i2c_channel, uint8_t address, uint8
 {
 	uint32_t reg32 __attribute__((unused));
 
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return;
 
 /* Send START condition. */
 	i2c_send_start(i2c);
@@ -116,16 +111,16 @@ After sending the last byte this waits for TxE and/or BTF to be set.
 This function does not send a stop condition so that a restart may be used by a
 following command. Therefore a stop condition must be sent separately.
 
-@param[in] uint8_t i2c: i2c channel to use (1 or 2).
+@param[in] uint8_t i2c: i2c channel to use {0 or 1).
 @param[in] uint8_t *data: Data byte array to send.
 */
 
 void i2c_master_transmit_data(uint8_t i2c_channel, uint8_t address, uint8_t length,
                               uint8_t *data)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return;
+
     i2c_initiate_transmission_7_bit(i2c, address, I2C_WRITE);
 /* Send the data bytes. */
     uint8_t i = 0;
@@ -151,7 +146,7 @@ Reading a single byte requires a different set of processes to those for the
 two and multiple byte cases. The ACK bit must be cleared before the addressing
 process is completed.
 
-@param[in] uint8_t i2c: i2c channel to use (1 or 2).
+@param[in] uint8_t i2c: i2c channel to use {0 or 1).
 @returns 8_t: data byte received.
 */
 
@@ -160,9 +155,9 @@ uint8_t i2c_master_read_single_byte(uint8_t i2c_channel, uint8_t address)
 	uint8_t data = 0;
 	uint32_t reg32 __attribute__((unused));
 
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
+
 /* Send START condition. */
 	i2c_send_start(i2c);
 
@@ -207,7 +202,7 @@ the addressing process is completed.
 
 Note that single and multiple word messages are handled differently.
 
-@param[in] uint8_t i2c: i2c channel to use (1 or 2).
+@param[in] uint8_t i2c: i2c channel to use {0 or 1).
 @returns uint16_t: data word received.
 */
 
@@ -216,9 +211,9 @@ uint16_t i2c_master_read_two_bytes(uint8_t i2c_channel, uint8_t address)
 	uint16_t data;
 	uint32_t reg32 __attribute__((unused));
 
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
+
 /* Send START condition. */
 	i2c_send_start(i2c);
 
@@ -273,16 +268,16 @@ careful attention to the way the last three bytes are read (see manual).
 
 Note that single and two byte word messages are handled differently.
 
-@param[in] uint8_t i2c: i2c channel to use (1 or 2).
+@param[in] uint8_t i2c: i2c channel to use {0 or 1).
 @returns uint8_t*: pointer to byte array that stores the data received.
 */
 
 void i2c_master_read_multiple_bytes(uint8_t i2c_channel, uint8_t address,
                                     uint8_t length, uint8_t* data)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return;
+
     uint8_t i = length;
 
     i2c_initiate_transmission_7_bit(i2c, address, I2C_READ);
@@ -334,9 +329,8 @@ set when the second last byte arrives in the shift register. */
 
 uint8_t i2c_check_error(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
     return (I2C_SR1(i2c) >> 8);
 }
 
@@ -351,9 +345,8 @@ uint8_t i2c_check_error(uint8_t i2c_channel)
 
 uint8_t i2c_data_sent(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR1(i2c) & I2C_SR1_TxE) != 0);
 }
 
@@ -366,9 +359,8 @@ uint8_t i2c_data_sent(uint8_t i2c_channel)
 
 uint8_t i2c_master_mode(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR2(i2c) & I2C_SR2_MSL) != 0);
 }
 
@@ -383,9 +375,8 @@ uint8_t i2c_master_mode(uint8_t i2c_channel)
 
 uint8_t i2c_busy(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR2(i2c) & I2C_SR2_BUSY) != 0);
 }
 
@@ -398,9 +389,8 @@ uint8_t i2c_busy(uint8_t i2c_channel)
 
 uint8_t i2c_start_generated(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR1(i2c) & I2C_SR1_SB) != 0);
 }
 
@@ -413,9 +403,8 @@ uint8_t i2c_start_generated(uint8_t i2c_channel)
 
 uint8_t i2c_address_sent(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR1(i2c) & I2C_SR1_ADDR) != 0);
 }
 
@@ -432,9 +421,8 @@ that may ultimately be lost. The flag must be reset before continuing.
 
 uint8_t i2c_byte_transfer_finished(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR1(i2c) & I2C_SR1_BTF) != 0);
 }
 
@@ -447,9 +435,8 @@ uint8_t i2c_byte_transfer_finished(uint8_t i2c_channel)
 
 uint8_t i2c_nack_received(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR1(i2c) & I2C_SR1_AF) != 0);
 }
 
@@ -462,9 +449,8 @@ uint8_t i2c_nack_received(uint8_t i2c_channel)
 
 uint8_t i2c_data_received(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return 0;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return 0;
 	return ((I2C_SR1(i2c) & I2C_SR1_RxNE) != 0);
 }
 
@@ -477,10 +463,10 @@ uint8_t i2c_data_received(uint8_t i2c_channel)
 
 void i2c_terminate(uint8_t i2c_channel)
 {
-    uint32_t i2c = I2C1;
-    if (i2c_channel == 2) i2c = I2C2;
-    else return;
+    uint32_t i2c = i2c_array[i2c_channel];
+    if (i2c_channel > I2C_CHANNELS-1) return;
 	i2c_send_stop(i2c);
+    delay(5);
 }
 
 /*--------------------------------------------------------------------------*/

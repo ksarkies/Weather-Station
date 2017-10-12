@@ -31,6 +31,7 @@ K. Sarkies, 9 December 2016
 #include <stdbool.h>
 
 #include "buffer.h"
+#include "stringlib.h"
 #include "hardware.h"
 #include "comms.h"
 
@@ -111,14 +112,14 @@ The response parameters are converted to ASCII integer.
 @param param2: int32_t second integer parameter.
 */
 
-void dataMessageSend(char* ident, int32_t param1, int32_t param2)
+void data_message_send(char* ident, int32_t param1, int32_t param2)
 {
-    commsPrintString(ident);
-    commsPrintString(",");
-    commsPrintInt(param1);
-    commsPrintString(",");
-    commsPrintInt(param2);
-    commsPrintString("\r\n");
+    comms_print_string(ident);
+    comms_print_string(",");
+    comms_print_int(param1);
+    comms_print_string(",");
+    comms_print_int(param2);
+    comms_print_string("\r\n");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -130,12 +131,12 @@ Use to send a simple response to a command.
 @param[in] parameter: int32_t Single integer parameter.
 */
 
-void sendResponse(char* ident, int32_t parameter)
+void send_response(char* ident, int32_t parameter)
 {
-    commsPrintString(ident);
-    commsPrintString(",");
-    commsPrintInt(parameter);
-    commsPrintString("\r\n");
+    comms_print_string(ident);
+    comms_print_string(",");
+    comms_print_int(parameter);
+    comms_print_string("\r\n");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -147,14 +148,14 @@ Use to send a simple debug response to a command.
 @param[in] parameter: int32_t Single integer parameter.
 */
 
-void sendDebugResponse(char* ident, int32_t parameter)
+void send_debug_response(char* ident, int32_t parameter)
 {
     if (ident[0] == 'D')
     {
-        commsPrintString(ident);
-        commsPrintString(",");
-        commsPrintInt(parameter);
-        commsPrintString("\r\n");
+        comms_print_string(ident);
+        comms_print_string(",");
+        comms_print_int(parameter);
+        comms_print_string("\r\n");
     }
 }
 
@@ -167,12 +168,12 @@ Use to send a single string.
 @param[in] string: char* Arbitrary length string.
 */
 
-void sendString(char* ident, char* string)
+void send_string(char* ident, char* string)
 {
-    commsPrintString(ident);
-    commsPrintString(",");
-    commsPrintString(string);
-    commsPrintString("\r\n");
+    comms_print_string(ident);
+    comms_print_string(",");
+    comms_print_string(string);
+    comms_print_string("\r\n");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -182,11 +183,11 @@ void sendString(char* ident, char* string)
 
 */
 
-void commsPrintRegister(uint32_t reg)
+void comms_print_register(uint32_t reg)
 {
-    commsPrintHex((reg >> 16) & 0xFFFF);
-    commsPrintHex((reg >> 00) & 0xFFFF);
-    commsPrintChar(" ");
+    comms_print_hex((reg >> 16) & 0xFFFF);
+    comms_print_hex((reg >> 00) & 0xFFFF);
+    comms_print_char(" ");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -195,14 +196,14 @@ void commsPrintRegister(uint32_t reg)
 @param[in] value: int32_t integer value to be printed.
 */
 
-void commsPrintInt(int32_t value)
+void comms_print_int(int32_t value)
 {
     uint8_t i=0;
     char buffer[25];
-    intToAscii(value, buffer);
+    int_to_ascii(value, buffer);
     while (buffer[i] > 0)
     {
-        commsPrintChar(&buffer[i]);
+        comms_print_char(&buffer[i]);
         i++;
     }
 }
@@ -213,14 +214,14 @@ void commsPrintInt(int32_t value)
 @param[in] value: int32_t integer value to be printed.
 */
 
-void commsPrintHex(uint32_t value)
+void comms_print_hex(uint32_t value)
 {
     uint8_t i=0;
     char buffer[25];
-    hexToAscii(value, buffer);
+    hex_to_ascii(value, buffer);
     while (buffer[i] > 0)
     {
-        commsPrintChar(&buffer[i]);
+        comms_print_char(&buffer[i]);
         i++;
     }
 }
@@ -231,9 +232,9 @@ void commsPrintHex(uint32_t value)
 @param[in] ch: char* pointer to string to be printed.
 */
 
-void commsPrintString(char* ch)
+void comms_print_string(char* ch)
 {
-    while(*ch) commsPrintChar(ch++);
+    while(*ch) comms_print_char(ch++);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -249,7 +250,7 @@ Blocks if there is no space left on the queue.
 @param[in] ch: char* pointer to character to be printed.
 */
 
-void commsPrintChar(char* ch)
+void comms_print_char(char* ch)
 {
     comms_enable_tx_interrupt(false);
     while (buffer_put(send_buffer, *ch) == 0x100);
@@ -257,161 +258,37 @@ void commsPrintChar(char* ch)
 }
 
 /*--------------------------------------------------------------------------*/
-/** @brief Convert an ASCII decimal string to an integer
+/* @brief Print out a fixed point value in ASCII decimal form.
 
-The conversion stops without error when the first non-numerical character
-is encountered.
+Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
+are the fractional part. The integer part is printed first with sign, followed
+by the fractional part rounded up to a specified precision.
 
-@param[in] string: char* externally defined buffer with the string.
-@returns int32_t: integer value to be converted to ASCII form.
+The USART ISR accesses the buffer independently. The USART interrupt must be
+re-enabled in the main program after each call to this function.
+
+@param[in] value: 32 bit signed integer as uint32_t.
 */
 
-int32_t asciiToInt(char* string)
+#define PRECISION 4
+
+void comms_print_fixed_point(uint32_t value)
 {
-    int32_t number = 0;
-    while ((*string >= '0') && (*string <= '9'))
-    {
-        number = number*10+(*string - '0');
-        string++;
-    }
-    return number;
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief Convert a 16 bit Integer to ASCII hexadecimal string form
-
-@param[in] value: int16_t integer value to be converted to ASCII form.
-@param[in] buffer: char* externally defined buffer to hold the result.
-*/
-
-void hexToAscii(int16_t value, char* buffer)
-{
-    uint8_t i = 0;
-
-    for (i = 0; i < 4; i++)
-    {
-        buffer[i] = "0123456789ABCDEF"[(value >> 12) & 0xF];
-        value <<= 4;
-    }
-    buffer[4] = 0;
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief Convert a 32 bit Integer to ASCII decimal string form
-
-@param[in] value: int32_t integer value to be converted to ASCII form.
-@param[in] buffer: char* externally defined buffer to hold the result.
-*/
-
-void intToAscii(int32_t value, char* buffer)
-{
-    uint8_t nr_digits = 0;
-    uint8_t i = 0;
-    char temp_buffer[25];
-
-/* Add minus sign if negative, and form absolute */
-    if (value < 0)
-    {
-        buffer[nr_digits++] = '-';
-        value = value * -1;
-    }
-/* Stop if value is zero */
-    if (value == 0) buffer[nr_digits++] = '0';
-    else
-    {
-/* Build string in reverse */
-        while (value > 0)
-        {
-            temp_buffer[i++] = "0123456789"[value % 10];
-            value /= 10;
-        }
-/* Copy across correcting the order */
-        while (i > 0)
-        {
-            buffer[nr_digits++] = temp_buffer[--i];
-        }
-    }
-    buffer[nr_digits] = 0;
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief Append a string to another
-
-@param[in] string: char* original string, returned after appending.
-@param[in] appendage: char* string to be appended to end.
-*/
-
-void stringAppend(char* string, char* appendage)
-{
-    uint8_t i=0;
-    uint8_t j=stringLength(string);
-    while (appendage[i] > 0)
-    {
-        string[j++] = appendage[i++];
-    }
-    string[j] = 0;
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief String Copy
-
-@param[out] string: char* copied string, returned.
-@param[in] original: char* original string to be copied.
-*/
-
-void stringCopy(char* string, char* original)
-{
-    uint8_t i=0;
-    while (original[i] > 0)
-    {
-        string[i] = original[i];
-        i++;
-    }
-    string[i] = 0;
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief Compute string length
-
-@param[in] string: char* string to be measured for length.
-@returns int16_t: length of string.
-*/
-
-uint16_t stringLength(char* string)
-{
-    uint8_t i=0;
-    while (string[i] > 0) i++;
-    return i;
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief Equality of Strings
-
-@param[in] string1: char* first string
-@param[in] string2: char* second string
-@returns uint8_t: 1 if strings are equal, 0 otherwise.
-*/
-
-uint16_t stringEqual(char* string1,char* string2)
-{
-    while (*string1 > 0)
-    {
-        if (*string1 != *string2) return 0;
-        string1++;
-        string2++;
-    }
-    return 1;
-}
-
-/*--------------------------------------------------------------------------*/
-/** @brief Clear String
-
-@param[in] string: char* string
-*/
-
-void stringClear(char* string)
-{
-    string[0] = 0;
+    int i = 0;
+    comms_print_int((int) value >> 8);
+    buffer_put(send_buffer, '.');
+    if ((value & 0x80000000) > 0) value = -value;
+    uint16_t fraction = value & 0xFF;
+	if (fraction == 0) buffer_put(send_buffer, '0');
+	else while (fraction > 0)
+	{
+		fraction *= 10;
+        if ((++i >= PRECISION) && ((fraction & 0xFF) > 128)) fraction += 256;
+		buffer_put(send_buffer, "0123456789"[fraction >> 8]);
+        if (i >= PRECISION) break;
+        fraction &= 0xFF;
+	}
+	comms_enable_tx_interrupt(true);
 }
 
 

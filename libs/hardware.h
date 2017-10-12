@@ -25,7 +25,8 @@ K. Sarkies, 10 May 2016
 (note only STM32F1xx,  STM32F05x have compatible memory organization). */
 #define FLASH_PAGE_SIZE 2048
 
-#define I2C 1
+/* Use first I2C channel */
+#define I2C_CHANNEL 0
 
 enum pinmodetype {INPUT, OUTPUT, INPUT_PULLUP};
 
@@ -53,11 +54,6 @@ void set_seconds_count(uint32_t time);
 void delay_sleep(uint32_t delay_ms);
 void flash_read_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
 uint32_t flash_write_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
-uint32_t check_receive_buffer(void);
-void usart_print_fixed_point(uint32_t value);
-void usart_print_int(int64_t value);
-void usart_print_hex(uint16_t value);
-void usart_print_string(char *ch);
 void comms_enable_tx_interrupt(uint8_t enable);
 void peripheral_enable(void);
 void peripheral_disable(void);

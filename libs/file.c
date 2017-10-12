@@ -27,6 +27,7 @@ K. Sarkies, 10 December 2016
 #include "buffer.h"
 #include "comms.h"
 #include "hardware.h"
+#include "stringlib.h"
 
 #define  _BV(bit) (1 << (bit))
 
@@ -147,7 +148,7 @@ uint8_t read_directory_entry(char* directoryName, char* type, uint32_t* size,
     if (directoryName[0] != 0) fileStatus = f_opendir(&directory, directoryName);
     if (fileStatus == FR_OK)
         fileStatus = f_readdir(&directory, &fileInfo);
-    stringCopy(fileName, fileInfo.fname);
+    string_copy(fileName, fileInfo.fname);
     *size = fileInfo.fsize;
     *type = 'f';
     if (fileInfo.fattrib == AM_DIR) *type = 'd';
@@ -294,7 +295,7 @@ uint8_t delete_file(char* fileName)
     bool ok = true;
     for (fileHandle = 0; fileHandle < 8; fileHandle++)
         if (valid_file_handle(fileHandle) &&
-            (stringEqual(fileName, fileInfo[fileHandle].fname))) ok = false;
+            (string_equal(fileName, fileInfo[fileHandle].fname))) ok = false;
     if (ok)
     {
         fileStatus = f_unlink(fileName);
@@ -461,7 +462,7 @@ if the file handle is not valid.
 void get_file_name(uint8_t fileHandle, char* fileName)
 {
     if (valid_file_handle(fileHandle))
-        stringCopy(fileName, fileInfo[fileHandle].fname);
+        string_copy(fileName, fileInfo[fileHandle].fname);
     else
         fileName[0] = 0;
 }
@@ -537,14 +538,14 @@ uint8_t record_single(char* ident, int32_t param1, uint8_t writeFileHandle)
     if (writeFileHandle < 0x7F)
     {
         char record[80];
-        stringClear(record);
-        stringAppend(record, ident);
-        stringAppend(record, ",");
+        string_clear(record);
+        string_append(record, ident);
+        string_append(record, ",");
         char buffer[20];
-        intToAscii(param1, buffer);
-        stringAppend(record, buffer);
-        stringAppend(record, "\r\n");
-        uint8_t length = stringLength(record);
+        int_to_ascii(param1, buffer);
+        string_append(record, buffer);
+        string_append(record, "\r\n");
+        uint8_t length = string_length(record);
         fileStatus = write_to_file(writeFileHandle, &length, (uint8_t*) record);
     }
     return fileStatus;
@@ -568,17 +569,17 @@ uint8_t record_dual(char* ident, int32_t param1, int32_t param2, uint8_t writeFi
     if (writeFileHandle < 0x7F)
     {
         char record[80];
-        stringClear(record);
-        stringAppend(record, ident);
-        stringAppend(record, ",");
+        string_clear(record);
+        string_append(record, ident);
+        string_append(record, ",");
         char buffer[20];
-        intToAscii(param1, buffer);
-        stringAppend(record, buffer);
-        stringAppend(record, ",");
-        intToAscii(param2, buffer);
-        stringAppend(record, buffer);
-        stringAppend(record, "\r\n");
-        uint8_t length = stringLength(record);
+        int_to_ascii(param1, buffer);
+        string_append(record, buffer);
+        string_append(record, ",");
+        int_to_ascii(param2, buffer);
+        string_append(record, buffer);
+        string_append(record, "\r\n");
+        uint8_t length = string_length(record);
         fileStatus = write_to_file(writeFileHandle, &length, (uint8_t*) record);
     }
     return fileStatus;
@@ -601,12 +602,12 @@ uint8_t record_string(char* ident, char* string, uint8_t writeFileHandle)
     if (writeFileHandle < 0x7F)
     {
         char record[80];
-        stringClear(record);
-        stringAppend(record, ident);
-        stringAppend(record, ",");
-        stringAppend(record, string);
-        stringAppend(record, "\r\n");
-        uint8_t length = stringLength(record);
+        string_clear(record);
+        string_append(record, ident);
+        string_append(record, ",");
+        string_append(record, string);
+        string_append(record, "\r\n");
+        uint8_t length = string_length(record);
         fileStatus = write_to_file(writeFileHandle, &length, (uint8_t*) record);
     }
     return fileStatus;

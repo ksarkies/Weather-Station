@@ -74,21 +74,21 @@ void init_baro_sensor(void)
 {
 	uint32_t reg32 __attribute__((unused));
     uint8_t command[1];
-    i2c_setup(I2C);
+    i2c_setup(I2C_CHANNEL);
 /* Reset Module */
     command[0] = CMD_RESET;
-    i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
-    i2c_terminate(I2C);
+    i2c_master_transmit_data(I2C_CHANNEL, BARO_ADDR, 1, command);
+    i2c_terminate(I2C_CHANNEL);
 
-    if (i2c_check_error(I2C)) return;
+    if (i2c_check_error(I2C_CHANNEL)) return;
 
     int i = 0;
 /* Pull in the calibration constants */
     for (i = 0; i < 7; i++) {
         command[0] = CMD_PROM_READ(i);
-        i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
-        if (i2c_check_error(I2C)) return;
-        cal[i] = i2c_master_read_two_bytes(I2C, BARO_ADDR);
+        i2c_master_transmit_data(I2C_CHANNEL, BARO_ADDR, 1, command);
+        if (i2c_check_error(I2C_CHANNEL)) return;
+        cal[i] = i2c_master_read_two_bytes(I2C_CHANNEL, BARO_ADDR);
     }
 
     initialised = true;
@@ -186,18 +186,18 @@ uint32_t take_baro_reading(uint8_t trigger_cmd,
 {
     uint8_t command[1];
     command[0] = trigger_cmd;
-    i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
-    i2c_terminate(I2C);
+    i2c_master_transmit_data(I2C_CHANNEL, BARO_ADDR, 1, command);
+    i2c_terminate(I2C_CHANNEL);
 
-    if(i2c_check_error(I2C)) return 0;
+    if(i2c_check_error(I2C_CHANNEL)) return 0;
     uint8_t sampling_delay = SamplingDelayMs[(uint32_t)oversample_level];
     delay(sampling_delay);
 
     command[0] = CMD_READ_ADC;
-    i2c_master_transmit_data(I2C, BARO_ADDR, 1, command);
-    if(i2c_check_error(I2C)) return 0;
+    i2c_master_transmit_data(I2C_CHANNEL, BARO_ADDR, 1, command);
+    if(i2c_check_error(I2C_CHANNEL)) return 0;
     uint8_t data[3];
-    i2c_master_read_multiple_bytes(I2C, BARO_ADDR, 3, data);
+    i2c_master_read_multiple_bytes(I2C_CHANNEL, BARO_ADDR, 3, data);
     uint32_t result = (uint32_t)data[0] << 16;
     result |= (uint32_t)data[1] << 8;
     result |= data[2];

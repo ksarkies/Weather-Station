@@ -68,6 +68,7 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include <libopencm3/cm3/nvic.h>
 #include "../libs/buffer.h"
 #include "../libs/comms.h"
+#include "../libs/stringlib.h"
 #include "../libs/file.h"
 #include "../libs/timelib.h"
 #include "../libs/dht.h"
@@ -125,9 +126,11 @@ extern union ConfigGroup configData;
 int main(void)
 {
 	hardware_init();
+    DHT sensor_DHT = {DHT_PIN,DHT22,false};
+    init_DHT(&sensor_DHT);
     init_comms_buffers();
-
     init_file_system();
+
     writeFileHandle = 0xFF;
     readFileHandle = 0xFF;
     writeFileName[0] = 0;
@@ -137,9 +140,7 @@ int main(void)
     uint8_t channel[1];                 /* Channel for A/D conversion */
     uint16_t charge_limit = 0;          /* voltage limit for charging battery */
     uint8_t i=0;
-    DHT sensor_DHT = {DHT_PIN,DHT22,false};
-    init_DHT(&sensor_DHT);
-    usart_print_string("Weather Station\n\r");
+    comms_print_string("Weather Station\n\r");
     uint8_t characterPosition = 0;
     uint8_t line[80];
     measurement_period = MEASUREMENT_PERIOD;
@@ -208,9 +209,10 @@ will go back into stop mode. */
 /* Voltage times 256 for fixed point scaling, with sense resistor (x10)
 and amplification (x100) will give results in volts. */
             uint32_t voltage = ((voltage_raw>>4)*256*V_AMP)/(1241*100);/* Volts */
-            usart_print_string("dV,");
-            usart_print_fixed_point(voltage);
-            usart_print_string("\n\r");
+            comms_print_string("dV,");
+            comms_print_fixed_point(voltage);
+            comms_print_string("\n\r");
+            delay(5);
 
 /* Read and send Battery Current. */
             uint32_t current_raw = 0;
@@ -227,9 +229,10 @@ and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t current = 
                     ((current_raw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* m_a */
-            usart_print_string("dI,");
-            usart_print_fixed_point(current);
-            usart_print_string("\n\r");
+            comms_print_string("dI,");
+            comms_print_fixed_point(current);
+            comms_print_string("\n\r");
+            delay(5);
 
 /* Battery Charge Limit Setting */
             charge_limit = 4000;                 /* temporary for testing */
@@ -254,21 +257,23 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 												   &humidity, false);
 			if (error)
 			{
-	            usart_print_string("D");
+	            comms_print_string("D");
 	            for (i=0; i<5; i++) {
-			        usart_print_string(",Humidity,");
-			        usart_print_int(sensor_DHT.data[i]);
+			        comms_print_string(",DHT Data,");
+			        comms_print_int(sensor_DHT.data[i]);
 				}
-	            usart_print_string("\n\r");
+	            comms_print_string("\n\r");
+                delay(5);
 			}
             else
             {
-//                usart_print_string("dT,");
-//                usart_print_fixed_point(temperature);
-//                usart_print_string("\n\r");
-                usart_print_string("dH,");
-                usart_print_fixed_point(humidity);
-                usart_print_string("\n\r");
+                comms_print_string("dT,");
+                comms_print_fixed_point(temperature);
+                comms_print_string("\n\r");
+                comms_print_string("dH,");
+                comms_print_fixed_point(humidity);
+                comms_print_string("\n\r");
+                delay(5);
             }
 
 /* Read and send temperature and barometric pressure over i2c. */
@@ -277,19 +282,21 @@ This cycles between the absorption voltage limit and the float voltage limit. */
             error = ! get_baro_temp_and_pressure(&temp,&pressure,CELSIUS,OSR_4096);
 			if (error)
 			{
-	            usart_print_string("D");
-		        usart_print_string(",Pressure,");
-		        usart_print_int(0);
-	            usart_print_string("\n\r");
+	            comms_print_string("D");
+		        comms_print_string(",Pressure,");
+		        comms_print_int(0);
+	            comms_print_string("\n\r");
+                delay(5);
 			}
             else
             {
-                usart_print_string("dT,");
-                usart_print_fixed_point(temp);
-                usart_print_string("\n\r");
-                usart_print_string("dP,");
-                usart_print_fixed_point(pressure);
-                usart_print_string("\n\r");
+//                comms_print_string("dT,");
+//                comms_print_fixed_point(temp);
+//                comms_print_string("\n\r");
+                comms_print_string("dP,");
+                comms_print_fixed_point(pressure);
+                comms_print_string("\n\r");
+                delay(5);
             }
 
 /* Read and send solar panel current. Use simple polling of the ADC. */
@@ -309,22 +316,25 @@ and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t radiance =
                     ((radiance_raw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* m_a */
-            usart_print_string("dL,");
-            usart_print_fixed_point(radiance);
-            usart_print_string("\n\r");
+            comms_print_string("dL,");
+            comms_print_fixed_point(radiance);
+            comms_print_string("\n\r");
+            delay(5);
 
 /* Send rain gauge count. */
-            usart_print_string("dR,");
-            usart_print_int(rainfall);
-            usart_print_string("\n\r");
+            comms_print_string("dR,");
+            comms_print_int(rainfall);
+            comms_print_string("\n\r");
+            delay(5);
             cli();
             rainfall = 0;
             sei();
 
 /* Send wind speed count. */
-            usart_print_string("dS,");
-            usart_print_int(wind_speed);
-            usart_print_string("\n\r");
+            comms_print_string("dS,");
+            comms_print_int(wind_speed);
+            comms_print_string("\n\r");
+            delay(5);
             cli();
             wind_speed = 0;
             sei();
@@ -332,7 +342,7 @@ Note order of computations to avoid 32 bit overflow. */
         else
 /* Check for incoming messages */
         {
-            uint16_t value = check_receive_buffer();
+            uint16_t value = get_from_receive_buffer();
             char receive_buffer_empty = (value >> 8);
             if (! receive_buffer_empty)
             {
@@ -376,8 +386,8 @@ Action Commands */
         case 'E':
             {
                 char ident[35] = "Weather Station,";
-                stringAppend(ident,FIRMWARE_VERSION);
-                sendString("dE",ident);
+                string_append(ident,FIRMWARE_VERSION);
+                send_string("dE",ident);
                 break;
             }
         }
@@ -396,7 +406,7 @@ Return the internal time.
             {
                 char timeString[20];
                 put_time_to_string(timeString);
-                sendString("pH",timeString);
+                send_string("pH",timeString);
             }
         }
     }
@@ -472,8 +482,8 @@ Data is not written to the file externally. */
                 uint32_t freeClusters = 0;
                 uint32_t sectorsPerCluster = 0;
                 uint8_t fileStatus = get_free_clusters(&freeClusters, &sectorsPerCluster);
-                dataMessageSend("fF",freeClusters,sectorsPerCluster);
-                sendResponse("fE",(uint8_t)fileStatus);
+                data_message_send("fF",freeClusters,sectorsPerCluster);
+                send_response("fE",(uint8_t)fileStatus);
                 break;
             }
 /* d[d] Directory listing, d is the d=directory name. Get the first (if d
@@ -496,14 +506,14 @@ directory, then size and name are not sent back. The type character can be:
                 if (type != 'e')
                 {
                     char fileSize[5];
-                    hexToAscii((size >> 16) & 0xFFFF,fileSize);
-                    stringAppend(dirInfo,fileSize);
-                    hexToAscii(size & 0xFFFF,fileSize);
-                    stringAppend(dirInfo,fileSize);
-                    stringAppend(dirInfo,fileName);
+                    hex_to_ascii((size >> 16) & 0xFFFF,fileSize);
+                    string_append(dirInfo,fileSize);
+                    hex_to_ascii(size & 0xFFFF,fileSize);
+                    string_append(dirInfo,fileSize);
+                    string_append(dirInfo,fileName);
                 }
-                sendString("fd",dirInfo);
-                sendResponse("fE",(uint8_t)fileStatus);
+                send_string("fd",dirInfo);
+                send_response("fE",(uint8_t)fileStatus);
                 break;
             }
 /* Wf Open a file f=filename for writing less than 12 characters.
@@ -512,16 +522,16 @@ Returns a file handle. On error, file handle is 0xFF. */
             case 'W':
             {
                 if (! file_system_usable()) break;
-                if (stringLength((char*)line+2) < 12)
+                if (string_length((char*)line+2) < 12)
                 {
                     uint8_t fileStatus =
                         open_write_file((char*)line+2, &writeFileHandle);
                     if (fileStatus == 0)
                     {
-                        stringCopy(writeFileName,(char*)line+2);
-                        sendResponse("fW",writeFileHandle);
+                        string_copy(writeFileName,(char*)line+2);
+                        send_response("fW",writeFileHandle);
                     }
-                    sendResponse("fE",(uint8_t)fileStatus);
+                    send_response("fE",(uint8_t)fileStatus);
                 }
                 break;
             }
@@ -531,16 +541,16 @@ Returns a file handle. On error, file handle is 0xFF. */
             case 'R':
             {
                 if (! file_system_usable()) break;
-                if (stringLength((char*)line+2) < 12)
+                if (string_length((char*)line+2) < 12)
                 {
                     uint8_t fileStatus = 
                         open_read_file((char*)line+2, &readFileHandle);
                     if (fileStatus == 0)
                     {
-                        stringCopy(readFileName,(char*)line+2);
-                        sendResponse("fR",readFileHandle);
+                        string_copy(readFileName,(char*)line+2);
+                        send_response("fR",readFileHandle);
                     }
-                    sendResponse("fE",(uint8_t)fileStatus);
+                    send_response("fE",(uint8_t)fileStatus);
                 }
                 break;
             }
@@ -549,14 +559,14 @@ separated list. */
             case 'G':
             {
                 if (! file_system_usable()) break;
-                uint8_t fileHandle = asciiToInt((char*)line+2);
+                uint8_t fileHandle = ascii_to_int((char*)line+2);
                 if (valid_file_handle(fileHandle))
                 {
                     char string[80];
                     uint8_t fileStatus = 
                         read_line_from_file(fileHandle,string);
-                    sendString("fG",string);
-                    sendResponse("fE",(uint8_t)fileStatus);
+                    send_string("fG",string);
+                    send_response("fE",(uint8_t)fileStatus);
                 }
                 break;
             }
@@ -565,34 +575,34 @@ files, with open write filehandle and filename first followed by read filehandle
 and filename, or blank if any file is not open. */
             case 's':
             {
-                commsPrintString("fs,");
-                commsPrintInt((int)get_controls());
-                commsPrintString(",");
+                comms_print_string("fs,");
+                comms_print_int((int)get_controls());
+                comms_print_string(",");
                 uint8_t writeStatus;
-                commsPrintInt(writeFileHandle);
-                commsPrintString(",");
+                comms_print_int(writeFileHandle);
+                comms_print_string(",");
                 if (writeFileHandle < 0xFF)
                 {
-                    commsPrintString(writeFileName);
-                    commsPrintString(",");
+                    comms_print_string(writeFileName);
+                    comms_print_string(",");
                 }
-                commsPrintInt(readFileHandle);
+                comms_print_int(readFileHandle);
                 if (readFileHandle < 0xFF)
                 {
-                    commsPrintString(",");
-                    commsPrintString(readFileName);
+                    comms_print_string(",");
+                    comms_print_string(readFileName);
                 }
-                commsPrintString("\r\n");
+                comms_print_string("\r\n");
                 break;
             }
 /* Cf Close File specified by f=file handle. */
             case 'C':
             {
                 if (! file_system_usable()) break;
-                uint8_t fileHandle = asciiToInt((char*)line+2);
+                uint8_t fileHandle = ascii_to_int((char*)line+2);
                 uint8_t fileStatus = close_file(&fileHandle);
                 if (fileStatus == 0) writeFileHandle = 0xFF;
-                sendResponse("fE",(uint8_t)fileStatus);
+                send_response("fE",(uint8_t)fileStatus);
                 break;
             }
 /* X Delete File. */
@@ -600,22 +610,22 @@ and filename, or blank if any file is not open. */
             {
                 if (! file_system_usable()) break;
                 uint8_t fileStatus = delete_file((char*)line+2);
-                sendResponse("fE",(uint8_t)fileStatus);
+                send_response("fE",(uint8_t)fileStatus);
                 break;
             }
 /* M Reinitialize the memory card. */
             case 'M':
             {
                 uint8_t fileStatus = init_file_system();
-                sendResponse("fE",(uint8_t)fileStatus);
+                send_response("fE",(uint8_t)fileStatus);
                 break;
             }
 /* Z Create a standard file system on the memory volume */
             case 'Z':
             {
-                sendString("D","Creating Filesystem");
+                send_string("D","Creating Filesystem");
                 uint8_t fileStatus = make_filesystem();
-                sendResponse("fE",(uint8_t)fileStatus);
+                send_response("fE",(uint8_t)fileStatus);
                 break;
             }
         }

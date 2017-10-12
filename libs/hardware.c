@@ -42,6 +42,7 @@ K. Sarkies, 10 May 2016
 #include "buffer.h"
 #include "dht.h"
 #include "i2clib.h"
+#include "comms.h"
 #include "hardware.h"
 
 #define  _BV(bit) (1 << (bit))
@@ -55,8 +56,6 @@ extern uint32_t __configBlockEnd;
 volatile uint32_t time2Tick_counter;
 volatile uint32_t systick_time;
 volatile uint32_t last_reload_value;
-static uint8_t send_buffer[BUFFER_SIZE+3];
-static uint8_t receive_buffer[BUFFER_SIZE+3];
 
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
@@ -166,7 +165,7 @@ void hardware_init(void)
     timer2_setup(0xFFFF);
     adc_setup();
     dac_setup();
-    i2c_setup(I2C);
+    i2c_setup(I2C_CHANNEL);
 	rtc_setup();
     exti_setup();
     sei();
@@ -416,126 +415,6 @@ uint32_t flash_write_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t siz
     }
 
     return 0;
-}
-
-/*--------------------------------------------------------------------------*/
-/*      Return a character from the receive buffer
-
-@returns uint16_t. Lower 8 bits has character. Upper 8 bits has 0x100 if no
-                   character has been received.
-*/
-
-uint32_t check_receive_buffer(void)
-{
-    return buffer_get(receive_buffer);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Print out a fixed point value in ASCII decimal form.
-
-Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
-are the fractional part. The integer part is printed first with sign, followed
-by the fractional part rounded up to a specified precision.
-
-The USART ISR accesses the buffer independently. The USART interrupt must be
-re-enabled in the main program after each call to this function.
-
-@param[in] value: 32 bit signed integer as uint32_t.
-*/
-
-#define PRECISION 4
-
-void usart_print_fixed_point(uint32_t value)
-{
-    int i = 0;
-    usart_print_int((int) value >> 8);
-    buffer_put(send_buffer, '.');
-    if ((value & 0x80000000) > 0) value = -value;
-    uint16_t fraction = value & 0xFF;
-	if (fraction == 0) buffer_put(send_buffer, '0');
-	else while (fraction > 0)
-	{
-		fraction *= 10;
-        if ((++i >= PRECISION) && ((fraction & 0xFF) > 128)) fraction += 256;
-		buffer_put(send_buffer, "0123456789"[fraction >> 8]);
-        if (i >= PRECISION) break;
-        fraction &= 0xFF;
-	}
-	usart_enable_tx_interrupt(USART1);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Print out an integer value in ASCII decimal form
-
-(ack Thomas Otto). The USART ISR accesses the buffer independently. The USART
-interrupt must be re-enabled in the main program after each call to this
-function.
-
-@param[in] value: 64 bit signed integer.
-*/
-
-void usart_print_int(int64_t value)
-{
-	uint8_t i;
-	uint8_t nr_digits = 0;
-	char buffer[25];
-
-	if (value < 0)
-	{
-		buffer_put(send_buffer, '-');
-		value = value * -1;
-	}
-	if (value == 0) buffer[nr_digits++] = '0';
-	else while (value > 0)
-	{
-		buffer[nr_digits++] = "0123456789"[value % 10];
-		value /= 10;
-	}
-	for (i = nr_digits; i > 0; i--)
-	{
-		buffer_put(send_buffer, buffer[i-1]);
-	}
-	usart_enable_tx_interrupt(USART1);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Print out a value in ASCII hex form.
-
-The USART ISR accesses the buffer independently. The USART interrupt must be
-re-enabled in the main program after each call to this function.
-
-@param[in] value: 16 bit unsigned integer.
-*/
-
-void usart_print_hex(uint16_t value)
-{
-	uint8_t i;
-	char buffer[25];
-
-	for (i = 0; i < 4; i++)
-	{
-		buffer[i] = "0123456789ABCDEF"[value & 0xF];
-		value >>= 4;
-	}
-	for (i = 4; i > 0; i--)
-	{
-		buffer_put(send_buffer, buffer[i-1]);
-	}
-	usart_enable_tx_interrupt(USART1);
-}
-
-/*--------------------------------------------------------------------------*/
-/* @brief Print a String.
-*/
-
-void usart_print_string(char *ch)
-{
-  	while(*ch)
-	{
-     	buffer_put(send_buffer, *ch);
-     	ch++;
-  	}
-	usart_enable_tx_interrupt(USART1);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -793,7 +672,7 @@ The clocks and GPIO settings are established.
 void i2c_setup(uint8_t i2c)
 {
     rcc_periph_clock_enable(RCC_AFIO);
-    if (i2c == 1)
+    if (i2c == 0)
     {
 /* Enable clocks for I2C1 and AFIO. */
 	    rcc_periph_clock_enable(RCC_I2C1);
@@ -801,8 +680,9 @@ void i2c_setup(uint8_t i2c)
 	    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
 		          GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
 		          GPIO_I2C1_SCL | GPIO_I2C1_SDA);
-        i2c_initialise(I2C1);
     }
+    else return;
+    i2c_initialise(i2c);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -900,14 +780,14 @@ void usart1_isr(void)
 /* Check if we were called because of RXNE. */
 	if (usart_get_flag(USART1,USART_SR_RXNE))
 	{
-/* If buffer full we'll just drop it */
-		buffer_put(receive_buffer, (uint8_t) usart_recv(USART1));
+/* If buffer full it'll just be dropped */
+		put_to_receive_buffer((uint8_t) usart_recv(USART1));
 	}
 /* Check if we were called because of TXE. */
 	if (usart_get_flag(USART1,USART_SR_TXE))
 	{
 /* If buffer empty, disable the tx interrupt */
-		data = buffer_get(send_buffer);
+		data = get_from_send_buffer();
 		if ((data & 0xFF00) > 0) usart_disable_tx_interrupt(USART1);
 		else usart_send(USART1, (data & 0xFF));
 	}
