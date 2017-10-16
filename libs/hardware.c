@@ -57,6 +57,14 @@ volatile uint32_t time2Tick_counter;
 volatile uint32_t systick_time;
 volatile uint32_t last_reload_value;
 
+/* Time variables needed when systick is used as a timer */
+static uint32_t secondsCount;
+static uint32_t millisecondsCount;
+static uint32_t downCount;
+
+/* This is provided in the FAT filesystem library */
+extern void disk_timerproc();
+
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
@@ -159,7 +167,7 @@ void hardware_init(void)
 {
 /* Set the clock to 72MHz from the 8MHz external crystal */
 	clock_setup();
-    systick_setup(1000);         /* Set systick to interrupt after 1 second. */
+    systick_setup(1000);    /* Set systick to interrupt after 1 millisecond. */
     gpio_setup();
     usart1_setup();
     timer2_setup(0xFFFF);
@@ -305,6 +313,28 @@ void set_seconds_count(uint32_t time)
 }
 
 /*--------------------------------------------------------------------------*/
+/** @brief Read the Down Counter
+
+@returns uint32_t counter value in milliseconds.
+*/
+
+uint32_t get_delay_count()
+{
+    return downCount;
+}
+
+/*--------------------------------------------------------------------------*/
+/** @brief Set the Down Counter
+
+@param[in] time: uint32_t seconds counter value in milliseconds to set.
+*/
+
+void set_delay_count(uint32_t time)
+{
+    downCount = time;
+}
+
+/*--------------------------------------------------------------------------*/
 /* @brief Sleeping Delay in Milliseconds
 
 This function provides a basic sleeping delay in milliseconds. The systick
@@ -442,9 +472,9 @@ void peripheral_disable(void)
     rcc_periph_clock_disable(RCC_AFIO);
     rcc_periph_clock_disable(RCC_GPIOA);
     rcc_periph_clock_disable(RCC_USART1);
-#endif
     rcc_periph_clock_disable(RCC_GPIOB);
     rcc_periph_clock_disable(RCC_GPIOC);
+#endif
     rcc_periph_clock_disable(RCC_ADC1);
 	rcc_periph_clock_disable(RCC_DAC);
 	rcc_periph_clock_disable(RCC_I2C1);
@@ -462,14 +492,16 @@ This turns on power to all peripherals needed.
 void peripheral_enable(void)
 {
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
+#ifdef DEEPSLEEP
     rcc_periph_clock_enable(RCC_AFIO);
     rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_USART1);
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
+#endif
     rcc_periph_clock_enable(RCC_ADC1);
 	rcc_periph_clock_enable(RCC_DAC);
 	rcc_periph_clock_enable(RCC_I2C1);
-    rcc_periph_clock_enable(RCC_USART1);
 	rcc_periph_clock_enable(RCC_TIM2);
     adc_power_on(ADC1);
     dac_enable(CHANNEL_2);
@@ -505,17 +537,14 @@ clock, thus allowing time estimates to be made in milliseconds.
 
 void systick_setup(uint16_t period)
 {
-    systick_counter_disable();
 /* 72MHz / 8 => 9,000,000 counts per second */
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
 /* 9000000/9000 = 1000 overflows per second - every period ms one interrupt */
 /* Systick interrupt every N clock pulses: set reload to N-1 */
-    systick_set_reload(MS_COUNT*(uint32_t)period - 1);
+    systick_set_reload((MS_COUNT*period) - 1);
     systick_interrupt_enable();
 /* Start counting. */
     systick_counter_enable();
-    systick_clear();
-    systick_get_countflag();        // Clear the flag
 }
 
 /*--------------------------------------------------------------------------*/
@@ -601,14 +630,8 @@ void gpio_setup(void)
     rcc_periph_clock_enable(RCC_GPIOC);
     rcc_periph_clock_enable(RCC_AFIO);
 
-/* Set GPIO8-15 (in GPIO port B) to 'output push-pull' for the LEDs. */
-/*    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8 | GPIO9 | GPIO10 | GPIO11 |
-              GPIO12 | GPIO13 | GPIO14 | GPIO15); */
-/* All LEDS off */
-/*    gpio_clear(GPIOB, GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
-               GPIO14 | GPIO15); */
-
+    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO0 | GPIO1);
 /* Set GPIO2, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
     gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO2 | GPIO5);
@@ -759,8 +782,23 @@ Globals: systick_time: running count of milliseconds from an arbitrary time.
          last_reload_value: reload value used for the countdown just finished.
 */
 
-void systick_handler(void)
+void sys_tick_handler(void)
 {
+    millisecondsCount++;
+/* SD card status update. */
+    if ((millisecondsCount % 10) == 0)
+    {
+        disk_timerproc();       /* File System hardware checks */
+    }
+
+/* updated every second if systick is used for the real-time clock. */
+    if ((millisecondsCount % 1000) == 0)
+    {
+        secondsCount++;
+    }
+/* down counter for timing. */
+    downCount--;
+
 //    systick_time++;
     systick_time += last_reload_value/MS_COUNT;
     last_reload_value = (systick_get_reload() & 0xFFFFFF);

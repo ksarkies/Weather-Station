@@ -51,6 +51,8 @@ void delay(uint32_t delay_sec);
 void delay_microseconds(uint16_t delay_us);
 uint32_t get_seconds_count();
 void set_seconds_count(uint32_t time);
+uint32_t get_delay_count(void);
+void set_delay_count(uint32_t time);
 void delay_sleep(uint32_t delay_ms);
 void flash_read_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);
 uint32_t flash_write_data(uint32_t *flashBlock, uint8_t *dataBlock, uint16_t size);

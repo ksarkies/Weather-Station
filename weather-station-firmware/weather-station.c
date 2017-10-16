@@ -125,12 +125,13 @@ extern union ConfigGroup configData;
 
 int main(void)
 {
+    set_global_defaults();
 	hardware_init();
     DHT sensor_DHT = {DHT_PIN,DHT22,false};
     init_DHT(&sensor_DHT);
     init_comms_buffers();
-    init_file_system();
 
+    init_file_system();
     writeFileHandle = 0xFF;
     readFileHandle = 0xFF;
     writeFileName[0] = 0;
@@ -141,49 +142,71 @@ int main(void)
     uint16_t charge_limit = 0;          /* voltage limit for charging battery */
     uint8_t i=0;
     comms_print_string("Weather Station\n\r");
-    uint8_t characterPosition = 0;
-    uint8_t line[80];
     measurement_period = MEASUREMENT_PERIOD;
     uint32_t measurement_time = measurement_period;
+    uint32_t cnt;
 
-    for (;;) {
-/* Snooze for a while in low power stop mode. */
+    for (;;)
+    {
+/* -------- CLI ------------*/
+/* Command Line Interface receiver interpretation.
+ Process incoming commands as they appear on the serial input.
+These will be fully processed before the processor goes to sleep mode.*/
+        static uint8_t line[80];
+        static uint8_t characterPosition = 0;
+        if (receive_data_available())
+        {
+            uint8_t character = get_from_receive_buffer();
+            if ((character == 0x0D) || (character == 0x0A) || (characterPosition > 78))
+            {
+                line[characterPosition] = 0;
+                characterPosition = 0;
+    comms_print_string(line);
+                parse_command(line);
+            }
+            else line[characterPosition++] = character;
+        }
 /* Wait a bit for USART and any other outstanding operations to finish. */
         while (! usart_get_flag(USART1, USART_SR_TC)) {}
-		uint32_t cnt;
-		for (cnt=0; cnt < 40000; cnt++) {
-			asm("nop");
-		}
+        for (cnt=0; cnt < 40000; cnt++) asm("nop");
 
+/* Snooze for a while in low power stop mode. */
 /* Possible power down modes are SLEEP or STOP modes only. These can be woken
 by EXTI interrupts and so can register external events as well as RTC alarm for
 periodical servicing of peripherals. If the USART is to be active during low
 power mode then only SLEEP mode can be used. */
 
-/* Turn off peripherals during sleep (only ADC and DAC need to do this in STOP
-mode if regulator low power is used). */
-        peripheral_disable();
 /* Just clear the whole bloody lot of exti pending requests */
-		exti_reset_request(0xFFFFF);
+        exti_reset_request(0xFFFFF);
+
+/* -------- Deep Sleep ------------*/
+/* The following would provide Deep Sleep (STOP) mode but at present this is
+incompatible with USART usage. */
+
 /* Use DEEPSLEEP mode if USART interrupts are not needed during sleep periods.
 USART is powered off when the 1.8V regulator is powered down. */
 #ifdef DEEPSLEEP
+/* Turn off peripherals during sleep (only ADC and DAC need to do this in STOP
+mode if regulator low power is used). */
+        peripheral_disable();
 /* Don't set complete power down (otherwise it goes to standby and memory
 contents are lost) */
-		pwr_set_stop_mode();
+        pwr_set_stop_mode();
 /* Set deep sleep mode bit in SCB to go to stop mode */
-		SCB_SCR |= SCB_SCR_SLEEPDEEP;
+        SCB_SCR |= SCB_SCR_SLEEPDEEP;
 /* Set the 1.8V regulator to low power to preserve registers and SRAM but
 power off core and digital peripherals. */
-		pwr_voltage_regulator_low_power_in_stop();
+        pwr_voltage_regulator_low_power_in_stop();
 #endif
 
-    	rtc_set_alarm_time(measurement_time);
-		asm volatile("wfi");
+        rtc_set_alarm_time(measurement_time);
+        asm volatile("wfi");
 
-/* Repeat setup as clocks seem to have been reset. */
+#ifdef DEEPSLEEP
 /* Restore hardware clocks and any config that may have been lost. */
         peripheral_enable();
+        usart1_setup();
+#endif
 
 /* Check if the wakeup source was the alarm. If so clear the alarm flag and
 reset the alarm value ahead of the RTC. */
@@ -339,24 +362,9 @@ Note order of computations to avoid 32 bit overflow. */
             wind_speed = 0;
             sei();
         }
-        else
-/* Check for incoming messages */
-        {
-            uint16_t value = get_from_receive_buffer();
-            char receive_buffer_empty = (value >> 8);
-            if (! receive_buffer_empty)
-            {
-                char character = (value & 0xFF);
-                if ((character == 0x0D) || (character == 0x0A) ||
-                    (characterPosition > 78))
-                {
-                    line[characterPosition] = 0;
-                    characterPosition = 0;
-                    parse_command(line);
-                }
-                else line[characterPosition++] = character;
-            }
-        }
+/* Wait a bit for USART and any other outstanding operations to finish. */
+        while (! usart_get_flag(USART1, USART_SR_TC)) {}
+        for (cnt=0; cnt < 40000; cnt++) asm("nop");
 	}
 
 	return 0;
