@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WeatherStationRecordDialog</class>
+ <widget class="QDialog" name="WeatherStationRecordDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>682</width>
+    <height>422</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Solar Power BMS Recording</string>
+  </property>
+  <widget class="QLabel" name="title">
+   <property name="geometry">
+    <rect>
+     <x>35</x>
+     <y>12</y>
+     <width>601</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Andale Mono</family>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Weather Station Remote Recording Control</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="errorLabel">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>390</y>
+     <width>511</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="recordingFrequencySpinBox">
+   <property name="geometry">
+    <rect>
+     <x>37</x>
+     <y>356</y>
+     <width>61</width>
+     <height>23</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="recordFreqencyLabel">
+   <property name="geometry">
+    <rect>
+     <x>24</x>
+     <y>330</y>
+     <width>147</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Recording Frequency</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="recordingIntervalLabel">
+   <property name="geometry">
+    <rect>
+     <x>107</x>
+     <y>360</y>
+     <width>64</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>0.1 sec</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="stopButton">
+   <property name="geometry">
+    <rect>
+     <x>138</x>
+     <y>150</y>
+     <width>93</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Pause recording but do not close the file.</string>
+   </property>
+   <property name="text">
+    <string>Stop Record</string>
+   </property>
+  </widget>
+  <widget class="QTableView" name="fileTableView">
+   <property name="geometry">
+    <rect>
+     <x>384</x>
+     <y>61</y>
+     <width>256</width>
+     <height>286</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click on an item to place it in the text boxes left.</string>
+   </property>
+   <attribute name="horizontalHeaderVisible">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="verticalHeaderVisible">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QLineEdit" name="recordFileName">
+   <property name="geometry">
+    <rect>
+     <x>139</x>
+     <y>66</y>
+     <width>164</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Name of remote file to open (or create if it doesn't exists)</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="closeButton">
+   <property name="geometry">
+    <rect>
+     <x>548</x>
+     <y>355</y>
+     <width>91</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="diskSpaceAvailable">
+   <property name="geometry">
+    <rect>
+     <x>306</x>
+     <y>115</y>
+     <width>70</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="spaceAvailableLabel">
+   <property name="geometry">
+    <rect>
+     <x>158</x>
+     <y>115</y>
+     <width>143</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Space Available (MB)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="recordFilenameLabel">
+   <property name="geometry">
+    <rect>
+     <x>158</x>
+     <y>90</y>
+     <width>125</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Record File Name</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="deleteButton">
+   <property name="geometry">
+    <rect>
+     <x>339</x>
+     <y>64</y>
+     <width>34</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Delete the file selected. Select the check box first.</string>
+   </property>
+   <property name="text">
+    <string>Del</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="deleteCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>311</x>
+     <y>67</y>
+     <width>22</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Delete protection. Set to enable file deletion.</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="registerButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>386</x>
+     <y>356</y>
+     <width>91</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Attempt to re-register the SD card if there are problems accessing it.</string>
+   </property>
+   <property name="text">
+    <string>Remount</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="readFileName">
+   <property name="geometry">
+    <rect>
+     <x>138</x>
+     <y>195</y>
+     <width>164</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Name of existing remote file to be read.</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="localFileName">
+   <property name="geometry">
+    <rect>
+     <x>138</x>
+     <y>240</y>
+     <width>164</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Name of local file to receive downloaded records.</string>
+   </property>
+  </widget>
+  <widget class="QProgressBar" name="progressBar">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>138</x>
+     <y>285</y>
+     <width>103</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="value">
+    <number>0</number>
+   </property>
+   <property name="invertedAppearance">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cancelDownloadButton">
+   <property name="geometry">
+    <rect>
+     <x>316</x>
+     <y>285</y>
+     <width>57</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Abort download</string>
+   </property>
+   <property name="text">
+    <string>Cancel</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="readFilenameLabel">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>220</y>
+     <width>125</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Remote File Name</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="localFilenameLabel">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>265</y>
+     <width>125</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Local File Name</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pauseDownloadButton">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>285</y>
+     <width>57</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Pause download but maintain position in file.</string>
+   </property>
+   <property name="text">
+    <string>Pause</string>
+   </property>
+  </widget>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>16</x>
+     <y>50</y>
+     <width>99</width>
+     <height>271</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QPushButton" name="recordFileButton">
+      <property name="toolTip">
+       <string>Open the specified remote file for recording.</string>
+      </property>
+      <property name="text">
+       <string>Record File</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="closeFileButton">
+      <property name="toolTip">
+       <string>Close the remote recording file. Recording is also stopped.</string>
+      </property>
+      <property name="text">
+       <string>Close File</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="startButton">
+      <property name="toolTip">
+       <string>Start recording on an open file (from end of file if it exists).</string>
+      </property>
+      <property name="text">
+       <string>Start Record</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="readFileButton">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="toolTip">
+       <string>Open a remote file for reading.</string>
+      </property>
+      <property name="text">
+       <string> Remote File</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="localFileButton">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="toolTip">
+       <string>Open a local file for storage of downloaded records.</string>
+      </property>
+      <property name="text">
+       <string> Local File</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="downloadButton">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="toolTip">
+       <string>Start download of remote records.</string>
+      </property>
+      <property name="text">
+       <string>Download</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QLabel" name="recordFreqencyLabel_2">
+   <property name="geometry">
+    <rect>
+     <x>392</x>
+     <y>45</y>
+     <width>31</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>File</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="recordFreqencyLabel_3">
+   <property name="geometry">
+    <rect>
+     <x>528</x>
+     <y>45</y>
+     <width>67</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Size (MB)</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -28,7 +28,7 @@ Here the data stream from the remote is received and saved to a file.
 
 #include "weather-station.h"
 #include "weather-station-main.h"
-//#include "weather-station-record.h"
+#include "weather-station-record.h"
 //#include "weather-station-configure.h"
 #include <QApplication>
 #include <QString>
@@ -184,6 +184,9 @@ Parse the line and take action on the command received.
 
 void WeatherStationGui::processResponse(const QString response)
 {
+#ifdef DEBUG
+    qDebug() << response;
+#endif
     QStringList breakdown = response.split(",");
     int size = breakdown.size();
     QString firstField;
@@ -271,6 +274,11 @@ for the Suntech STP005S12-5W */
                 .toFloat(),0,'f',0));
     }
 
+/* Messages for the File Module start with f */
+    if ((size > 0) && (firstField.left(1) == "f"))
+    {
+        emit this->recordMessageReceived(response);
+    }
 /* This allows debug messages to be displayed on the terminal. */
     if ((size > 0) && (firstField.left(1) == "D"))
     {
@@ -364,6 +372,22 @@ void WeatherStationGui::on_closeFileButton_clicked()
         saveFile = QString();
     }
 }
+
+//-----------------------------------------------------------------------------
+/** @brief Call up the Recording Window.
+
+*/
+
+void WeatherStationGui::on_recordingButton_clicked()
+{
+    WeatherStationRecordGui* WeatherStationRecordForm =
+                    new WeatherStationRecordGui(port,this);
+    WeatherStationRecordForm->setAttribute(Qt::WA_DeleteOnClose);
+    connect(this, SIGNAL(recordMessageReceived(const QString&)),
+                    WeatherStationRecordForm, SLOT(onMessageReceived(const QString&)));
+    WeatherStationRecordForm->exec();
+}
+
 /*---------------------------------------------------------------------------*/
 /** @brief Show an error condition in the Error label.
 

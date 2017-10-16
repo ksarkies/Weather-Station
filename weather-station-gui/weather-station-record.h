@@ -30,6 +30,8 @@
 
 #include "weather-station.h"
 #include "ui_weather-station-record.h"
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include <QDialog>
 #include <QStandardItemModel>
 
@@ -42,11 +44,7 @@ class WeatherStationRecordGui : public QDialog
 {
     Q_OBJECT
 public:
-#ifdef SERIAL
-    WeatherStationRecordGui(SerialPort* socket, QWidget* parent = 0);
-#else
-    WeatherStationRecordGui(QTcpSocket* socket, QWidget* parent = 0);
-#endif
+    WeatherStationRecordGui(QSerialPort* socket, QWidget* parent = 0);
     ~WeatherStationRecordGui();
 private slots:
     void on_deleteButton_clicked();
@@ -65,6 +63,7 @@ private:
     void requestRecordingStatus();
     void refreshDirectory();
     void getFreeSpace();
+    QSerialPort* socket;
     int writeFileHandle;
     int readFileHandle;
     bool recordingOn;

@@ -41,6 +41,8 @@
 
 #define millisleep(a) usleep(a*1000)
 
+#define DEBUG
+
 //-----------------------------------------------------------------------------
 /** @brief Weather Station Main Window.
 
@@ -60,9 +62,12 @@ private slots:
     void on_batteryPushButton_clicked();
     void on_saveFileButton_clicked();
     void on_closeFileButton_clicked();
-//    void on_recordingButton_clicked();
+    void on_recordingButton_clicked();
 //    void on_configureButton_clicked();
     void closeEvent(QCloseEvent*);
+signals:
+    void recordMessageReceived(const QString response);
+//    void configureMessageReceived(const QString response);
 private:
 // User Interface object instance
     Ui::WeatherStationMainDialog WeatherStationMainUi;
