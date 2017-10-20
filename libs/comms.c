@@ -29,7 +29,6 @@ K. Sarkies, 9 December 2016
 
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "buffer.h"
 #include "stringlib.h"
 #include "hardware.h"
@@ -183,7 +182,7 @@ void send_string(char* ident, char* string)
 
 */
 
-void comms_print_register(uint32_t reg)
+void commsPrintRegister(uint32_t reg)
 {
     comms_print_hex((reg >> 16) & 0xFFFF);
     comms_print_hex((reg >> 00) & 0xFFFF);
@@ -290,5 +289,4 @@ void comms_print_fixed_point(uint32_t value)
 	}
 	comms_enable_tx_interrupt(true);
 }
-
 

@@ -16,26 +16,60 @@ K. Sarkies, 10 May 2016
 #define HIGH        1
 #define LOW         0
 
-#define BUFFER_SIZE 128
-
 /* 72MHz clock rate divided by 8 and 1000 to set ms count period for systick */
 #define MS_COUNT    9000
+
+/* Use first I2C channel */
+#define I2C_CHANNEL 0
+
+/* DHT Temperature/Humidity sensor */
+#define DHT_PORT    GPIOA
+#define DHT_PIN     1
+
+/* DAC set of charge limit */
+#define DAC_PORT    GPIOA
+#define DAC_PIN     5
+
+/* Size of communications receive and transmit buffers. */
+#define BUFFER_SIZE 250
+
+/* USART */
+#define BAUDRATE        38400
+
+/* Watchdog Timer Timeout Period in ms */
+#define IWDG_TIMEOUT_MS 1500
 
 /* Flash. Largest page size compatible with most families used.
 (note only STM32F1xx,  STM32F05x have compatible memory organization). */
 #define FLASH_PAGE_SIZE 2048
 
-/* Use first I2C channel */
-#define I2C_CHANNEL 0
+/* RTC select hardware RTC or software counter */
+#define RTC_SOURCE      RTC
 
-enum pinmodetype {INPUT, OUTPUT, INPUT_PULLUP};
+/* Number of A/D converter channels available (STM32F103) */
+#define NUM_DEVICES     3
+#define NUM_LOADS       2
+#define NUM_SOURCES     1
+#define NUM_INTERFACES  6
+#define NUM_CHANNEL     1 + 2*NUM_INTERFACES
 
-/* STM32F103 definitions. Define pin as pin number in first four bits,
-with the port number in the next 4 bits (GPIOA = 0 etc). */
-#define DHT_PORT    GPIOA
-#define DHT_PIN     1
+/* A/D Converter Channels
+For A/D conversion on the STM32F103RET6 the A/D ports are:
+PA 0-7 is ADC 0-7
+PB 0-1 is ADC 8-9
+PC 0-5 is ADC 10-15 */
+
+#define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
+
+/* GPIO Port Settings */
+#define PA_ANALOGUE_INPUTS          GPIO4 | GPIO6 | GPIO7
+#define PA_DIGITAL_INPUTS           GPIO0 | GPIO1 | GPIO2
+#define PB_DIGITAL_OUTPUTS          GPIO4 | GPIO5 | GPIO10 | GPIO11 | GPIO12
+#define PC_DIGITAL_OUTPUTS          GPIO0 | GPIO1
 
 /* Arduino emulated calls */
+enum pinmodetype {INPUT, OUTPUT, INPUT_PULLUP};
+
 uint32_t gpio_port(uint8_t pin);
 void pin_mode(uint8_t pin, enum pinmodetype mode);
 void digital_write(uint8_t pin, uint8_t setting);
@@ -45,8 +79,8 @@ uint8_t digital_read(uint8_t pin);
 void hardware_init(void);
 void cli(void);
 void sei(void);
-void millis_offset(uint32_t offset);
 uint32_t millis();
+void millis_offset(uint32_t offset);
 void delay(uint32_t delay_sec);
 void delay_microseconds(uint16_t delay_us);
 uint32_t get_seconds_count();
@@ -61,7 +95,7 @@ void peripheral_enable(void);
 void peripheral_disable(void);
 /* Setup procedures */
 void clock_setup(void);
-void systick_setup(uint16_t period);
+void systick_setup();
 void usart1_setup(void);
 void timer2_setup(uint32_t period);
 void i2c_setup(uint8_t i2c);

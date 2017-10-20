@@ -12,13 +12,11 @@ The hardware library is libopencm3.
 #include <stdint.h>
 
 #include <libopencm3/stm32/i2c.h>
-#include "buffer.h"
 #include "dht.h"
 #include "i2clib.h"
 #include "hardware.h"       /* TO BE REMOVED */
 
 #define  _BV(bit) (1 << (bit))
-#define BUFFER_SIZE 128
 #define OWN_ADDRESS 0x32
 #define I2C_CHANNELS 2
 

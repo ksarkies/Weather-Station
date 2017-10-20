@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 
-// how many timing transitions we need to keep track of. 2 * number bits + extra
+/* how many timing transitions we need to track: 2 * number bits + extra */
 #define MAXTIMINGS 85
 
 #define DHT11 11

@@ -9,6 +9,7 @@ contribution to the ChaN FAT library. It has been modified for libopencm3.
 
 Only the two ET boards have been tested.
 
+Check port settings against those set in the board.h header.
 */
 /* Copyright (c) 2010, Martin Thomas, ChaN
    Copyright (c) 2013 Ken Sarkies
@@ -43,22 +44,19 @@ Only the two ET boards have been tested.
 #define BOARD_H_
 
 /* set to 1 to provide a disk_ioctrl function even if not needed by the FatFs */
-#define STM32_SD_DISK_IOCTRL_FORCE      0
+#define STM32_SD_DISK_IOCTRL_FORCE      FALSE
 
-//#define STM32_SD_USE_DMA
+#define STM32_SD_USE_DMA
 
-//#define USE_ET_STAMP_STM32
-//#define USE_ET_STM32F103
-//#define USE_EK_STM32F
-//#define USE_STM32_P103
-//#define USE_MINI_STM32
+/* The board being used is defined in the makefile */
 
 #if defined USE_ET_STM32F103
- #define CARD_SUPPLY_SWITCHABLE   0
- #define SOCKET_WP_CONNECTED      1 /* write-protect socket-switch */
- #define SOCKET_CP_CONNECTED      0 /* card-present socket-switch (clashes with USART1 on this board) */
- #define GPIO_PORT_WP             GPIOC
+/* GPIO C6 is WP, A8 is CP (not used), A4 is CS, A5 is SCK, A6 is MISO, A7 is MOSI, */
+ #define CARD_SUPPLY_SWITCHABLE   FALSE
+ #define SOCKET_WP_CONNECTED      TRUE  /* write-protect socket-switch */
+ #define SOCKET_CP_CONNECTED      FALSE /* card-present socket-switch (clashes with USART1) */
  #define RCC_GPIO                 RCC_APB2ENR
+ #define GPIO_PORT_WP             GPIOC
  #define RCC_GPIO_PORT_WP         RCC_APB2ENR_IOPCEN
  #define GPIOWP                   GPIO6
  #define GPIO_MODE_WP             GPIO_CNF_INPUT_FLOAT /* external resistor */
@@ -85,17 +83,18 @@ Only the two ET boards have been tested.
  #define SPI_BaudRatePrescaler_slow    SPI_CR1_BR_FPCLK_DIV_256
 
 #elif defined USE_ET_STAMP_STM32
- #define CARD_SUPPLY_SWITCHABLE   0
- #define SOCKET_WP_CONNECTED      0 /* write-protect socket-switch */
- #define SOCKET_CP_CONNECTED      0 /* card-present socket-switch (clashes with USART1 on this board) */
- #define GPIO_PORT_WP             GPIOB
+/* GPIO WP not used, D2 is CP, B12 is CS, B13 is SCK, B14 is MISO, B15 is MOSI */
+ #define CARD_SUPPLY_SWITCHABLE   FALSE
+ #define SOCKET_WP_CONNECTED      FALSE /* write-protect socket-switch */
+ #define SOCKET_CP_CONNECTED      FALSE /* card-present socket-switch */
  #define RCC_GPIO                 RCC_APB2ENR
- #define RCC_GPIO_PORT_WP         RCC_APB2ENR_IOPBEN
- #define GPIOWP                   GPIO11
- #define GPIO_MODE_WP             GPIO_CNF_INPUT_FLOAT /* external resistor */
- #define GPIO_PORT_CP             GPIOB
- #define RCC_GPIO_PORT_CP         RCC_APB2ENR_IOPBEN
- #define GPIOCP                   GPIO10
+// #define GPIO_PORT_WP             GPIOB
+// #define RCC_GPIO_PORT_WP         RCC_APB2ENR_IOPBEN
+// #define GPIOWP                   GPIO11
+// #define GPIO_MODE_WP             GPIO_CNF_INPUT_FLOAT /* external resistor */
+ #define GPIO_PORT_CP             GPIOD
+ #define RCC_GPIO_PORT_CP         RCC_APB2ENR_IOPDEN
+ #define GPIOCP                   GPIO2
  #define GPIO_MODE_CP             GPIO_CNF_INPUT_FLOAT /* external resistor */
  #define GPIO_PORT_CS             GPIOB
  #define RCC_GPIO_PORT_CS         RCC_APB2ENR_IOPBEN
@@ -117,13 +116,14 @@ Only the two ET boards have been tested.
  #define SPI_BaudRatePrescaler_slow    SPI_CR1_BR_FPCLK_DIV_256
 
 #elif defined USE_EK_STM32F
- #define CARD_SUPPLY_SWITCHABLE   1
+/* Not Tested */
+ #define CARD_SUPPLY_SWITCHABLE   TRUE
  #define GPIO_PWR                 GPIOD
  #define RCC_APB2Periph_GPIO_PWR  RCC_APB2Periph_GPIOD
  #define GPIOPWR                  GPIO10
  #define GPIO_Mode_PWR            GPIO_Mode_Out_OD /* pull-up resistor at power FET */
- #define SOCKET_WP_CONNECTED      0
- #define SOCKET_CP_CONNECTED      0
+ #define SOCKET_WP_CONNECTED      FALSE
+ #define SOCKET_CP_CONNECTED      FALSE
  #define SPI_SD                   SPI1
  #define GPIO_CS                  GPIOD
  #define RCC_APB2Periph_GPIO_CS   RCC_APB2Periph_GPIOD
@@ -133,9 +133,9 @@ Only the two ET boards have been tested.
  #define DMA_FLAG_SPI_SD_TC_RX    DMA1_TCIF
  #define DMA_FLAG_SPI_SD_TC_TX    DMA1_TCIF
  #define GPIO_SPI_SD              GPIOA
- #define GPIOSPI_SD_SCK      GPIO5
- #define GPIOSPI_SD_MISO     GPIO6
- #define GPIOSPI_SD_MOSI     GPIO7
+ #define GPIOSPI_SD_SCK           GPIO5
+ #define GPIOSPI_SD_MISO          GPIO6
+ #define GPIOSPI_SD_MOSI          GPIO7
  #define RCC_APBPeriphClockCmd_SPI_SD  RCC_APB2PeriphClockCmd
  #define RCC_APBPeriph_SPI_SD     RCC_APB2Periph_SPI1
  /* - for SPI1 and full-speed APB2: 72MHz/4 */
@@ -143,10 +143,10 @@ Only the two ET boards have been tested.
  #define SPI_BaudRatePrescaler_slow  SPI_CR1_BR_FPCLK_DIV_256
 
 #elif defined USE_STM32_P103
- // Olimex STM32-P103 not tested!
- #define CARD_SUPPLY_SWITCHABLE   0
- #define SOCKET_WP_CONNECTED      1 /* write-protect socket-switch */
- #define SOCKET_CP_CONNECTED      1 /* card-present socket-switch */
+/* Olimex STM32-P103 not tested! */
+ #define CARD_SUPPLY_SWITCHABLE   FALSE
+ #define SOCKET_WP_CONNECTED      TRUE  /* write-protect socket-switch */
+ #define SOCKET_CP_CONNECTED      TRUE  /* card-present socket-switch */
  #define GPIO_WP                  GPIOC
  #define GPIO_CP                  GPIOC
  #define RCC_APBxPeriph_GPIO_WP   RCC_APB2Periph_GPIOC
@@ -176,13 +176,14 @@ Only the two ET boards have been tested.
  #define SPI_BaudRatePrescaler_slow  SPI_CR1_BR_FPCLK_DIV_256
 
 #elif defined USE_MINI_STM32
- #define CARD_SUPPLY_SWITCHABLE   0
- #define SOCKET_WP_CONNECTED      0
- #define SOCKET_CP_CONNECTED      0
+/* Not Tested */
+ #define CARD_SUPPLY_SWITCHABLE   FALSE
+ #define SOCKET_WP_CONNECTED      FALSE
+ #define SOCKET_CP_CONNECTED      FALSE
  #define SPI_SD                   SPI1
  #define GPIO_CS                  GPIOB
  #define RCC_APB2Periph_GPIO_CS   RCC_APB2Periph_GPIOB
- #define GPIOCS              GPIO6
+ #define GPIOCS                   GPIO6
  #define DMA_Channel_SPI_SD_RX    DMA1_Channel2
  #define DMA_Channel_SPI_SD_TX    DMA1_Channel3
  #define DMA_FLAG_SPI_SD_TC_RX    DMA1_TCIF

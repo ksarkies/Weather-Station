@@ -54,8 +54,6 @@ extern uint32_t __configBlockStart;
 extern uint32_t __configBlockEnd;
 
 volatile uint32_t time2Tick_counter;
-volatile uint32_t systick_time;
-volatile uint32_t last_reload_value;
 
 /* Time variables needed when systick is used as a timer */
 static uint32_t secondsCount;
@@ -167,7 +165,7 @@ void hardware_init(void)
 {
 /* Set the clock to 72MHz from the 8MHz external crystal */
 	clock_setup();
-    systick_setup(1000);    /* Set systick to interrupt after 1 millisecond. */
+    systick_setup();
     gpio_setup();
     usart1_setup();
     timer2_setup(0xFFFF);
@@ -198,28 +196,7 @@ void sei(void)
 }
 
 /*--------------------------------------------------------------------------*/
-/*      Millisecond System Time Offset
-
-The milliseconds timer is incremented by a fixed amount. This is useful if the
-systick timer stops running for a period, such as during sleep.
-
-GLOBALS: last_reload_value
-
-@param[in] uint32_t. Time offset in milliseconds.
-*/
-
-void millis_offset(uint32_t offset)
-{
-	last_reload_value += offset * MS_COUNT;
-}
-
-/*--------------------------------------------------------------------------*/
 /*      Millisecond System Time
-
-The systick time is updated only at the end of a systick timer countdown to 0.
-Compute the actual time by adding in the time elapsed since the last event.
-
-GLOBALS: last_reload_value, systick_time
 
 @returns uint32_t. Time in milliseconds since rollover or start of counting.
 */
@@ -227,10 +204,24 @@ GLOBALS: last_reload_value, systick_time
 uint32_t millis()
 {
     cli();
-    uint32_t elapsed_time = systick_time
-                           + (last_reload_value - systick_get_value())/MS_COUNT;
+    uint32_t elapsed_time = millisecondsCount;
     sei();
     return elapsed_time;
+}
+
+/*--------------------------------------------------------------------------*/
+/*      Millisecond System Time Offset
+
+The milliseconds timer is incremented by a fixed amount that is provided.
+This is useful if the systick timer stops running for a period, such as during
+sleep, in which case the time can be bumped up by the sleep time.
+
+@param[in] uint32_t. Time offset in milliseconds.
+*/
+
+void millis_offset(uint32_t offset)
+{
+	millisecondsCount += offset * MS_COUNT;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -339,12 +330,7 @@ void set_delay_count(uint32_t time)
 
 This function provides a basic sleeping delay in milliseconds. The systick
 timer defines the time more accurately and independently of the instruction
-timing.
-
-The CM3 systick timer is a 24 bits downcounter that can reload to a specified
-start value.
-
-Global: systick_time taken from the systick interrupt.
+timing. The processor is put to sleep until awoken every millisecond.
 
 @param[in] delay_ms: uint32_t. Delay in milliseconds to 65,535.
 */
@@ -353,19 +339,9 @@ void delay_sleep(uint32_t delay_ms)
 {
 #define DIVISOR 0xFFFFFF/MS_COUNT
 
-/* If delay_ms is more than 24 bits, split into number of 24 bit full cycles and
-the remainder for the last cycle */
-    uint16_t cycles = 1+delay_ms/DIVISOR;
-    uint32_t last_cycle_count = delay_ms % DIVISOR;
-    uint32_t count;
-/* Sleep state will awake on any interrupt. Wait for systick before deciding
-whether to quit this loop. */
-    uint16_t i = 0;
-    for (i=0; i < cycles; i++)
+    uint32_t i = 0;
+    for (i=0; i < delay_ms; i++)
     {
-        if (i == 0) count = last_cycle_count;
-        else count = DIVISOR;
-        systick_setup(count);        // Set systick to interrupt after given delay.
         while (! systick_get_countflag())
             asm volatile("wfi");    // sleep until systick fires.
     }
@@ -528,21 +504,20 @@ Timing is defined for a 72MHz system clock.
 The AHB clock can be divided by 8 to give a 9MHz clock. The period can be up
 to 24 bits giving a 1864 ms maximum count. If the period is set beyond this
 then a shortened period will occur.
-
-MS_COUNT provides the translation between the systick clock and a millisecond
 clock, thus allowing time estimates to be made in milliseconds.
-
-@param[in] period: uint16_t period before interrupt in ms, up to 1864.
 */
 
-void systick_setup(uint16_t period)
+void systick_setup()
 {
 /* 72MHz / 8 => 9,000,000 counts per second */
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
+
 /* 9000000/9000 = 1000 overflows per second - every period ms one interrupt */
 /* Systick interrupt every N clock pulses: set reload to N-1 */
-    systick_set_reload((MS_COUNT*period) - 1);
+    systick_set_reload(8999);
+
     systick_interrupt_enable();
+
 /* Start counting. */
     systick_counter_enable();
 }
@@ -630,28 +605,71 @@ void gpio_setup(void)
     rcc_periph_clock_enable(RCC_GPIOC);
     rcc_periph_clock_enable(RCC_AFIO);
 
-    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO0 | GPIO1);
-/* Set GPIO2, GPIO5 (in GPIO port B) to 'output push-pull' for the MOSFETs. */
-    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO2 | GPIO5);
-/* All MOSFET controls off. */
-    gpio_clear(GPIOB, GPIO2 | GPIO5);
+#ifndef USE_SWD
+/* Disable SWD and JTAG to allow full use of the ports PA13, PA14, PA15 */
+    gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_OFF,0);
+#endif
+
+/* PA inputs analogue for currents, voltages and ambient temperature */
+#ifdef PA_ANALOGUE_INPUTS
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG,
+                PA_ANALOGUE_INPUTS);
+#endif
+/* PC inputs analogue for currents, voltages and ambient temperature */
+#ifdef PC_ANALOGUE_INPUTS
+    gpio_set_mode(GPIOC, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG,
+                PC_ANALOGUE_INPUTS);
+#endif
+/* PA outputs digital */
+#ifdef PA_DIGITAL_OUTPUTS
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+                PA_DIGITAL_OUTPUTS);
+    gpio_clear(GPIOA, PA_DIGITAL_OUTPUTS);
+#endif
+/* PB outputs digital */
+#ifdef PB_DIGITAL_OUTPUTS
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+                PB_DIGITAL_OUTPUTS);
+    gpio_clear(GPIOB, PB_DIGITAL_OUTPUTS);
+#endif
+/* PC outputs digital */
+#ifdef PC_DIGITAL_OUTPUTS
+    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+                PC_DIGITAL_OUTPUTS);
+    gpio_clear(GPIOC, PC_DIGITAL_OUTPUTS);
+#endif
+/* PA inputs digital. Set pull up/down configuration to pull up. */
+#ifdef PA_DIGITAL_INPUTS
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
+                PA_DIGITAL_INPUTS);
+    gpio_set(GPIOA,PA_DIGITAL_INPUTS);
+#endif
+/* PB inputs digital. Set pull up/down configuration to pull up. */
+#ifdef PB_DIGITAL_INPUTS
+    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
+                PB_DIGITAL_INPUTS);
+    gpio_set(GPIOB,PB_DIGITAL_INPUTS);
+#endif
+/* PC inputs digital. Set pull up/down configuration to pull up. */
+#ifdef PC_DIGITAL_INPUTS
+    gpio_set_mode(GPIOC, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
+                PC_DIGITAL_INPUTS);
+    gpio_set(GPIOC,PC_DIGITAL_INPUTS);
+#endif
 }
 
 /*--------------------------------------------------------------------------*/
 /* @brief ADC Setup.
 
-ADC1 is turned on and calibrated.
+ADC1 is turned on and calibrated. Ports are set to analogue input in GPIO
+setup.
 */
-
-#define ADC_INPUTS  (GPIO4 | GPIO6 | GPIO7)
 
 void adc_setup(void)
 {
-/* Set ports on PA for ADC1 to analogue input. */
-	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, ADC_INPUTS);
 /* Enable the ADC1 clock on APB2 */
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_AFIO);
     rcc_periph_clock_enable(RCC_ADC1);
 /* Setup the ADC */
     adc_power_on(ADC1);
@@ -673,8 +691,8 @@ DAC channel 2 is setup on GPIO PA5.
 void dac_setup(void)
 {
 /* Set port PA5 for DAC1 to 'alternate function'. Output driver mode is ignored. */
-	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-		          GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5);
+	gpio_set_mode(DAC_PORT, GPIO_MODE_OUTPUT_50_MHZ,
+		          GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, DAC_PIN);
 /* Enable the DAC clock on APB1 */
 	rcc_periph_clock_enable(RCC_DAC);
 /* Setup the DAC, software trigger source. Assume the DAC has
@@ -734,17 +752,12 @@ void rtc_setup(void)
 /*--------------------------------------------------------------------------*/
 /* @brief EXTI Setup.
 
-This enables the external interrupts on bits 0, 2 and 3 of the ports.
+This enables the external interrupts on bits 0, 2 and 3 of the ports. Ports are
+set to inputs pulled up in GPIO setup.
 */
-
-#define EXTI_ENABLES        (EXTI0 | EXTI2 | EXTI3)
-#define PA_DIGITAL_INPUTS   (GPIO0 | GPIO2 | GPIO3)
 
 void exti_setup(void)
 {
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN,
-                  PA_DIGITAL_INPUTS);
-    gpio_set(GPIOA,PA_DIGITAL_INPUTS);      // Pull up
     exti_select_source(EXTI0, GPIOA);
     exti_select_source(EXTI2, GPIOA);
     exti_select_source(EXTI3, GPIOA);
@@ -777,31 +790,25 @@ Just update a counter for extended time use. As it is only updated on an
 interrupt occurring, the last reload value that resulted in the countdown
 is read and used to update the time before being reset to the existing reload
 value.
-
-Globals: systick_time: running count of milliseconds from an arbitrary time.
-         last_reload_value: reload value used for the countdown just finished.
 */
 
 void sys_tick_handler(void)
 {
     millisecondsCount++;
-/* SD card status update. */
+/* This updates the status of any inserted SD card every 10 ms. */
     if ((millisecondsCount % 10) == 0)
     {
         disk_timerproc();       /* File System hardware checks */
     }
 
-/* updated every second if systick is used for the real-time clock. */
+/* updated every second in case systick is used for the real-time clock. */
     if ((millisecondsCount % 1000) == 0)
     {
         secondsCount++;
     }
-/* down counter for timing. */
-    downCount--;
 
-//    systick_time++;
-    systick_time += last_reload_value/MS_COUNT;
-    last_reload_value = (systick_get_reload() & 0xFFFFFF);
+/* down counter for one-shot timer. */
+    downCount--;
 }
 
 /*--------------------------------------------------------------------------*/
