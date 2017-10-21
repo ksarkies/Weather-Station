@@ -139,6 +139,23 @@ void send_response(char* ident, int32_t parameter)
 }
 
 /*--------------------------------------------------------------------------*/
+/** @brief Send a data message with one fixed point parameter
+
+Send a fixed point value in which the lower 8 bits are the fraction.
+
+@param[in] ident: char* Response identifier string
+@param[in] parameter: int32_t Single fixed point parameter.
+*/
+
+void send_fixed_point(char* ident, int32_t parameter)
+{
+    comms_print_string(ident);
+    comms_print_string(",");
+    comms_print_fixed_point(parameter);
+    comms_print_string("\r\n");
+}
+
+/*--------------------------------------------------------------------------*/
 /** @brief Send a debug message with one parameter.
 
 Use to send a simple debug response to a command.

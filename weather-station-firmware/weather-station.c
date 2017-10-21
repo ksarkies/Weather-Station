@@ -161,7 +161,6 @@ These will be fully processed before the processor goes to sleep mode.*/
             {
                 line[characterPosition] = 0;
                 characterPosition = 0;
-    comms_print_string(line);
                 parse_command(line);
             }
             else line[characterPosition++] = character;
@@ -282,24 +281,12 @@ This cycles between the absorption voltage limit and the float voltage limit. */
             uint32_t humidity;
 			bool error = ! read_temperature_humidity(&sensor_DHT, &temperature,
 												   &humidity, false);
-			if (error)
-			{
-	            comms_print_string("D");
-	            for (i=0; i<5; i++) {
-			        comms_print_string(",DHT Data,");
-			        comms_print_int(sensor_DHT.data[i]);
-				}
-	            comms_print_string("\n\r");
-                delay(5);
-			}
-            else
+			if (! error)
             {
-                comms_print_string("dT,");
-                comms_print_fixed_point(temperature);
-                comms_print_string("\n\r");
-                comms_print_string("dH,");
-                comms_print_fixed_point(humidity);
-                comms_print_string("\n\r");
+                send_fixed_point("dT", temperature);
+                if (is_recording()) record_fixed_point("dT", temperature, writeFileHandle);
+                send_fixed_point("dH", humidity);
+                if (is_recording()) record_fixed_point("dH", humidity, writeFileHandle);
                 delay(5);
             }
 
@@ -307,22 +294,13 @@ This cycles between the absorption voltage limit and the float voltage limit. */
             int32_t temp;
             int32_t pressure;
             error = ! get_baro_temp_and_pressure(&temp,&pressure,CELSIUS,OSR_4096);
-			if (error)
-			{
-	            comms_print_string("D");
-		        comms_print_string(",Pressure,");
-		        comms_print_int(0);
-	            comms_print_string("\n\r");
-                delay(5);
-			}
-            else
+			if (! error)
             {
 //                comms_print_string("dT,");
 //                comms_print_fixed_point(temp);
 //                comms_print_string("\n\r");
-                comms_print_string("dP,");
-                comms_print_fixed_point(pressure);
-                comms_print_string("\n\r");
+                send_fixed_point("dP", pressure);
+                if (is_recording()) record_fixed_point("dP", pressure, writeFileHandle);
                 delay(5);
             }
 
@@ -343,24 +321,21 @@ and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t radiance =
                     ((radiance_raw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* m_a */
-            comms_print_string("dL,");
-            comms_print_fixed_point(radiance);
-            comms_print_string("\n\r");
+            send_fixed_point("dL", radiance);
+            if (is_recording()) record_fixed_point("dL", radiance, writeFileHandle);
             delay(5);
 
 /* Send rain gauge count. */
-            comms_print_string("dR,");
-            comms_print_int(rainfall);
-            comms_print_string("\n\r");
+            send_response("dR", rainfall);
+            if (is_recording()) record_single("dR", rainfall, writeFileHandle);
             delay(5);
             cli();
             rainfall = 0;
             sei();
 
 /* Send wind speed count. */
-            comms_print_string("dS,");
-            comms_print_int(wind_speed);
-            comms_print_string("\n\r");
+            send_response("dS", wind_speed);
+            if (is_recording()) record_single("dS", wind_speed, writeFileHandle);
             delay(5);
             cli();
             wind_speed = 0;
@@ -698,9 +673,6 @@ void disable_charging(void)
 /*--------------------------------------------------------------------------*/
 /* @brief Return State of Charging
 
-The measurement MOSFET must be turned on and the charging must be turned off.
-Delay for a while to allow settling of currents in the sense resistor.
-
 @returns uint8_t: true = charging active, false = charging inactive.
 */
 
@@ -719,7 +691,6 @@ Bit 0 of each port used as a pin interrupt. This is for rainfall.
 
 void exti0_isr(void)
 {
-	gpio_toggle(GPIOB, GPIO10);      /* LED3 on/off. */
     rainfall++;
     exti_reset_request(EXTI0);
 }
@@ -732,7 +703,6 @@ Bit 2 of each port used as a pin interrupt. This is for wind speed.
 
 void exti2_isr(void)
 {
-	gpio_toggle(GPIOB, GPIO11);      /* LED4 on/off. */
     wind_speed++;
     exti_reset_request(EXTI2);
 }
@@ -745,7 +715,6 @@ Bit 3 of each port used as a pin interrupt. This is for wind direction.
 
 void exti3_isr(void)
 {
-	gpio_toggle(GPIOB, GPIO12);      /* LED5 on/off. */
     exti_reset_request(EXTI3);
 }
 

@@ -36,6 +36,7 @@ uint16_t put_to_receive_buffer(uint8_t character);
 uint16_t get_from_send_buffer(void);
 void data_message_send(char* ident, int32_t parm1, int32_t parm2);
 void send_response(char* ident, int32_t parameter);
+void send_fixed_point(char* ident, int32_t parameter);
 void send_debug_response(char* ident, int32_t parameter);
 void send_string(char* ident, char* string);
 void send_debug_string(char* ident, char* string);
