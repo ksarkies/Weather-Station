@@ -613,3 +613,21 @@ uint8_t record_string(char* ident, char* string, uint8_t writeFileHandle)
     return fileStatus;
 }
 
+/*--------------------------------------------------------------------------*/
+/* @brief Record a fixed point value in ASCII decimal form.
+
+Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
+are the fractional part.
+
+@param[in] param: 32 bit signed integer as uint32_t.
+*/
+
+uint8_t record_fixed_point(char* ident, int32_t param, uint8_t writeFileHandle)
+{
+    char buffer[32];
+    fixed_point_to_ascii(param,buffer);
+    uint8_t fileStatus = record_string(ident, buffer, writeFileHandle);
+    return fileStatus;
+}
+
+

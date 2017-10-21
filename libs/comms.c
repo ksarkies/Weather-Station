@@ -260,33 +260,16 @@ void comms_print_char(char* ch)
 /* @brief Print out a fixed point value in ASCII decimal form.
 
 Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
-are the fractional part. The integer part is printed first with sign, followed
-by the fractional part rounded up to a specified precision.
+are the fractional part.
 
-The USART ISR accesses the buffer independently. The USART interrupt must be
-re-enabled in the main program after each call to this function.
-
-@param[in] value: 32 bit signed integer as uint32_t.
+@param[in] param: 32 bit signed integer as uint32_t.
 */
 
-#define PRECISION 4
-
-void comms_print_fixed_point(uint32_t value)
+void comms_print_fixed_point(uint32_t param)
 {
-    int i = 0;
-    comms_print_int((int) value >> 8);
-    buffer_put(send_buffer, '.');
-    if ((value & 0x80000000) > 0) value = -value;
-    uint16_t fraction = value & 0xFF;
-	if (fraction == 0) buffer_put(send_buffer, '0');
-	else while (fraction > 0)
-	{
-		fraction *= 10;
-        if ((++i >= PRECISION) && ((fraction & 0xFF) > 128)) fraction += 256;
-		buffer_put(send_buffer, "0123456789"[fraction >> 8]);
-        if (i >= PRECISION) break;
-        fraction &= 0xFF;
-	}
+    char buffer[32];
+    fixed_point_to_ascii(param,buffer);
+    comms_print_string(buffer);
 	comms_enable_tx_interrupt(true);
 }
 

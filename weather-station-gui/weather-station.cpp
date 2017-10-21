@@ -193,7 +193,8 @@ void WeatherStationGui::processResponse(const QString response)
     firstField = breakdown[0].simplified();
     QString secondField;
     if (size > 1) secondField = breakdown[1].simplified();
-    QString current, voltage;
+    QString thirdField;
+    if (size > 2) thirdField = breakdown[2].simplified();
     if (! saveFile.isEmpty()) saveLine(response);
 /* When the time field is received, send back a short message to keep comms
 alive. Also check for calibration as time messages stop during this process. */
@@ -254,24 +255,19 @@ for the Suntech STP005S12-5W */
 
 // TBD work at providing a better health measure
 /* Battery Health. For now use voltage as fixed point number to scale. */
-    if ((size > 0) && (firstField == "dV"))
+    if ((size > 0) && (firstField == "dB"))
     {
-        float batteryVoltage = secondField.toFloat();
+        float batteryVoltage = thirdField.toFloat()/256;
         WeatherStationMainUi.voltage
-            ->setText(QString("%1 V").arg(secondField
-                .toFloat(),0,'f',2));
+            ->setText(QString("%1 V").arg(batteryVoltage,0,'f',2));
         int batteryHealth = batteryVoltage*100/6.5;
         if (batteryHealth > 100) batteryHealth = 100;
         if (size > 1) WeatherStationMainUi.battery
             ->setValue(batteryHealth);
-    }
-
 /* Battery Current */
-    if ((size > 0) && (firstField == "dI"))
-    {
+        float batteryCurrent = secondField.toFloat()/256;
         WeatherStationMainUi.current
-            ->setText(QString("%1 mA").arg(secondField
-                .toFloat(),0,'f',0));
+            ->setText(QString("%1 mA").arg(batteryCurrent,0,'f',0));
     }
 
 /* Messages for the File Module start with f */

@@ -50,6 +50,7 @@ void get_file_name(uint8_t fileHandle, char* fileName);
 uint8_t record_single(char* ident, int32_t param1, uint8_t writeFileHandle);
 uint8_t record_dual(char* ident, int32_t param1, int32_t param2, uint8_t writeFileHandle);
 uint8_t record_string(char* ident, char* string, uint8_t writeFileHandle);
+uint8_t record_fixed_point(char* ident, int32_t param1, uint8_t writeFileHandle);
 
 #endif
 

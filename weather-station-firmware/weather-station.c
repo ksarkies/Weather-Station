@@ -214,6 +214,12 @@ reset the alarm value ahead of the RTC. */
 			rtc_clear_flag(RTC_ALR);
             measurement_time = rtc_get_counter_val() + measurement_period;
 
+/* Send out a time string */
+            char timeString[20];
+            put_time_to_string(timeString);
+            send_string("pH",timeString);
+            if (is_recording()) record_string("pH",timeString,writeFileHandle);
+
 /* These tasks are now performed whenever the RTC alarm wakes the processor.
 Other interrupts will activate their ISR but are ignored and the processor
 will go back into stop mode. */
@@ -232,12 +238,7 @@ will go back into stop mode. */
 /* Voltage times 256 for fixed point scaling, with sense resistor (x10)
 and amplification (x100) will give results in volts. */
             uint32_t voltage = ((voltage_raw>>4)*256*V_AMP)/(1241*100);/* Volts */
-            comms_print_string("dV,");
-            comms_print_fixed_point(voltage);
-            comms_print_string("\n\r");
-            delay(5);
-
-/* Read and send Battery Current. */
+/* Read Battery Current. */
             uint32_t current_raw = 0;
             channel[0] = ADC_CHANNEL7;          /* channel 7 battery current */
 	        adc_set_regular_sequence(ADC1, 1, channel);
@@ -252,9 +253,12 @@ and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t current = 
                     ((current_raw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* m_a */
-            comms_print_string("dI,");
-            comms_print_fixed_point(current);
-            comms_print_string("\n\r");
+            char id[4];
+            id[0] = 'd';
+            id[1] = 'B';
+            id[2] = 0;
+            data_message_send(id, current, voltage);
+            if (is_recording()) record_dual(id, current, voltage, writeFileHandle);
             delay(5);
 
 /* Battery Charge Limit Setting */
@@ -651,7 +655,7 @@ void enable_radiance_measurement(void)
 {
     charger_is_active = charger_active();
     disable_charging();                  /* turn off charger */
-    gpio_set(GPIOB, GPIO2);             /* Turn on measurement switch */
+    gpio_set(GPIOB, GPIO4);             /* Turn on measurement switch */
     delay(RADIANCE_SETTLE_TIME);
 }
 
@@ -664,7 +668,7 @@ if it was in a charging state at the time of measurement.
 
 void disable_radiance_measurement(void)
 {
-    gpio_clear(GPIOB, GPIO2);           /* Turn off measurement switch */
+    gpio_clear(GPIOB, GPIO4);           /* Turn off measurement switch */
     if (charger_is_active) enable_charging();
     else disable_charging();
 }

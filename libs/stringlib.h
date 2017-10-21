@@ -25,6 +25,9 @@ Copyright (C) K. Sarkies <ksarkies@internode.on.net>
 #ifndef STRINGLIB_H
 #define STRINGLIB_H
 
+/* Precision for fixed point conversions */
+#define PRECISION 4
+
 /*--------------------------------------------------------------------------*/
 /* Prototypes */
 /*--------------------------------------------------------------------------*/
@@ -32,6 +35,7 @@ Copyright (C) K. Sarkies <ksarkies@internode.on.net>
 void hex_to_ascii(int16_t value, char* buffer);
 int32_t ascii_to_int(char* buffer);
 void int_to_ascii(int32_t value, char* buffer);
+void fixed_point_to_ascii(int32_t param, char* buffer);
 void string_append(char* string, char* appendage);
 void string_copy(char* string, char* original);
 uint16_t string_length(char* string);

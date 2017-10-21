@@ -107,6 +107,47 @@ void int_to_ascii(int32_t value, char* buffer)
 }
 
 /*--------------------------------------------------------------------------*/
+/** @brief Convert a 32 bit Fixed Point Value to ASCII decimal string form
+
+Fixed point arithmetic based on 32 bit signed integer of which the first 8 bits
+are the fractional part. The integer part is printed first with sign, followed
+by the fractional part rounded up to a specified precision.
+
+@param[in] value: int32_t integer value to be converted to ASCII form.
+@param[in] buffer: char* externally defined buffer to hold the result.
+*/
+
+void fixed_point_to_ascii(int32_t param, char* buffer)
+{
+    int32_t value = param;
+    buffer[0] = 0;
+    if ((value & 0x80000000) > 0)
+    {
+        value = -value;
+        string_append(buffer,"-");
+    }
+    int_to_ascii(((int) value >> 8), buffer);
+    string_append(buffer,".");
+    uint16_t fraction = value & 0xFF;
+	if (fraction == 0) string_append(buffer,"0");
+	else
+    {
+        char fract[8];
+        int i = 0;
+        while (fraction > 0)
+        {
+		    fraction *= 10;
+            if ((i >= PRECISION) && ((fraction & 0xFF) > 128)) fraction += 256;
+		    fract[i++] = "0123456789"[fraction >> 8];
+            if (i >= PRECISION) break;
+            fraction &= 0xFF;
+	    }
+        fract[i] = 0;
+        string_append(buffer,fract);
+    }
+}
+
+/*--------------------------------------------------------------------------*/
 /** @brief Append a string to another
 
 @param[in] string: char* original string, returned after appending.
