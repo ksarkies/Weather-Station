@@ -63,11 +63,11 @@ private slots:
     void on_saveFileButton_clicked();
     void on_closeFileButton_clicked();
     void on_recordingButton_clicked();
-//    void on_configureButton_clicked();
+    void on_configureButton_clicked();
     void closeEvent(QCloseEvent*);
 signals:
     void recordMessageReceived(const QString response);
-//    void configureMessageReceived(const QString response);
+    void configureMessageReceived(const QString response);
 private:
 // User Interface object instance
     Ui::WeatherStationMainDialog WeatherStationMainUi;

@@ -281,11 +281,7 @@ void delay_microseconds(uint16_t delay_us)
 
 uint32_t get_seconds_count()
 {
-#if (RTC_SOURCE == RTC)
-    return rtc_get_counter_val();
-#else
     return secondsCount;
-#endif
 }
 
 /*--------------------------------------------------------------------------*/
@@ -296,11 +292,7 @@ uint32_t get_seconds_count()
 
 void set_seconds_count(uint32_t time)
 {
-#if (RTC_SOURCE == RTC)
-    rtc_set_counter_val(time);
-#else
     secondsCount = time;
-#endif
 }
 
 /*--------------------------------------------------------------------------*/

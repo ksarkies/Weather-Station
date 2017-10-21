@@ -29,7 +29,7 @@ Here the data stream from the remote is received and saved to a file.
 #include "weather-station.h"
 #include "weather-station-main.h"
 #include "weather-station-record.h"
-//#include "weather-station-configure.h"
+#include "weather-station-configure.h"
 #include <QApplication>
 #include <QString>
 #include <QLineEdit>
@@ -270,6 +270,11 @@ for the Suntech STP005S12-5W */
             ->setText(QString("%1 mA").arg(batteryCurrent,0,'f',0));
     }
 
+/* Messages for the Configure Module start with p or certain of the data responses */
+    if ((size > 0) && ((firstField.left(1) == "p") || (firstField.left(2) == "dE")))
+    {
+        emit this->configureMessageReceived(response);
+    }
 /* Messages for the File Module start with f */
     if ((size > 0) && (firstField.left(1) == "f"))
     {
@@ -384,6 +389,20 @@ void WeatherStationGui::on_recordingButton_clicked()
     WeatherStationRecordForm->exec();
 }
 
+//-----------------------------------------------------------------------------
+/** @brief Call up the Configure Window.
+
+*/
+
+void WeatherStationGui::on_configureButton_clicked()
+{
+    WeatherStationConfigGui* WeatherStationConfigForm =
+                    new WeatherStationConfigGui(port,this);
+    WeatherStationConfigForm->setAttribute(Qt::WA_DeleteOnClose);
+    connect(this, SIGNAL(configureMessageReceived(const QString&)),
+                    WeatherStationConfigForm, SLOT(onMessageReceived(const QString&)));
+    WeatherStationConfigForm->exec();
+}
 /*---------------------------------------------------------------------------*/
 /** @brief Show an error condition in the Error label.
 

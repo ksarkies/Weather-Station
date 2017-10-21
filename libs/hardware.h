@@ -43,9 +43,6 @@ K. Sarkies, 10 May 2016
 (note only STM32F1xx,  STM32F05x have compatible memory organization). */
 #define FLASH_PAGE_SIZE 2048
 
-/* RTC select hardware RTC or software counter */
-#define RTC_SOURCE      RTC
-
 /* Number of A/D converter channels available (STM32F103) */
 #define NUM_DEVICES     3
 #define NUM_LOADS       2

@@ -418,10 +418,13 @@ Parameter Setting Commands */
                 if (line[2] == '-') configData.config.debugMessageSend = false;
                 break;
             }
-/* Hxxxx Set time from an ISO 8601 formatted string. */
+/* Hxxxx Set time from an ISO 8601 formatted string. Echo back for GUI. */
         case 'H':
             {
                 set_time_from_string((char*)line+2);
+                char timeString[20];
+                put_time_to_string(timeString);
+                send_string("pH",timeString);
                 break;
             }
 /* M-, M+ Turn on/off data messaging (mainly for debug) */

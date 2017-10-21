@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WeatherStationConfigDialog</class>
+ <widget class="QDialog" name="WeatherStationConfigDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>670</width>
+    <height>601</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Data Acquisition Configuration</string>
+  </property>
+  <widget class="QLabel" name="title">
+   <property name="geometry">
+    <rect>
+     <x>95</x>
+     <y>10</y>
+     <width>456</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Andale Mono</family>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Weather Station Configuration</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="closeButton">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>556</y>
+     <width>91</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </widget>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>8</x>
+     <y>36</y>
+     <width>651</width>
+     <height>501</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="generalTab">
+    <property name="toolTip">
+     <string>Time and debug display settings</string>
+    </property>
+    <attribute name="title">
+     <string>General</string>
+    </attribute>
+    <widget class="QPushButton" name="timeSetButton">
+     <property name="geometry">
+      <rect>
+       <x>248</x>
+       <y>130</y>
+       <width>101</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Set the time/date in the remote system from the local time.</string>
+     </property>
+     <property name="text">
+      <string>Set Time</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="date">
+     <property name="geometry">
+      <rect>
+       <x>178</x>
+       <y>90</y>
+       <width>111</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Time/Date in the remote system.</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="lineWidth">
+      <number>3</number>
+     </property>
+     <property name="midLineWidth">
+      <number>1</number>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLabel" name="time">
+     <property name="geometry">
+      <rect>
+       <x>303</x>
+       <y>90</y>
+       <width>111</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Time/Date in the remote system.</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="lineWidth">
+      <number>3</number>
+     </property>
+     <property name="midLineWidth">
+      <number>1</number>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLabel" name="dateTimeLabel">
+     <property name="geometry">
+      <rect>
+       <x>148</x>
+       <y>65</y>
+       <width>316</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Date and time reported by the remote system</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="generalLabel">
+     <property name="geometry">
+      <rect>
+       <x>194</x>
+       <y>5</y>
+       <width>239</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>General Configuration</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="debugMessageCheckbox">
+     <property name="geometry">
+      <rect>
+       <x>208</x>
+       <y>175</y>
+       <width>187</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Enable Debug Messages to be sent from remote</string>
+     </property>
+     <property name="text">
+      <string>Enable Debug Messages</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="dataMessageCheckbox">
+     <property name="geometry">
+      <rect>
+       <x>214</x>
+       <y>205</y>
+       <width>185</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Enable Data Messages. Disabling will stop the main display from showing real-time data and will stoip local recording.</string>
+     </property>
+     <property name="text">
+      <string>Enable Data Messages</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="echoTestButton">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>240</y>
+       <width>91</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Request an ID to be sent from the remote.</string>
+     </property>
+     <property name="text">
+      <string>Echo Test</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="firmwareVersion">
+     <property name="geometry">
+      <rect>
+       <x>162</x>
+       <y>280</y>
+       <width>316</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Firmware Version:</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="calibrationTab">
+    <property name="toolTip">
+     <string>Calibrate zero of current measurements</string>
+    </property>
+    <attribute name="title">
+     <string>Calibration</string>
+    </attribute>
+    <widget class="QLabel" name="calibrationLabel">
+     <property name="geometry">
+      <rect>
+       <x>96</x>
+       <y>5</y>
+       <width>431</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Zero Calibration of  Current Measurements</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="errorLabel">
+   <property name="geometry">
+    <rect>
+     <x>8</x>
+     <y>564</y>
+     <width>511</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
