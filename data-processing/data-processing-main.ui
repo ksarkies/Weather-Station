@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DataProcessingMainWindow</class>
+ <widget class="QMainWindow" name="DataProcessingMainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>747</width>
+    <height>652</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Data Acquitition Processing Tools</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="openReadFileButton">
+    <property name="geometry">
+     <rect>
+      <x>25</x>
+      <y>60</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open a raw txt data file for processing&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="text">
+     <string>Open Raw</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>156</x>
+      <y>8</y>
+      <width>465</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Weather Station Data Processing Tool</string>
+    </property>
+   </widget>
+   <widget class="QDateTimeEdit" name="startTime">
+    <property name="geometry">
+     <rect>
+      <x>139</x>
+      <y>60</y>
+      <width>194</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QDateTimeEdit" name="endTime">
+    <property name="geometry">
+     <rect>
+      <x>411</x>
+      <y>60</y>
+      <width>194</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="dumpAllButton">
+    <property name="geometry">
+     <rect>
+      <x>625</x>
+      <y>60</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Extracts and interprets all data in csv form suitable for spreadsheet&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="text">
+     <string>Dump All</string>
+    </property>
+   </widget>
+   <widget class="QFrame" name="dataAnalysisFrame">
+    <property name="geometry">
+     <rect>
+      <x>392</x>
+      <y>452</y>
+      <width>321</width>
+      <height>131</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Analysis of combined data files for performance tracking. Results are printed to individual files.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QLabel" name="dataAnalysisLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>106</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Analysis of combined data files for performance tracking. Results are printed to individual files.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Data Analysis</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="analysisFileSelectButton">
+     <property name="geometry">
+      <rect>
+       <x>15</x>
+       <y>35</y>
+       <width>91</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the csv file to be analysed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>CSV File</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QSpinBox" name="timeCorrectionSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>138</x>
+      <y>100</y>
+      <width>85</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>If time is to be corrected, add this value to last valid time.</string>
+    </property>
+    <property name="maximum">
+     <number>60</number>
+    </property>
+    <property name="value">
+     <number>1</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="timeCorrectionLabel">
+    <property name="geometry">
+     <rect>
+      <x>246</x>
+      <y>110</y>
+      <width>149</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Time Correction step</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="errorMessageLabel">
+    <property name="geometry">
+     <rect>
+      <x>28</x>
+      <y>588</y>
+      <width>696</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>747</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpen_Datafile"/>
+    <addaction name="actionPlot"/>
+   </widget>
+   <addaction name="menuFile"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionOpen_Datafile">
+   <property name="text">
+    <string>Open Datafile</string>
+   </property>
+  </action>
+  <action name="actionEnergy_Analysis">
+   <property name="text">
+    <string>Energy Analysis</string>
+   </property>
+  </action>
+  <action name="actionPlot">
+   <property name="text">
+    <string>Plot</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
