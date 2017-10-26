@@ -395,7 +395,7 @@ F 3 "" H 9700 2000 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Text GLabel 10700 1650 2    60   Input ~ 0
-+3.3V
++3.3V-M
 Text GLabel 2250 2200 0    60   Input ~ 0
 PB5
 Text GLabel 8850 2500 0    60   Input ~ 0
@@ -746,7 +746,7 @@ F 3 "" H 3750 6100 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Text GLabel 1300 5150 1    60   Input ~ 0
-+3.3V
++3.3V-M
 Text GLabel 3300 5150 1    60   Input ~ 0
 PA4
 Text GLabel 3200 5150 1    60   Input ~ 0
@@ -1524,113 +1524,15 @@ Connection ~ 4050 7150
 Connection ~ 4050 7300
 Connection ~ 4050 6700
 $Comp
-L Q_NPN_EBC Q10
-U 1 1 59EB8976
-P 4400 4300
-F 0 "Q10" H 4750 4350 50  0000 R CNN
-F 1 "MMBT3904" H 5000 4250 50  0000 R CNN
-F 2 "WeatherStation:SOT23EBC" H 4600 4400 50  0001 C CNN
-F 3 "" H 4400 4300 50  0000 C CNN
-	1    4400 4300
-	1    0    0    -1  
-$EndComp
-$Comp
-L Q_NPN_EBC Q11
-U 1 1 59EB897C
-P 5000 3700
-F 0 "Q11" H 5350 3750 50  0000 R CNN
-F 1 "MMBT3904" H 5600 3650 50  0000 R CNN
-F 2 "WeatherStation:SOT23EBC" H 5200 3800 50  0001 C CNN
-F 3 "" H 5000 3700 50  0000 C CNN
-	1    5000 3700
-	1    0    0    -1  
-$EndComp
-$Comp
-L Q_PNP_EBC Q12
-U 1 1 59EB8982
-P 5000 4100
-F 0 "Q12" H 5350 4100 50  0000 R CNN
-F 1 "MMBT3906" H 5600 4200 50  0000 R CNN
-F 2 "WeatherStation:SOT23EBC" H 5200 4200 50  0001 C CNN
-F 3 "" H 5000 4100 50  0000 C CNN
-	1    5000 4100
-	1    0    0    1   
-$EndComp
-$Comp
-L Q_PMOS_GDS Q13
-U 1 1 59EB8988
-P 5600 3900
-F 0 "Q13" H 6000 3900 50  0000 R CNN
-F 1 "SUD45P03-12-GE3" H 5800 3350 50  0000 R CNN
-F 2 "WeatherStation:TO-252-2Lead" H 5800 4000 50  0001 C CNN
-F 3 "" H 5600 3900 50  0000 C CNN
-	1    5600 3900
-	1    0    0    1   
-$EndComp
-$Comp
-L R R?
-U 1 1 59EB898E
-P 4500 3950
-F 0 "R?" V 4580 3950 50  0000 C CNN
-F 1 "10K" V 4500 3950 50  0000 C CNN
-F 2 "WeatherStation:SM0603_Resistor" V 4430 3950 50  0001 C CNN
-F 3 "" H 4500 3950 50  0000 C CNN
-	1    4500 3950
-	1    0    0    -1  
-$EndComp
-$Comp
 L Earth #PWR?
 U 1 1 59EB8994
-P 4500 4500
-F 0 "#PWR?" H 4500 4250 50  0001 C CNN
-F 1 "Earth" H 4500 4350 50  0001 C CNN
-F 2 "" H 4500 4500 50  0000 C CNN
-F 3 "" H 4500 4500 50  0000 C CNN
-	1    4500 4500
+P 5050 4600
+F 0 "#PWR?" H 5050 4350 50  0001 C CNN
+F 1 "Earth" H 5050 4450 50  0001 C CNN
+F 2 "" H 5050 4600 50  0000 C CNN
+F 3 "" H 5050 4600 50  0000 C CNN
+	1    5050 4600
 	1    0    0    -1  
-$EndComp
-$Comp
-L Earth #PWR?
-U 1 1 59EB899A
-P 5100 4300
-F 0 "#PWR?" H 5100 4050 50  0001 C CNN
-F 1 "Earth" H 5100 4150 50  0001 C CNN
-F 2 "" H 5100 4300 50  0000 C CNN
-F 3 "" H 5100 4300 50  0000 C CNN
-	1    5100 4300
-	1    0    0    -1  
-$EndComp
-Connection ~ 5100 3500
-Wire Wire Line
-	4500 3500 4500 3800
-Wire Wire Line
-	4350 3500 5700 3500
-Wire Wire Line
-	4800 4100 4500 4100
-Wire Wire Line
-	5400 3900 5100 3900
-Connection ~ 4800 4100
-Wire Wire Line
-	4800 3700 4800 4100
-Connection ~ 4500 4100
-Connection ~ 5100 3900
-Wire Wire Line
-	5700 3500 5700 3700
-Wire Wire Line
-	5700 4100 5700 6900
-Text GLabel 4350 3500 0    60   Input ~ 0
-+3.3V
-Connection ~ 4500 3500
-$Comp
-L R R?
-U 1 1 59EBCD7E
-P 4050 4300
-F 0 "R?" V 4130 4300 50  0000 C CNN
-F 1 "100K" V 4050 4300 50  0000 C CNN
-F 2 "WeatherStation:SM0603_Resistor" V 3980 4300 50  0001 C CNN
-F 3 "" H 4050 4300 50  0000 C CNN
-	1    4050 4300
-	0    1    1    0   
 $EndComp
 $Comp
 L R R?
@@ -1649,7 +1551,7 @@ Text Notes 1850 4600 0    60   ~ 0
 Sensor Power\nEnable
 Connection ~ 3600 4300
 Wire Wire Line
-	2250 4300 3900 4300
+	2250 4300 4750 4300
 $Comp
 L Earth #PWR?
 U 1 1 59EBCEAA
@@ -1662,10 +1564,7 @@ F 3 "" H 3600 4600 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5700 5250 6450 5250
-Wire Wire Line
-	6450 5250 6450 6900
-Connection ~ 5700 5250
+	6450 6150 6450 6900
 Wire Wire Line
 	4800 6500 4900 6500
 Wire Wire Line
@@ -1676,4 +1575,57 @@ Wire Wire Line
 	7150 1800 7150 2050
 Wire Wire Line
 	7150 2050 7850 2050
+$Comp
+L TPS77033 U4
+U 1 1 59F0317C
+P 5050 4100
+F 0 "U4" H 5200 3704 60  0000 C CNN
+F 1 "TPS77033" H 5250 4300 60  0000 C CNN
+F 2 "WeatherStation:SOT23-5" H 5050 4100 60  0001 C CNN
+F 3 "" H 5050 4100 60  0000 C CNN
+	1    5050 4100
+	1    0    0    -1  
+$EndComp
+Text GLabel 6450 6150 1    60   Input ~ 0
++3.3V
+Text GLabel 5700 6150 1    60   Input ~ 0
++3.3V
+Wire Wire Line
+	5700 6150 5700 6900
+Text GLabel 5900 4200 2    60   Input ~ 0
++3.3V
+NoConn ~ 5350 4050
+Text GLabel 8350 1500 3    60   Input ~ 0
+Power
+Text GLabel 4750 4050 0    60   Input ~ 0
+Power
+$Comp
+L CP C5
+U 1 1 59F0BDCB
+P 5550 4450
+F 0 "C5" H 5575 4550 50  0000 L CNN
+F 1 "10uF" H 5575 4350 50  0000 L CNN
+F 2 "WeatherStation:SM1206POL" H 5588 4300 50  0001 C CNN
+F 3 "" H 5550 4450 50  0000 C CNN
+	1    5550 4450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5350 4200 5900 4200
+Wire Wire Line
+	5550 4300 5550 4200
+Connection ~ 5550 4200
+$Comp
+L Earth #PWR?
+U 1 1 59F0C357
+P 5550 4600
+F 0 "#PWR?" H 5550 4350 50  0001 C CNN
+F 1 "Earth" H 5550 4450 50  0001 C CNN
+F 2 "" H 5550 4600 50  0000 C CNN
+F 3 "" H 5550 4600 50  0000 C CNN
+	1    5550 4600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5050 4600 5050 4550
 $EndSCHEMATC
