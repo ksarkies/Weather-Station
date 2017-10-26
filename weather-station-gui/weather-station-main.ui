@@ -107,7 +107,7 @@
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;System configuration and advanced configuration choices for algorithms.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color:black;color:white;</string>
+       <string notr="true">background-color:lightgreen;color:black;</string>
       </property>
       <property name="text">
        <string>Configure</string>
@@ -120,7 +120,7 @@
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open or close files on the BMS for recording history, and start and pause recording actions.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color:black;color:white;</string>
+       <string notr="true">background-color:lightgreen;color:black;</string>
       </property>
       <property name="text">
        <string>Record</string>
@@ -133,7 +133,7 @@
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save incoming data to a local file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color:black;color:white;</string>
+       <string notr="true">background-color:lightgreen;color:black;</string>
       </property>
       <property name="text">
        <string>Open File</string>
@@ -146,7 +146,7 @@
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save incoming data to a local file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color:black;color:white;</string>
+       <string notr="true">background-color:lightgreen;color:black;</string>
       </property>
       <property name="text">
        <string>Close File</string>
@@ -166,6 +166,9 @@
    </property>
    <property name="toolTip">
     <string>Connect to the TCP address and port as configured</string>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightgreen;color:black;</string>
    </property>
    <property name="text">
     <string>Connect</string>
