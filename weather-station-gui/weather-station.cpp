@@ -207,14 +207,14 @@ alive. Also check for calibration as time messages stop during this process. */
     {
         if (size > 1) WeatherStationMainUi.outsideTemperature
             ->setText(QString("%1").arg(secondField
-                .toFloat(),0,'f',1).append(QChar(0x00B0)).append("C"));
+                .toFloat()/256,0,'f',1).append(QChar(0x00B0)).append("C"));
     }
 /* Outside humidity is sent as fixed point floating number to scale. */
     if ((size > 0) && (firstField == "dH"))
     {
         if (size > 1) WeatherStationMainUi.outsideHumidity
             ->setText(QString("%1").arg(secondField
-                .toFloat(),0,'f',1).append("%"));
+                .toFloat()/256,0,'f',1).append("%"));
     }
 
 // TBD convert to suitable scaled value
@@ -235,13 +235,12 @@ alive. Also check for calibration as time messages stop during this process. */
                 .toFloat(),0,'f',0));
     }
 
-/* Solar Radiance. Current converted to a percentage of maximum current (330mA)
-for the Suntech STP005S12-5W */
+/* Solar Radiance. Current converted to a percentage of maximum panel current. */
     if ((size > 0) && (firstField == "dL"))
     {
         if (size > 1) WeatherStationMainUi.insolation
             ->setText(QString("%1%").arg(secondField
-                .toFloat()/3.3,0,'f',1));
+                .toFloat()*100/MAX_SOLAR_CURRENT/256,0,'f',1));
     }
 
 // TBD convert to suitable scaled value
@@ -250,7 +249,7 @@ for the Suntech STP005S12-5W */
     {
         if (size > 1) WeatherStationMainUi.airPressure
             ->setText(QString("%1 mbar").arg(secondField
-                .toFloat(),0,'f',0));
+                .toFloat()/256,0,'f',0));
     }
 
 // TBD work at providing a better health measure
@@ -260,7 +259,7 @@ for the Suntech STP005S12-5W */
         float batteryVoltage = thirdField.toFloat()/256;
         WeatherStationMainUi.voltage
             ->setText(QString("%1 V").arg(batteryVoltage,0,'f',2));
-        int batteryHealth = batteryVoltage*100/6.5;
+        int batteryHealth = batteryVoltage*100/NOMINAL_BATTERY_VOLTAGE;
         if (batteryHealth > 100) batteryHealth = 100;
         if (size > 1) WeatherStationMainUi.battery
             ->setValue(batteryHealth);

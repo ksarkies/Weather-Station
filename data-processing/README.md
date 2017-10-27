@@ -6,7 +6,7 @@ csv records consisting of an ID and several fields of associated data.
 
 The program scans the file for start and end time, and extracts a list of
 record types. The user can then request a number of performance measures over
-a specified time interval.
+a specified time interval (not implemented yet).
 
 To compile this program, ensure that QT5 is installed.
 

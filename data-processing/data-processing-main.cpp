@@ -250,19 +250,19 @@ bool DataProcessingGui::combineRecords(QDateTime startTime, QDateTime endTime,
             }
             if (firstText == "dT")
             {
-                temperature = secondText.toFloat();
+                temperature = secondText.toFloat()/256;
             }
             if (firstText == "dH")
             {
-                humidity = secondText.toFloat();
+                humidity = secondText.toFloat()/256;
             }
             if (firstText == "dP")
             {
-                pressure = secondText.toFloat();
+                pressure = secondText.toFloat()/256;
             }
             if (firstText == "dL")
             {
-                insolation = secondText.toFloat()/3.3;
+                insolation = secondText.toFloat()*100/MAX_SOLAR_CURRENT/256;
             }
             if (firstText == "dR")
             {

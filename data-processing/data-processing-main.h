@@ -56,6 +56,9 @@ typedef enum {battery1UnderVoltage, battery2UnderVoltage, battery3UnderVoltage,
 
 #define millisleep(a) usleep(a*1000)
 
+/* Maximum current put out by the solar panel */
+#define MAX_SOLAR_CURRENT 330
+
 //-----------------------------------------------------------------------------
 /** @brief Power Management Main Window.
 

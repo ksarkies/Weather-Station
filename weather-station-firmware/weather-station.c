@@ -283,10 +283,10 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 												   &humidity, false);
 			if (! error)
             {
-                send_fixed_point("dT", temperature);
-                if (is_recording()) record_fixed_point("dT", temperature, writeFileHandle);
-                send_fixed_point("dH", humidity);
-                if (is_recording()) record_fixed_point("dH", humidity, writeFileHandle);
+                send_response("dT", temperature);
+                if (is_recording()) record_single("dT", temperature, writeFileHandle);
+                send_response("dH", humidity);
+                if (is_recording()) record_single("dH", humidity, writeFileHandle);
                 delay(5);
             }
 
@@ -299,8 +299,8 @@ This cycles between the absorption voltage limit and the float voltage limit. */
 //                comms_print_string("dT,");
 //                comms_print_fixed_point(temp);
 //                comms_print_string("\n\r");
-                send_fixed_point("dP", pressure);
-                if (is_recording()) record_fixed_point("dP", pressure, writeFileHandle);
+                send_response("dP", pressure);
+                if (is_recording()) record_single("dP", pressure, writeFileHandle);
                 delay(5);
             }
 
@@ -321,8 +321,8 @@ and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t radiance =
                     ((radiance_raw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* m_a */
-            send_fixed_point("dL", radiance);
-            if (is_recording()) record_fixed_point("dL", radiance, writeFileHandle);
+            send_response("dL", radiance);
+            if (is_recording()) record_single("dL", radiance, writeFileHandle);
             delay(5);
 
 /* Send rain gauge count. */

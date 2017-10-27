@@ -43,6 +43,12 @@
 
 #define DEBUG
 
+/* Maximum current put out by the solar panel */
+#define MAX_SOLAR_CURRENT 330
+
+/* Voltage for a full battery (may be higher when under charge) */
+#define NOMINAL_BATTERY_VOLTAGE 6.5
+
 //-----------------------------------------------------------------------------
 /** @brief Weather Station Main Window.
 
