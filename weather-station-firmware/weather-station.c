@@ -115,6 +115,9 @@ static uint8_t writeFileHandle;
 static uint8_t readFileHandle;
 static char writeFileName[12];
 static char readFileName[12];
+static bool deepSleep;
+static bool scanNow;
+static uint32_t measurement_time;
 
 /* These configuration variables are part of the Object Dictionary. */
 /* This is defined in data-acquisition-objdic and is updated in response to
@@ -137,13 +140,16 @@ int main(void)
     writeFileName[0] = 0;
     readFileName[0] = 0;
 
+    deepSleep = false;
+    scanNow = true;
+
     charger_is_active = charger_active();
     uint8_t channel[1];                 /* Channel for A/D conversion */
     uint16_t charge_limit = 0;          /* voltage limit for charging battery */
     uint8_t i=0;
     comms_print_string("Weather Station\n\r");
     measurement_period = MEASUREMENT_PERIOD;
-    uint32_t measurement_time = measurement_period;
+    measurement_time = rtc_get_counter_val() + measurement_period;
     uint32_t cnt;
 
     for (;;)
@@ -165,9 +171,11 @@ These will be fully processed before the processor goes to sleep mode.*/
             }
             else line[characterPosition++] = character;
         }
+        if (! scanNow)
+        {
 /* Wait a bit for USART and any other outstanding operations to finish. */
-        while (! usart_get_flag(USART1, USART_SR_TC)) {}
-        for (cnt=0; cnt < 40000; cnt++) asm("nop");
+            while (! usart_get_flag(USART1, USART_SR_TC)) {}
+            for (cnt=0; cnt < 40000; cnt++) asm("nop");
 
 /* Snooze for a while in low power stop mode. */
 /* Possible power down modes are SLEEP or STOP modes only. These can be woken
@@ -176,48 +184,65 @@ periodical servicing of peripherals. If the USART is to be active during low
 power mode then only SLEEP mode can be used. */
 
 /* Just clear the whole bloody lot of exti pending requests */
-        exti_reset_request(0xFFFFF);
+            exti_reset_request(0xFFFFF);
 
 /* -------- Deep Sleep ------------*/
 /* The following would provide Deep Sleep (STOP) mode but at present this is
 incompatible with USART usage. */
-
 /* Use DEEPSLEEP mode if USART interrupts are not needed during sleep periods.
 USART is powered off when the 1.8V regulator is powered down. */
 #ifdef DEEPSLEEP
+            if (deepSleep)
+            {
 /* Turn off peripherals during sleep (only ADC and DAC need to do this in STOP
 mode if regulator low power is used). */
-        peripheral_disable();
+                peripheral_disable();
 /* Don't set complete power down (otherwise it goes to standby and memory
 contents are lost) */
-        pwr_set_stop_mode();
+                pwr_set_stop_mode();
 /* Set deep sleep mode bit in SCB to go to stop mode */
-        SCB_SCR |= SCB_SCR_SLEEPDEEP;
+                SCB_SCR |= SCB_SCR_SLEEPDEEP;
 /* Set the 1.8V regulator to low power to preserve registers and SRAM but
 power off core and digital peripherals. */
-        pwr_voltage_regulator_low_power_in_stop();
+                pwr_voltage_regulator_low_power_in_stop();
 #endif
+            }
 
-        rtc_set_alarm_time(measurement_time);
-        asm volatile("wfi");
+            rtc_set_alarm_time(measurement_time);
+            asm volatile("wfi");
+
+/* Check if the wakeup source was the alarm. If so clear the alarm flag and
+set the new alarm value ahead of the RTC. Signal a scan to take place. */
+		    if (rtc_check_flag(RTC_ALR))
+            {
+                scanNow = true;
+			    rtc_clear_flag(RTC_ALR);
+                measurement_time = rtc_get_counter_val() + measurement_period;
+            }
 
 #ifdef DEEPSLEEP
 /* Restore hardware clocks and any config that may have been lost. */
-        peripheral_enable();
-        usart1_setup();
+            if (deepSleep)
+            {
+                peripheral_enable();
+            }
 #endif
+        }
 
-/* Check if the wakeup source was the alarm. If so clear the alarm flag and
-reset the alarm value ahead of the RTC. */
-		if (rtc_check_flag(RTC_ALR)) {
-			rtc_clear_flag(RTC_ALR);
-            measurement_time = rtc_get_counter_val() + measurement_period;
+		if (scanNow)
+        {
+            scanNow = false;
 
 /* Send out a time string */
             char timeString[20];
             put_time_to_string(timeString);
             send_string("pH",timeString);
             if (is_recording()) record_string("pH",timeString,writeFileHandle);
+
+/* Send status message. Bit 0 represents deep sleep (stop) mode */
+            uint8_t status = 0;
+            if (deepSleep) status |= 0x01;
+            send_response("ds",status);
 
 /* These tasks are now performed whenever the RTC alarm wakes the processor.
 Other interrupts will activate their ISR but are ignored and the processor
@@ -228,7 +253,8 @@ will go back into stop mode. */
             channel[0] = ADC_CHANNEL6;          /* channel 6 battery voltage */
 	        adc_set_regular_sequence(ADC1, 1, channel);
 /* Average over 16 readings */
-            for (i=0; i<16; i++) {
+            for (i=0; i<16; i++)
+            {
                 adc_start_conversion_direct(ADC1);
                 while (! adc_eoc(ADC1));
                 voltage_raw += adc_read_regular(ADC1);
@@ -242,7 +268,8 @@ and amplification (x100) will give results in volts. */
             channel[0] = ADC_CHANNEL7;          /* channel 7 battery current */
 	        adc_set_regular_sequence(ADC1, 1, channel);
 /* Average over 16 readings */
-            for (i=0; i<16; i++) {
+            for (i=0; i<16; i++)
+            {
                 adc_start_conversion_direct(ADC1);
                 while (! adc_eoc(ADC1));
                 current_raw += adc_read_regular(ADC1);
@@ -252,12 +279,8 @@ and current amplification (x10) and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t current = 
                     ((current_raw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* m_a */
-            char id[4];
-            id[0] = 'd';
-            id[1] = 'B';
-            id[2] = 0;
-            data_message_send(id, current, voltage);
-            if (is_recording()) record_dual(id, current, voltage, writeFileHandle);
+            data_message_send("dB", current, voltage);
+            if (is_recording()) record_dual("dB", current, voltage, writeFileHandle);
             delay(5);
 
 /* Battery Charge Limit Setting */
@@ -357,8 +380,7 @@ Note order of computations to avoid 32 bit overflow. */
 void parse_command(uint8_t* line)
 {
 /* ======================== Action commands ========================  */
-/**
-Action Commands */
+/** Action Commands */
     if (line[0] == 'a')
     {
         switch (line[1])
@@ -377,23 +399,27 @@ Action Commands */
                 send_string("dE",ident);
                 break;
             }
+/** Perform a scan. */
+        case 'S':
+            {
+                if (! deepSleep) scanNow = true;
+                break;
+            }
         }
     }
 /* ======================== Data request commands ================  */
-/**
-Data Request Commands */
+/** Data Request Commands */
     else if (line[0] == 'd')
     {
         switch (line[1])
         {
-/**
-Return the internal time.
- */
+/** Return the internal time. */
         case 'H':
             {
                 char timeString[20];
                 put_time_to_string(timeString);
                 send_string("pH",timeString);
+                break;
             }
         }
     }
@@ -411,6 +437,13 @@ Parameter Setting Commands */
                 else if (line[2] == '+') configData.config.enableSend = true;
                 break;
             }
+/* w-, w+ Turn deep sleep mode on or off (to allow USART communications) */
+        case 'w':
+            {
+                if (line[2] == '-') deepSleep = false;
+                else if (line[2] == '+') deepSleep = true;
+                break;
+            }
 /* d-, d+ Turn on debug messages */
         case 'd':
             {
@@ -425,6 +458,7 @@ Parameter Setting Commands */
                 char timeString[20];
                 put_time_to_string(timeString);
                 send_string("pH",timeString);
+                measurement_time = rtc_get_counter_val() + measurement_period;
                 break;
             }
 /* M-, M+ Turn on/off data messaging (mainly for debug) */

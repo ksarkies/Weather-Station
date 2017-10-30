@@ -63,7 +63,7 @@
     </font>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color:lightgreen;</string>
+    <string notr="true">background-color:lightyellow;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -117,7 +117,7 @@
     <item>
      <widget class="QPushButton" name="recordingButton">
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open or close files on the BMS for recording history, and start and pause recording actions.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open or close files on the remote system for recording history, starting and pausing recording actions.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color:lightgreen;color:black;</string>
@@ -165,7 +165,7 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>Connect to the TCP address and port as configured</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Connect to the address and port as configured&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="styleSheet">
     <string notr="true">background-color:lightgreen;color:black;</string>
@@ -215,7 +215,7 @@
     </font>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color:lightgreen;</string>
+    <string notr="true">background-color:lightyellow;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -258,7 +258,7 @@
     </font>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color:lightgreen;</string>
+    <string notr="true">background-color:lightyellow;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -288,7 +288,7 @@
     </font>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color:lightgreen;</string>
+    <string notr="true">background-color:lightyellow;</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::Box</enum>
@@ -504,7 +504,7 @@
   <widget class="QProgressBar" name="battery">
    <property name="geometry">
     <rect>
-     <x>270</x>
+     <x>278</x>
      <y>50</y>
      <width>118</width>
      <height>23</height>
@@ -629,7 +629,7 @@ Current</string>
   <widget class="QPushButton" name="batteryPushButton">
    <property name="geometry">
     <rect>
-     <x>404</x>
+     <x>524</x>
      <y>52</y>
      <width>16</width>
      <height>19</height>
@@ -638,8 +638,56 @@ Current</string>
    <property name="toolTip">
     <string>Click to show battery status</string>
    </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:lightgreen;</string>
+   </property>
    <property name="text">
     <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="deepSleepPushButton">
+   <property name="geometry">
+    <rect>
+     <x>156</x>
+     <y>52</y>
+     <width>16</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click to change between sleep and deep sleep (stop) modes.</string>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:rgb(255, 213, 0);</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="deepSleepLabel">
+   <property name="geometry">
+    <rect>
+     <x>184</x>
+     <y>52</y>
+     <width>81</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Deep Sleep</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="batteryLabel">
+   <property name="geometry">
+    <rect>
+     <x>416</x>
+     <y>52</y>
+     <width>105</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Battery Details</string>
    </property>
   </widget>
  </widget>

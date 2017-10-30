@@ -75,10 +75,11 @@ WeatherStationGui::WeatherStationGui(QString device, uint parameter,
     on_connectButton_clicked();
     if (port != NULL)
     {
-/* Turn on remote microcontroller communications */
+/* Turn on remote microcontroller communications. */
         port->write("pc+\n\r");
-/* This should cause the remote microcontroller to respond with all data */
-        port->write("dS\n\r");
+/* This should cause the remote microcontroller to respond with all data if
+not in stop mode. */
+        port->write("aS\n\r");
     }
 }
 
@@ -110,6 +111,10 @@ void WeatherStationGui::initMainWindow(Ui::WeatherStationMainDialog mainWindow)
     mainWindow.battery->setValue(0);
 
     WeatherStationMainUi.batteryGroupBox->setVisible(false);
+// Assume remote is in stop mode.
+    changeSleepMode = false;
+    deepSleep = true;
+    WeatherStationMainUi.deepSleepPushButton->setStyleSheet("background-color:lightgreen");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -184,6 +189,16 @@ Parse the line and take action on the command received.
 
 void WeatherStationGui::processResponse(const QString response)
 {
+/* As soon as a response is received, check if a change to sleep mode has
+been requested, and send a message to effect the change. */
+    if (changeSleepMode)
+    {
+        changeSleepMode = false;
+        if (deepSleep)
+            port->write("pw-\n\r");
+        else
+            port->write("pw+\n\r");
+    }
 #ifdef DEBUG
     qDebug() << response;
 #endif
@@ -196,6 +211,20 @@ void WeatherStationGui::processResponse(const QString response)
     QString thirdField;
     if (size > 2) thirdField = breakdown[2].simplified();
     if (! saveFile.isEmpty()) saveLine(response);
+/* Status message. Bit 0 indicates if in deep sleep (stop) mode. */
+    if ((size > 0) && (firstField == "ds"))
+    {
+        if ((secondField.toInt() & 0x01) > 0)
+        {
+            deepSleep = true;
+            WeatherStationMainUi.deepSleepPushButton->setStyleSheet("background-color:lightgreen");
+        }
+        else
+        {
+            deepSleep = false;
+            WeatherStationMainUi.deepSleepPushButton->setStyleSheet("background-color:red");
+        }
+    }
 /* When the time field is received, send back a short message to keep comms
 alive. Also check for calibration as time messages stop during this process. */
     if ((size > 0) && (firstField == "pH"))
@@ -285,6 +314,30 @@ alive. Also check for calibration as time messages stop during this process. */
         qDebug() << response;
         if (! saveFile.isEmpty()) saveLine(response);
     }
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief Change Deep Sleep Mode.
+
+Sends a message to change the sleep mode at the remote.
+
+Global: deepSleep should have been set accurately when receiving a status message.
+
+Green button means in deep sleep (stop) mode and cannot be contacted except when
+awake. When clicked a message is sent to change to sleep mode. Amber means
+attempting to contact the remote; red button means in sleep mode.
+
+If not in deep sleep then send a message to change immediately. Deep sleep mode
+will not allow messages to be received so there is no point sending in this
+case, and it may result in problems.
+*/
+
+void WeatherStationGui::on_deepSleepPushButton_clicked()
+{
+    changeSleepMode = true;
+    if (! deepSleep)
+        port->write("pw+\n\r");
+    WeatherStationMainUi.deepSleepPushButton->setStyleSheet("background-color:rgb(255, 213, 0);");
 }
 
 /*---------------------------------------------------------------------------*/

@@ -13,6 +13,10 @@ K. Sarkies, 10 May 2016
 
 #include <stdint.h>
 
+#define DEEPSLEEP
+
+#define RTC_SOURCE  RTC
+
 #define HIGH        1
 #define LOW         0
 

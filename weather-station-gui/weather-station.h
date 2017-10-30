@@ -66,6 +66,7 @@ private slots:
     void on_connectButton_clicked();
     void onDataAvailable();
     void on_batteryPushButton_clicked();
+    void on_deepSleepPushButton_clicked();
     void on_saveFileButton_clicked();
     void on_closeFileButton_clicked();
     void on_recordingButton_clicked();
@@ -96,6 +97,8 @@ private:
     QString saveFile;
     QFile* outFile;
     QTime tick;
+    bool deepSleep;
+    bool changeSleepMode;
 };
 
 #endif

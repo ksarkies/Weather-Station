@@ -164,7 +164,7 @@ uint8_t digital_read(uint8_t pin)
 void hardware_init(void)
 {
 /* Set the clock to 72MHz from the 8MHz external crystal */
-	clock_setup();
+    clock_setup();
     systick_setup();
     gpio_setup();
     usart1_setup();
@@ -172,7 +172,7 @@ void hardware_init(void)
     adc_setup();
     dac_setup();
     i2c_setup(I2C_CHANNEL);
-	rtc_setup();
+    rtc_setup();
     exti_setup();
     sei();
 }
@@ -281,7 +281,11 @@ void delay_microseconds(uint16_t delay_us)
 
 uint32_t get_seconds_count()
 {
+#if (RTC_SOURCE == RTC)
+    return rtc_get_counter_val();
+#else
     return secondsCount;
+#endif
 }
 
 /*--------------------------------------------------------------------------*/
@@ -292,7 +296,11 @@ uint32_t get_seconds_count()
 
 void set_seconds_count(uint32_t time)
 {
+#if (RTC_SOURCE == RTC)
+    rtc_set_counter_val(time);
+#else
     secondsCount = time;
+#endif
 }
 
 /*--------------------------------------------------------------------------*/
@@ -436,13 +444,11 @@ RTC and EXTI need to remain on.
 
 void peripheral_disable(void)
 {
-#ifdef DEEPSLEEP
     rcc_periph_clock_disable(RCC_AFIO);
     rcc_periph_clock_disable(RCC_GPIOA);
     rcc_periph_clock_disable(RCC_USART1);
     rcc_periph_clock_disable(RCC_GPIOB);
     rcc_periph_clock_disable(RCC_GPIOC);
-#endif
     rcc_periph_clock_disable(RCC_ADC1);
 	rcc_periph_clock_disable(RCC_DAC);
 	rcc_periph_clock_disable(RCC_I2C1);
@@ -460,13 +466,11 @@ This turns on power to all peripherals needed.
 void peripheral_enable(void)
 {
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
-#ifdef DEEPSLEEP
     rcc_periph_clock_enable(RCC_AFIO);
     rcc_periph_clock_enable(RCC_GPIOA);
     rcc_periph_clock_enable(RCC_USART1);
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
-#endif
     rcc_periph_clock_enable(RCC_ADC1);
 	rcc_periph_clock_enable(RCC_DAC);
 	rcc_periph_clock_enable(RCC_I2C1);
@@ -728,14 +732,14 @@ The LSE clock appears to be already running.
 
 void rtc_setup(void)
 {
-	/* Wake up and clear RTC registers using the LSE as clock. */
-	/* Set prescaler, using value for 1Hz out. */
+/* Wake up and clear RTC registers using the LSE as clock. */
+/* Set prescaler, using value for 1Hz out. */
 	rtc_auto_awake(RCC_LSE,0x7FFF);
 
-	/* Clear the RTC counter - some counts will occur before prescale is set. */
-	rtc_set_counter_val(0);
+/* Clear the RTC counter - some counts will occur before prescale is set. */
+//	rtc_set_counter_val(0);
 
-	/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
+/* Set the Alarm to trigger in interrupt mode on EXTI17 for wakeup */
 	nvic_enable_irq(NVIC_RTC_ALARM_IRQ);
 	EXTI_IMR |= EXTI17;
 	exti_set_trigger(EXTI17,EXTI_TRIGGER_RISING);
