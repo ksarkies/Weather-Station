@@ -85,10 +85,13 @@ not in stop mode. */
 
 WeatherStationGui::~WeatherStationGui()
 {
-/* Turn off remote microcontroller communications to save power. */
     if (port != NULL)
     {
+/* Turn off remote microcontroller communications to save power. */
         port->write("pc-\n\r");
+/* Change to deep sleep mode */
+        port->write("pw+\n\r");
+        port->flush();
         delete port;
         port = NULL;
     }
@@ -111,8 +114,8 @@ void WeatherStationGui::initMainWindow(Ui::WeatherStationMainDialog mainWindow)
     mainWindow.battery->setValue(0);
 
     WeatherStationMainUi.batteryGroupBox->setVisible(false);
-// Assume remote is in stop mode.
-    changeSleepMode = false;
+// Remote is probably in stop mode so change to light sleep.
+    changeSleepMode = true;
     deepSleep = true;
     WeatherStationMainUi.deepSleepPushButton->setStyleSheet("background-color:lightgreen");
 }

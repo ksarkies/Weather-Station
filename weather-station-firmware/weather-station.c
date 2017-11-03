@@ -4,6 +4,18 @@
 @author Ken Sarkies (www.jiggerjuice.info)
 @date 04 July 2016
 
+The program will place the processor into sleep mode for a given period of time
+measured by the RTC alarm setting, which is the only clock still running in the
+deep sleep (stop) mode. When expired, a scan of peripherals is made and the
+results transmitted and recorded. During sleep, counting peripherals such as
+rainfall and wind speed will temporarily wake the processor until the ISR is
+complete and it will be placed back to sleep.
+
+If the processor is placed into the lowest power stop mode, it cannot be
+contacted by USART. In order to allow access by the base station, the processor
+is first placed into sleep mode for a short time before being placed into stop
+mode.
+
 This initial development version uses the ET-ARM STAMP board. The port
 allocations are:
 
@@ -77,17 +89,19 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include "../libs/hardware.h"
 #include "weather-station-objdic.h"
 
-/* 10 second sleep/stop period */
-#define MEASUREMENT_PERIOD        10
+/* 60 second sleep/stop period */
+#define MEASUREMENT_PERIOD         30
+/* 5 second light sleep time */
+#define LIGHT_SLEEP_TIME            5
 /* Time in ms to allow radiance current to settle after switching. */
-#define RADIANCE_SETTLE_TIME     100
+#define RADIANCE_SETTLE_TIME      100
 /* Resistor values times 10 */
-#define BATTERY_SENSE             12        
-#define RADIANCE_SENSE            10       
+#define BATTERY_SENSE              12        
+#define RADIANCE_SENSE             10       
 /* Amplification of current sense voltage */
-#define I_AMP                    110 
+#define I_AMP                     110 
 /* Amplification of battery voltage */
-#define V_AMP                    259 
+#define V_AMP                     259 
 
 /* Fixed point for battery charge limit for Diamec batteries (7.2V to 7.5V). */
 #define CHARGE_LIMIT       72*256/10
@@ -115,8 +129,9 @@ static uint8_t writeFileHandle;
 static uint8_t readFileHandle;
 static char writeFileName[12];
 static char readFileName[12];
-static bool deepSleep;
-static bool scanNow;
+static bool deepSleep;                  /* Put processor into stop mode */
+static bool lightSleep;                 /* Short term sleep mode in progress */
+static bool scanNow;                    /* Request an immediate scan */
 static uint32_t measurement_time;
 
 /* These configuration variables are part of the Object Dictionary. */
@@ -141,6 +156,7 @@ int main(void)
     readFileName[0] = 0;
 
     deepSleep = false;
+    lightSleep = false;
     scanNow = true;
 
     charger_is_active = charger_active();
@@ -192,7 +208,7 @@ incompatible with USART usage. */
 /* Use DEEPSLEEP mode if USART interrupts are not needed during sleep periods.
 USART is powered off when the 1.8V regulator is powered down. */
 #ifdef DEEPSLEEP
-            if (deepSleep)
+            if (deepSleep && ! lightSleep)
             {
 /* Turn off peripherals during sleep (only ADC and DAC need to do this in STOP
 mode if regulator low power is used). */
@@ -205,7 +221,16 @@ contents are lost) */
 /* Set the 1.8V regulator to low power to preserve registers and SRAM but
 power off core and digital peripherals. */
                 pwr_voltage_regulator_low_power_in_stop();
+            }
+            else
 #endif
+            {
+/* Clear power down bit */
+                pwr_set_stop_mode();
+/* Clear deep sleep mode bit in SCB in case it was previously set */
+                SCB_SCR &= ~SCB_SCR_SLEEPDEEP;
+/* Leave the 1.8V regulator on. */
+                pwr_voltage_regulator_on_in_stop();
             }
 
             rtc_set_alarm_time(measurement_time);
@@ -216,15 +241,23 @@ set the new alarm value ahead of the RTC. Signal a scan to take place. */
 		    if (rtc_check_flag(RTC_ALR))
             {
                 scanNow = true;
+/* After light sleep mode period, go to main sleep period without scanning. */
+                if (lightSleep)
+                {
+                    measurement_period = MEASUREMENT_PERIOD;
+                    scanNow = false;
+                    lightSleep = false;
+                }
 			    rtc_clear_flag(RTC_ALR);
                 measurement_time = rtc_get_counter_val() + measurement_period;
             }
 
 #ifdef DEEPSLEEP
 /* Restore hardware clocks and any config that may have been lost. */
-            if (deepSleep)
+            if (deepSleep && ! lightSleep)
             {
                 peripheral_enable();
+                usart1_setup();
             }
 #endif
         }
@@ -363,7 +396,12 @@ Note order of computations to avoid 32 bit overflow. */
             cli();
             wind_speed = 0;
             sei();
+
+/* Set to a short light sleep period in case base station attempts to contact */
+            lightSleep = true;
+            measurement_time = rtc_get_counter_val() + LIGHT_SLEEP_TIME;
         }
+
 /* Wait a bit for USART and any other outstanding operations to finish. */
         while (! usart_get_flag(USART1, USART_SR_TC)) {}
         for (cnt=0; cnt < 40000; cnt++) asm("nop");

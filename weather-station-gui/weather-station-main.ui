@@ -645,6 +645,32 @@ Current</string>
     <string/>
    </property>
   </widget>
+  <widget class="QLabel" name="batteryLabel">
+   <property name="geometry">
+    <rect>
+     <x>416</x>
+     <y>52</y>
+     <width>105</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Battery Details</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="deepSleepLabel">
+   <property name="geometry">
+    <rect>
+     <x>184</x>
+     <y>52</y>
+     <width>81</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Deep Sleep</string>
+   </property>
+  </widget>
   <widget class="QPushButton" name="deepSleepPushButton">
    <property name="geometry">
     <rect>
@@ -662,32 +688,6 @@ Current</string>
    </property>
    <property name="text">
     <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="deepSleepLabel">
-   <property name="geometry">
-    <rect>
-     <x>184</x>
-     <y>52</y>
-     <width>81</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Deep Sleep</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="batteryLabel">
-   <property name="geometry">
-    <rect>
-     <x>416</x>
-     <y>52</y>
-     <width>105</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Battery Details</string>
    </property>
   </widget>
  </widget>

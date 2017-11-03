@@ -192,7 +192,6 @@ independent of formats.
 
 void WeatherStationRecordGui::onMessageReceived(const QString &response)
 {
-qDebug() << response;
     QStringList breakdown = response.split(",");
     QString command = breakdown[0].right(1);
 // Error Code
@@ -422,7 +421,6 @@ one has been received.
 
 void WeatherStationRecordGui::refreshDirectory()
 {
-qDebug() << "Refresh Directory";
     model->clear();
     socket->write("fd/\n\r");
 }
