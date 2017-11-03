@@ -26,13 +26,14 @@ K. Sarkies, 10 May 2016
 /* Use first I2C channel */
 #define I2C_CHANNEL 0
 
-/* DHT Temperature/Humidity sensor */
+/* DHT Temperature/Humidity sensor.
+Pin number refers to Arduino API, not to libopencm3 pin. */
 #define DHT_PORT    GPIOA
 #define DHT_PIN     1
 
 /* DAC set of charge limit */
 #define DAC_PORT    GPIOA
-#define DAC_PIN     5
+#define DAC_PIN     GPIO5
 
 /* Size of communications receive and transmit buffers. */
 #define BUFFER_SIZE 250

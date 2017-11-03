@@ -155,7 +155,7 @@ int main(void)
     writeFileName[0] = 0;
     readFileName[0] = 0;
 
-    deepSleep = false;
+    deepSleep = true;                   /* Start off in deep sleep */
     lightSleep = false;
     scanNow = true;
 
