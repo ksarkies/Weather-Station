@@ -92,8 +92,9 @@ uint32_t convert_c_to_f(uint32_t celsius)
 /*--------------------------------------------------------------------------*/
 /* @brief Read humidity and temperature together from the sensor
 
-Humidity comes as (data[0]*256+data[1])/10 percent. Expressed as fixed point.
-Temperature comes as (data[2]*256+data[3])/10 celcius. Expressed as fixed point.
+Humidity comes as (data[0]*256+data[1])/10 percent.
+Temperature comes as (data[2]*256+data[3])/10 celcius.
+Expressed as fixed point by an additional right shift of 8 bits.
 
 @param[in] *sensor: DHT for the sensor used.
 @param[in] boolean fahrenheit: Scale, True = Farenheit; False = Celcius

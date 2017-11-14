@@ -89,25 +89,6 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include "../libs/hardware.h"
 #include "weather-station-objdic.h"
 
-/* 60 second sleep/stop period */
-#define MEASUREMENT_PERIOD         30
-/* 5 second light sleep time */
-#define LIGHT_SLEEP_TIME            5
-/* Time in ms to allow radiance current to settle after switching. */
-#define RADIANCE_SETTLE_TIME      100
-/* Resistor values times 10 */
-#define BATTERY_SENSE              12        
-#define RADIANCE_SENSE             10       
-/* Amplification of current sense voltage */
-#define I_AMP                     110 
-/* Amplification of battery voltage */
-#define V_AMP                     259 
-
-/* Fixed point for battery charge limit for Diamec batteries (7.2V to 7.5V). */
-#define CHARGE_LIMIT       72*256/10
-/* Fixed point for battery float limit for Diamec batteries (6.5V to 6.8V). */
-#define FLOAT_LIMIT        68*256/10
-
 /*--------------------------------------------------------------------------*/
 /* Local Prototypes */
 
@@ -307,11 +288,12 @@ and amplification (x100) will give results in volts. */
                 while (! adc_eoc(ADC1));
                 current_raw += adc_read_regular(ADC1);
             }
-/* Current in m_a times 256 for fixed point scaling, with sense resistor (x10)
-and current amplification (x10) and scale back to average 16 readings.
+/* Current in mA times 256 for fixed point scaling, with sense resistor times 10
+and current amplification and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t current = 
-                    ((current_raw*BATTERY_SENSE*1000)/(1241*I_AMP))*16;  /* m_a */
+                    ((current_raw*BATTERY_SENSE_RESISTOR*(1000/10))
+                                /(1241*I_AMP_BATTERY))*(256/16);
             data_message_send("dB", current, voltage);
             if (is_recording()) record_dual("dB", current, voltage, writeFileHandle);
             delay(5);
@@ -372,11 +354,12 @@ This cycles between the absorption voltage limit and the float voltage limit. */
                 radiance_raw += adc_read_regular(ADC1);
             }
             disable_radiance_measurement();       /* Puts charging back on */
-/* Current in m_a times 256 for fixed point scaling, with sense resistor (x10)
-and current amplification (x10) and scale back to average 16 readings.
+/* Current in mA times 256 for fixed point scaling, with sense resistor times 10
+and current amplification and scale back to average 16 readings.
 Note order of computations to avoid 32 bit overflow. */
             uint32_t radiance =
-                    ((radiance_raw*RADIANCE_SENSE*1000)/(1241*I_AMP))*16;/* m_a */
+                    ((radiance_raw*RADIANCE_SENSE_RESISTOR*(1000/10))
+                                /(1241*I_AMP_RADIANCE))*(256/16);
             send_response("dL", radiance);
             if (is_recording()) record_single("dL", radiance, writeFileHandle);
             delay(5);
