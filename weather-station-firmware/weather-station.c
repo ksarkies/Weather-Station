@@ -87,6 +87,7 @@ NOTE: the test ET-STM32 STAMP board has a faulty PB4 and PB3.
 #include "../libs/barosensor.h"
 #include "../libs/i2clib.h"
 #include "../libs/hardware.h"
+#include "weather-station.h"
 #include "weather-station-objdic.h"
 
 /*--------------------------------------------------------------------------*/
